@@ -742,6 +742,11 @@ html, body{
 <body>
 <div class="app">
 
+<!-- AUDIO NOTIFIKASI -->
+<audio id="notifSound" preload="auto">
+  <source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" type="audio/mpeg">
+</audio>
+
 <!-- TOAST -->
 <div id="toastNotification">
   <i class="fa-solid fa-circle-check"></i>
@@ -1307,6 +1312,17 @@ function renderInformasiPage() {
   const h = document.getElementById('homeInfoBox');
   const empty = '<div class="card"><p class="muted">Belum ada informasi.</p></div>';
 
+  if (list.length > 0) {
+    const infoTerbaru = (list[0].Judul || '') + '|' + (list[0].Informasi || list[0].Isi || '');
+    const lastSeenInfo = localStorage.getItem('lastSeenInfo');
+
+    if (lastSeenInfo && lastSeenInfo !== infoTerbaru) {
+      playNotifSound();
+      showToast('ADA INFORMASI TERBARU!');
+    }
+    localStorage.setItem('lastSeenInfo', infoTerbaru);
+  }
+
   const mapper = x => `
     <div class="home-info-card">
       <div style="flex:1">
@@ -1318,6 +1334,13 @@ function renderInformasiPage() {
 
   if (b) b.innerHTML = list.length ? list.map(mapper).join('') : empty;
   if (h) h.innerHTML = list.length ? list.slice(0, 2).map(mapper).join('') : empty;
+}
+
+function playNotifSound() {
+  const audio = document.getElementById('notifSound');
+  if (audio) {
+    audio.play().catch(e => console.log('Autoplay diblokir:', e));
+  }
 }
 
 function renderPengaduanPage() {
