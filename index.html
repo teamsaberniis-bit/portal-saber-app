@@ -19,6 +19,36 @@
 <link rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+<!-- ONESIGNAL WEB PUSH SDK & INISIALISASI -->
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "f0c6cdea-3d81-4491-8c5f-2a33eec4221a",
+      safari_web_id: "",
+      notifyButton: {
+        enable: true,
+      },
+      promptOptions: {
+        slidedown: {
+          prompts: [
+            {
+              type: "push",
+              autoPrompt: true,
+              text: {
+                actionMessage: "Aktifkan notifikasi untuk menerima Informasi, Jadwal, Pengaduan, dan Laporan Pekerjaan Tim SABER secara real-time.",
+                acceptButton: "Aktifkan",
+                cancelButton: "Nanti"
+              }
+            }
+          ]
+        }
+      }
+    });
+  });
+</script>
+
 <style>
 :root{
   --g:#16a34a;
@@ -1100,13 +1130,6 @@ function loadDataFallback() {
   document.body.appendChild(script);
 }
 
-function showLoadError(msg) {
-  ['homeInfoBox', 'homePengaduanBox'].forEach(id => {
-    const e = document.getElementById(id);
-    if (e) e.innerHTML = '<div class="card"><p class="danger">' + esc(msg) + '</p></div>';
-  });
-}
-
 function initApp() {
   const sel = document.getElementById('memberSelectTop');
   if (!sel) return;
@@ -1413,13 +1436,11 @@ function renderInformasiPage() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Tampilan persis Gambar 2 (menggunakan border hijau dan badge hijau "KEGIATAN HARI INI" TANPA BINTANG)
   const mapper = x => {
     const rawTgl = extractDisplayDate(x);
     const tglInfo = parseSmartDate(rawTgl);
     const isToday = tglInfo && tglInfo.getTime() === today.getTime();
 
-    // Badge "KEGIATAN HARI INI" tanpa ikon bintang
     const badgeKegiatanHariIni = isToday ? `
       <span style="background:var(--g); color:#fff; font-size:10px; font-weight:800; padding:3px 8px; border-radius:12px; display:inline-block; margin-left:8px; text-transform:uppercase; vertical-align:middle;">
         KEGIATAN HARI INI
@@ -1444,7 +1465,6 @@ function renderInformasiPage() {
     if (list.length === 0) {
       h.innerHTML = empty;
     } else {
-      // Prioritaskan kegiatan hari ini & mendatang untuk Beranda (urutan Gambar 2)
       const sortedForHome = [...list].sort((a, b) => {
         const dA = parseSmartDate(extractDisplayDate(a));
         const dB = parseSmartDate(extractDisplayDate(b));
@@ -1454,7 +1474,6 @@ function renderInformasiPage() {
         if (isTodayA && !isTodayB) return -1;
         if (!isTodayA && isTodayB) return 1;
 
-        // Tampilkan yang terdekat lebih dulu
         const diffA = dA ? Math.abs(dA.getTime() - today.getTime()) : Infinity;
         const diffB = dB ? Math.abs(dB.getTime() - today.getTime()) : Infinity;
         return diffA - diffB;
