@@ -1329,7 +1329,6 @@ function renderInformasiPage() {
   const now = new Date();
   now.setHours(0, 0, 0, 0);
 
-  // Batas 3 hari ke depan (Hari ini + 3 hari)
   const threeDaysLater = new Date(now);
   threeDaysLater.setDate(now.getDate() + 3);
 
@@ -1350,7 +1349,6 @@ function renderInformasiPage() {
     localStorage.setItem('lastSeenInfo', infoTerbaru);
   }
 
-  // Filter khusus untuk beranda: Tampilkan semua kegiatan dalam rentang hari ini s.d 3 hari ke depan
   const homeFiltered = sortedList.filter(x => {
     let pDate = parseSmartDate(x.Tanggal || x.Timestamp || '');
     if (!pDate) return true;
@@ -1400,8 +1398,6 @@ function renderPengaduanPage() {
   const mapper = x => {
     const st = String(x.Status || 'Progres').trim().toLowerCase();
     const cls = st === 'selesai' ? 'selesai' : (st.includes('cek') ? 'cek' : 'progres');
-    
-    // Menangkap semua kemungkinan nama kolom tanggal/waktu dari Google Sheets
     const tglDisplay = x['Hari/Tanggal'] || x.Timestamp || x.Tanggal || x.Waktu || '-';
     
     return `
