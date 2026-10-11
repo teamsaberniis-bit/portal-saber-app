@@ -624,8 +624,8 @@ html, body{
 .jcol{ background:#fff; border:1px solid var(--b); border-radius:11px; overflow:hidden; }
 .jhead{ padding:10px 11px; color:#fff; font-size:12px; font-weight:800; background:var(--g); }
 .jitem{ border:1px solid var(--b); border-radius:8px; padding:9px; margin-bottom:6px; }
-.jitem b{ font-size:11px; display:block; margin-bottom:3px; }
-.jitem small{ font-size:9px; color:var(--s); display:block; margin-bottom:5px; }
+.jitem b{ font-size:11.5px; display:block; margin-bottom:3px; }
+.jitem small{ font-size:9.5px; color:var(--s); display:block; margin-bottom:5px; }
 
 .priority{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
 .priority label{
@@ -1214,14 +1214,11 @@ function closeAnggotaDetail() {
   if (box) { box.classList.remove('active'); box.innerHTML = ''; }
 }
 
-// Fungsi serbaguna untuk ekstraksi tanggal/waktu dari berbagai nama property
 function extractDisplayDate(item) {
   if (!item) return '-';
-  // Mengecek seluruh variasi property tanggal dari Google Sheets JSON
   let val = item.Tanggal || item['Hari/tgl'] || item['Hari/Tanggal'] || item.Timestamp || item.timestamp || item.Waktu || item.waktu || item.Date || item.date || item.CreatedAt || item.created_at || '';
   
   if (!val) {
-    // Jika tidak ada key standar, cari key apapun yang mengandung kata 'tgl', 'date', atau 'time'
     for (let k in item) {
       if (k.toLowerCase().includes('tgl') || k.toLowerCase().includes('date') || k.toLowerCase().includes('time') || k.toLowerCase().includes('waktu')) {
         if (item[k]) { val = item[k]; break; }
@@ -1231,7 +1228,6 @@ function extractDisplayDate(item) {
 
   if (!val) return 'Terbaru';
 
-  // Format standar jika data berupa String ISO Date dari GAS
   if (typeof val === 'string' && val.includes('T')) {
     let d = new Date(val);
     if (!isNaN(d.getTime())) {
@@ -1396,7 +1392,7 @@ function renderInformasiPage() {
     const rawTgl = extractDisplayDate(x);
     const tglInfo = parseSmartDate(rawTgl);
     const isToday = tglInfo && tglInfo.toDateString() === todayStr;
-    const badgeHariIni = isToday ? '<span class="status" style="background:var(--g); color:#fff; margin-bottom:5px; font-weight:bold;"><i class="fa-solid fa-bell"></i> Hari Ini</span>' : '';
+    const badgeHariIni = isToday ? '<span class="status" style="background:var(--g); color:#fff; margin-bottom:5px; font-weight:800; border-radius:4px; padding:2px 6px;">Hari Ini</span>' : '';
 
     return `
       <div class="home-info-card" ${isToday ? 'style="border-left: 4px solid var(--g); background:#f0fdf4;"' : ''}>
@@ -1415,13 +1411,11 @@ function renderInformasiPage() {
     if (list.length === 0) {
       h.innerHTML = empty;
     } else {
-      // Ambil informasi hari ini
       const todayList = list.filter(x => {
         const d = parseSmartDate(extractDisplayDate(x));
         return d && d.toDateString() === todayStr;
       });
 
-      // Tampilkan seluruh informasi hari ini jika > 2, atau tampilkan minimal 2 informasi paling baru
       let listToDisplay = [];
       if (todayList.length > 2) {
         listToDisplay = todayList;
@@ -1507,34 +1501,35 @@ function renderJadwalByDay() {
   const hariEl = document.getElementById('jadwalHariIni');
   const tanggalEl = document.getElementById('jadwalTanggalHariIni');
 
-  if (hariEl) hariEl.textContent = 'Jadwal Kerja: ' + hariNama[day] + ', ' + tanggalStr;
+  if (hariEl) hariEl.textContent = 'Jadwal Kerja Hari Ini: ' + hariNama[day] + ', ' + tanggalStr;
   if (tanggalEl) {
     tanggalEl.textContent = isWeekend 
       ? 'Hari Libur: Tidak ada jadwal pekerjaan rutin pada hari Sabtu & Minggu.' 
       : 'Pekerjaan dengan tanda hijau (✓ KERJAKAN HARI INI) wajib diselesaikan hari ini.';
   }
 
+  // Master Data Jobdesk Tanpa Nomor Urut
   const masterTugas = [
-    { no: 1, tugas: 'Glass cleaning kelas / ruangan', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
-    { no: 2, tugas: 'Cleaning masjid', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
-    { no: 3, tugas: 'Cleaning kelas / ruangan secara menyeluruh', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
-    { no: 4, tugas: 'Cleaning list kaca & lemari prasman siswa', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
-    { no: 5, tugas: 'Toilet cleaning', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
-    { no: 6, tugas: 'Membuang sampah', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
-    { no: 7, tugas: 'Cleaning karpet toilet & keset', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5], kategori: 'Mingguan' },
-    { no: 8, tugas: 'General cleaning toilet', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5], kategori: 'Mingguan' },
-    { no: 9, tugas: 'Cleaning tempat sampah', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5], kategori: 'Mingguan' },
-    { no: 10, tugas: 'Penggantian sprei', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5], kategori: 'Mingguan' },
-    { no: 11, tugas: 'Vaccum karpet Masjid', frekuensi: '2x Seminggu', pelaksanaan: "Rabu & Jum'at", days: [3,5], kategori: 'Mingguan' },
-    { no: 12, tugas: 'Vaccum karpet', frekuensi: '2x Seminggu', pelaksanaan: 'Selasa & Kamis', days: [2,4], kategori: 'Mingguan' },
-    { no: 13, tugas: 'Cleaning sawang-sawang', frekuensi: '2x Seminggu', pelaksanaan: 'Selasa & Kamis', days: [2,4], kategori: 'Mingguan' },
-    { no: 14, tugas: 'Cleaning dinding kelas', frekuensi: '2x Seminggu', pelaksanaan: 'Senin & Rabu', days: [1,3], kategori: 'Mingguan' },
-    { no: 15, tugas: 'Cleaning balkon dan kaca', frekuensi: '2x Sebulan', pelaksanaan: 'Minggu ke 1 & Minggu ke 3', days: [1,2,3,4,5], kategori: 'Bulanan' },
-    { no: 16, tugas: 'Cleaning dispenser', frekuensi: '2x Sebulan', pelaksanaan: 'Minggu ke 2 & Minggu ke 4', days: [1,2,3,4,5], kategori: 'Bulanan' },
-    { no: 17, tugas: 'General cleaning Masjid', frekuensi: '1x Sebulan', pelaksanaan: 'Minggu ke 4', days: [5], kategori: 'Bulanan' },
-    { no: 18, tugas: 'Brusing lantai koridor', frekuensi: '1x Sebulan', pelaksanaan: 'Minggu ke 3', days: [5], kategori: 'Bulanan' },
-    { no: 19, tugas: 'Penyemprotan disinfektan', frekuensi: '1x Sebulan', pelaksanaan: 'Minggu ke 2', days: [5], kategori: 'Bulanan' },
-    { no: 20, tugas: 'Fogging', frekuensi: '1x 3 bulan', pelaksanaan: 'Minggu ke 1', days: [5], kategori: 'Bulanan' }
+    { tugas: 'Glass cleaning kelas / ruangan', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
+    { tugas: 'Cleaning masjid', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
+    { tugas: 'Cleaning kelas / ruangan secara menyeluruh', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
+    { tugas: 'Cleaning list kaca & lemari prasman siswa', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
+    { tugas: 'Toilet cleaning', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
+    { tugas: 'Membuang sampah', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
+    { tugas: 'Cleaning karpet toilet & keset', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5], kategori: 'Mingguan' },
+    { tugas: 'General cleaning toilet', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5], kategori: 'Mingguan' },
+    { tugas: 'Cleaning tempat sampah', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5], kategori: 'Mingguan' },
+    { tugas: 'Penggantian sprei', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5], kategori: 'Mingguan' },
+    { tugas: 'Vaccum karpet Masjid', frekuensi: '2x Seminggu', pelaksanaan: "Rabu & Jum'at", days: [3,5], kategori: 'Mingguan' },
+    { tugas: 'Vaccum karpet', frekuensi: '2x Seminggu', pelaksanaan: 'Selasa & Kamis', days: [2,4], kategori: 'Mingguan' },
+    { tugas: 'Cleaning sawang-sawang', frekuensi: '2x Seminggu', pelaksanaan: 'Selasa & Kamis', days: [2,4], kategori: 'Mingguan' },
+    { tugas: 'Cleaning dinding kelas', frekuensi: '2x Seminggu', pelaksanaan: 'Senin & Rabu', days: [1,3], kategori: 'Mingguan' },
+    { tugas: 'Cleaning balkon dan kaca', frekuensi: '2x Sebulan', pelaksanaan: 'Minggu ke 1 & Minggu ke 3', days: [1,2,3,4,5], kategori: 'Bulanan' },
+    { tugas: 'Cleaning dispenser', frekuensi: '2x Sebulan', pelaksanaan: 'Minggu ke 2 & Minggu ke 4', days: [1,2,3,4,5], kategori: 'Bulanan' },
+    { tugas: 'General cleaning Masjid', frekuensi: '1x Sebulan', pelaksanaan: 'Minggu ke 4', days: [5], kategori: 'Bulanan' },
+    { tugas: 'Brusing lantai koridor', frekuensi: '1x Sebulan', pelaksanaan: 'Minggu ke 3', days: [5], kategori: 'Bulanan' },
+    { tugas: 'Penyemprotan disinfektan', frekuensi: '1x Sebulan', pelaksanaan: 'Minggu ke 2', days: [5], kategori: 'Bulanan' },
+    { tugas: 'Fogging', frekuensi: '1x 3 bulan', pelaksanaan: 'Minggu ke 1', days: [5], kategori: 'Bulanan' }
   ];
 
   const renderItemHTML = (x) => {
@@ -1543,14 +1538,14 @@ function renderJadwalByDay() {
     const statusLabel = isWeekend 
       ? '<span class="status" style="background:#f1f5f9; color:#64748b;">LIBUR</span>'
       : (wajibHariIni 
-          ? '<span class="status" style="background:#16a34a; color:#fff; font-weight:bold;">✓ KERJAKAN HARI INI</span>' 
+          ? '<span class="status" style="background:#16a34a; color:#fff; font-weight:800;"><i class="fa-solid fa-check"></i> KERJAKAN HARI INI</span>' 
           : '<span class="status" style="background:#f8fafc; color:#94a3b8;">Terjadwal</span>');
 
     return `
       <div class="jitem" style="${bgStyle} margin-bottom: 8px; padding: 9px; border-radius: 8px;">
         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
           <div style="flex:1;">
-            <b>${x.no}.${esc(x.tugas)}</b>
+            <b>${esc(x.tugas)}</b>
             <small style="display:block; color:#64748b; font-size:10px; margin-top:2px;">
               <i class="fa-regular fa-clock me-1"></i>${esc(x.frekuensi)} (${esc(x.pelaksanaan)})
             </small>
@@ -1569,15 +1564,15 @@ function renderJadwalByDay() {
   if (box) {
     box.innerHTML = `
       <div class="jcol">
-        <div class="jhead"><i class="fa-solid fa-sun"></i> 1. Jadwal Harian (Senin - Jumat)</div>
+        <div class="jhead"><i class="fa-solid fa-sun"></i> Pekerjaan Harian (Senin - Jumat)</div>
         <div style="padding:7px">${harianList.map(renderItemHTML).join('')}</div>
       </div>
       <div class="jcol" style="margin-top:4px;">
-        <div class="jhead" style="background:var(--blue);"><i class="fa-solid fa-calendar-week"></i> 2. Jadwal Mingguan</div>
+        <div class="jhead" style="background:var(--blue);"><i class="fa-solid fa-calendar-week"></i> Pekerjaan Mingguan</div>
         <div style="padding:7px">${mingguanList.map(renderItemHTML).join('')}</div>
       </div>
       <div class="jcol" style="margin-top:4px;">
-        <div class="jhead" style="background:var(--o);"><i class="fa-solid fa-calendar-alt"></i> 3. Jadwal Bulanan / Berkala</div>
+        <div class="jhead" style="background:var(--o);"><i class="fa-solid fa-calendar-alt"></i> Pekerjaan Bulanan / Berkala</div>
         <div style="padding:7px">${bulananList.map(renderItemHTML).join('')}</div>
       </div>`;
   }
