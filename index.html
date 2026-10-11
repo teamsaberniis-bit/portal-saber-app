@@ -919,7 +919,7 @@ html, body{
       <label><input type="radio" name="prioritas" value="Penting"><span>Penting</span></label>
       <label><input type="radio" name="prioritas" value="Mendesak"><span>Mendesak</span></label>
     </div>
-    <div class="form-label">Kebutuhan Alat / Bahan</div>
+    <div class="form-label">Kebutuhan Alat / Bahan (6 Kolom)</div>
     <input class="form-input" id="kebutuhan1" placeholder="1. Kebutuhan pertama">
     <input class="form-input" id="kebutuhan2" placeholder="2. Kebutuhan kedua" style="margin-top:5px">
     <input class="form-input" id="kebutuhan3" placeholder="3. Kebutuhan ketiga" style="margin-top:5px">
@@ -1369,7 +1369,7 @@ function playNotifSound() {
 }
 
 function renderPengaduanPage() {
-  const list = [...(DB.pengaduan || [])].sort((a, b) => parseDateVal(b.Tanggal || b.Timestamp || '') - parseDateVal(a.Tanggal || a.Timestamp || ''));
+  const list = [...(DB.pengaduan || [])].sort((a, b) => parseDateVal(b.Timestamp || b.Tanggal || '') - parseDateVal(a.Timestamp || a.Tanggal || ''));
   const h = document.getElementById('homePengaduanBox');
   const f = document.getElementById('pengaduanListFull');
   const empty = '<div class="card"><p class="muted">Belum ada pengaduan.</p></div>';
@@ -1377,14 +1377,15 @@ function renderPengaduanPage() {
   const mapper = x => {
     const st = String(x.Status || 'Progres').trim().toLowerCase();
     const cls = st === 'selesai' ? 'selesai' : (st.includes('cek') ? 'cek' : 'progres');
+    const tglDisplay = x.Timestamp || x.Tanggal || x.Waktu || '-';
     return `
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:flex-start">
           <div><h4>${esc(x.Nama || 'Pengguna')}</h4><p><b>Area:</b> ${esc(x.Area || '-')}</p></div>
           <span class="badge-status ${cls}">${esc(x.Status || 'Progres')}</span>
         </div>
-        <p style="margin-top:5px">${esc(x.Kendala || '-')}</p>
-        <span class="status"><i class="fa-regular fa-calendar"></i> ${esc(x.Tanggal || '-')}</span>
+        <p style="margin-top:5px">${esc(x.Kendala || x.Pengaduan || '-')}</p>
+        <span class="status"><i class="fa-regular fa-calendar"></i> ${esc(tglDisplay)}</span>
       </div>`;
   };
 
@@ -1431,7 +1432,7 @@ function renderJadwalByDay() {
       : 'Pekerjaan dengan tanda hijau (✓ KERJAKAN HARI INI) wajib diselesaikan hari ini.';
   }
 
-  // Master Data 20 Jobdesk
+  // Master Data 20 Jobdesk Lengkap
   const masterTugas = [
     { no: 1, tugas: 'Glass cleaning kelas / ruangan', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5] },
     { no: 2, tugas: 'Cleaning masjid', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5] },
@@ -1458,13 +1459,10 @@ function renderJadwalByDay() {
   if (box) {
     box.innerHTML = `
       <div class="jcol">
-        <div class="jhead">Daftar Jobdesk & Status Pekerjaan</div>
+        <div class="jhead">Daftar Jobdesk & Status Pekerjaan (20 Item)</div>
         <div style="padding:7px">
           ${masterTugas.map(x => {
-            // Cek apakah tugas ini wajib dikerjakan HARI INI
             const wajibHariIni = !isWeekend && x.days.includes(day);
-
-            // Styling jika wajib dikerjakan hari ini
             const bgStyle = wajibHariIni ? 'background:#f0fdf4; border:2px solid #16a34a;' : 'background:#fff; border:1px solid #e2e8f0;';
             const statusLabel = isWeekend 
               ? '<span class="status" style="background:#f1f5f9; color:#64748b;">LIBUR</span>'
@@ -1487,21 +1485,6 @@ function renderJadwalByDay() {
                 </div>
               </div>`;
           }).join('')}
-        </div>
-      </div>`;
-  }
-}
-
-  if (box) {
-    box.innerHTML = `
-      <div class="jcol">
-        <div class="jhead">Pekerjaan Rutin</div>
-        <div style="padding:7px">
-          ${all.map(x => `
-            <div class="jitem" style="${x[3] ? 'background:#f0fdf4;border:2px solid #16a34a;' : ''}">
-              <div><b>${esc(x[0])}</b><small>${esc(x[1])} •${esc(x[2])}</small></div>
-              <span class="status" style="${x[3] ? 'background:#16a34a;color:#fff;' : ''}">${x[3] ? '✓ KERJAKAN HARI INI' : (isWeekend ? 'LIBUR' : 'Terjadwal')}</span>
-            </div>`).join('')}
         </div>
       </div>`;
   }
@@ -1614,9 +1597,15 @@ function kirimPengajuan() {
     Area: document.getElementById('pengajuanArea').value.trim(),
     Prioritas: (document.querySelector('input[name="prioritas"]:checked') || {}).value || 'Normal'
   };
-  for (let i = 1; i <= 4; i++) { d['Kebutuhan' + i] = document.getElementById('kebutuhan' + i).value.trim(); }
-  if (!d.Nama || !d.Area || ![d.Kebutuhan1, d.Kebutuhan2, d.Kebutuhan3, d.Kebutuhan4].some(Boolean)) {
-    alert('Isi minimal satu kebutuhan alat/bahan.'); return;
+  
+  // Mengambil 6 kolom kebutuhan alat/bahan
+  for (let i = 1; i <= 6; i++) { 
+    d['Kebutuhan' + i] = document.getElementById('kebutuhan' + i).value.trim(); 
+  }
+
+  const adaIsi = [d.Kebutuhan1, d.Kebutuhan2, d.Kebutuhan3, d.Kebutuhan4, d.Kebutuhan5, d.Kebutuhan6].some(Boolean);
+  if (!d.Nama || !d.Area || !adaIsi) {
+    alert('Nama, area, dan minimal isi satu kebutuhan alat/bahan.'); return;
   }
 
   btn.disabled = true; btn.innerText = 'Mengirim...';
@@ -1629,7 +1618,7 @@ function kirimPengajuan() {
     btn.disabled = false; btn.innerText = 'Kirim Pengajuan';
     if (res && res.success) {
       showToast('BERHASIL DIKIRIM');
-      for (let i = 1; i <= 4; i++) { document.getElementById('kebutuhan' + i).value = ''; }
+      for (let i = 1; i <= 6; i++) { document.getElementById('kebutuhan' + i).value = ''; }
       showPage('home');
     } else { alert('Gagal: ' + (res && res.message || 'Data tidak tersimpan.')); }
   })
