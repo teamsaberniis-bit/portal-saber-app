@@ -1369,10 +1369,35 @@ function playNotifSound() {
 }
 
 function renderPengaduanPage() {
-  const list = [...(DB.pengaduan || [])].sort((a, b) => parseDateVal(b.Timestamp || b.Tanggal || '') - parseDateVal(a.Timestamp || a.Tanggal || ''));
+  const list = [...(DB.pengaduan || [])].sort((a, b) => parseDateVal(b['Hari/Tanggal'] || b.Timestamp || b.Tanggal || '') - parseDateVal(a['Hari/Tanggal'] || a.Timestamp || a.Tanggal || ''));
   const h = document.getElementById('homePengaduanBox');
   const f = document.getElementById('pengaduanListFull');
   const empty = '<div class="card"><p class="muted">Belum ada pengaduan.</p></div>';
+
+  const mapper = x => {
+    const st = String(x.Status || 'Progres').trim().toLowerCase();
+    const cls = st === 'selesai' ? 'selesai' : (st.includes('cek') ? 'cek' : 'progres');
+    
+    // Menangkap berbagai kemungkinan nama kolom tanggal di Google Sheets
+    const tglDisplay = x['Hari/Tanggal'] || x.Timestamp || x.Tanggal || x.Waktu || '-';
+    
+    return `
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div><h4>${esc(x.Nama || 'Pengguna')}</h4><p><b>Area:</b> ${esc(x.Area || '-')}</p></div>
+          <span class="badge-status ${cls}">${esc(x.Status || 'Progres')}</span>
+        </div>
+        <p style="margin-top:5px">${esc(x.Kendala || x.Pengaduan || '-')}</p>
+        <span class="status"><i class="fa-regular fa-calendar"></i> ${esc(tglDisplay)}</span>
+      </div>`;
+  };
+
+  if (h) {
+    const active = list.filter(x => String(x.Status || '').trim().toLowerCase() !== 'selesai');
+    h.innerHTML = active.length ? active.slice(0, 2).map(mapper).join('') : '<p class="muted">Tidak ada pengaduan aktif.</p>';
+  }
+  if (f) f.innerHTML = list.length ? list.map(mapper).join('') : empty;
+}
 
   const mapper = x => {
     const st = String(x.Status || 'Progres').trim().toLowerCase();
