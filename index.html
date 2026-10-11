@@ -1,22 +1,1583 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Portal Tim SABER</title>
-    <style>
-        html, body, iframe {
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            border: none;
-            overflow: hidden;
-            background: #f5f5f9;
-        }
-    </style>
+<meta charset="UTF-8">
+
+<!-- MOBILE VIEWPORT -->
+<meta name="viewport"
+      content="width=device-width,
+               initial-scale=1.0,
+               maximum-scale=1.0,
+               minimum-scale=1.0,
+               user-scalable=no,
+               viewport-fit=cover">
+
+<title>Portal Tim SABER</title>
+
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+:root{
+  --g:#16a34a;
+  --gd:#15803d;
+  --gl:#f0fdf4;
+  --o:#f97316;
+  --ol:#fff7ed;
+  --bg:#f1f5f9;
+  --w:#fff;
+  --t:#0f172a;
+  --s:#64748b;
+  --b:#e2e8f0;
+  --blue:#2563eb;
+}
+
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    Arial,
+    sans-serif;
+  -webkit-tap-highlight-color:transparent;
+}
+
+html, body{
+  width:100%;
+  height:100%;
+  margin:0;
+  padding:0;
+  overflow:hidden;
+  background:var(--bg);
+  color:var(--t);
+  overscroll-behavior:none;
+}
+
+.app{
+  width:100%;
+  max-width:414px;
+  height:100vh;
+  height:100dvh;
+  margin:0 auto;
+  background:var(--bg);
+  display:flex;
+  flex-direction:column;
+  position:relative;
+  overflow:hidden;
+}
+
+@media (min-width:415px){
+  body{
+    background:#0f172a;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .app{
+    height:100dvh;
+    max-height:900px;
+    border-radius:22px;
+    box-shadow:0 15px 45px rgba(0,0,0,.45);
+  }
+}
+
+.pull-refresh-indicator{
+  position:absolute;
+  top:-52px;
+  left:0;
+  width:100%;
+  height:52px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--g);
+  font-size:12px;
+  font-weight:800;
+  background:#fff;
+  border-bottom:1px solid var(--b);
+  transition:transform .2s ease;
+  z-index:99;
+  padding-top:env(safe-area-inset-top);
+}
+
+.header{
+  background:#fff;
+  padding:calc(9px + env(safe-area-inset-top)) 14px 9px 14px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  border-bottom:1px solid var(--b);
+  flex:0 0 auto;
+  min-height:62px;
+  z-index:20;
+}
+
+.avatar{
+  width:40px;
+  height:40px;
+  border-radius:50%;
+  background:var(--o);
+  color:#fff;
+  display:grid;
+  place-items:center;
+  font-weight:800;
+  overflow:hidden;
+  flex:none;
+}
+
+.avatar img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+.greet{
+  font-size:10.5px;
+  color:var(--s);
+  line-height:1.2;
+}
+
+.top-member-select{
+  width:100%;
+  border:0;
+  background:transparent;
+  color:var(--t);
+  font-size:15px;
+  font-weight:800;
+  outline:none;
+  padding:2px 0;
+  appearance:auto;
+}
+
+.top-area{
+  font-size:10px;
+  color:var(--s);
+  font-weight:600;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.content{
+  flex:1 1 auto;
+  min-height:0;
+  width:100%;
+  overflow-y:auto;
+  overflow-x:hidden;
+  padding:12px 13px 18px 13px;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior-y:contain;
+}
+
+.page{
+  display:none;
+  width:100%;
+}
+
+.page.active{
+  display:block;
+}
+
+.hero{
+  background:linear-gradient(135deg, var(--g), var(--gd));
+  color:#fff;
+  border-radius:14px;
+  padding:15px;
+  margin-bottom:12px;
+  box-shadow:0 6px 15px #16a34a20;
+}
+
+.hero h2{
+  font-size:18px;
+  margin-bottom:4px;
+}
+
+.hero p{
+  font-size:12px;
+  opacity:.92;
+}
+
+.section{
+  font-size:14px;
+  font-weight:800;
+  color:var(--t);
+  margin:11px 0 8px;
+}
+
+.section-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin:11px 0 8px;
+}
+
+.section-link{
+  font-size:11.5px;
+  font-weight:700;
+  color:var(--g);
+  cursor:pointer;
+  text-decoration:none;
+}
+
+.menu{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:11px 7px;
+  margin-bottom:14px;
+}
+
+.mi{
+  text-decoration:none;
+  color:var(--t);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:5px;
+  cursor:pointer;
+  user-select:none;
+}
+
+.ico{
+  width:45px;
+  height:45px;
+  border-radius:13px;
+  background:var(--gl);
+  color:var(--g);
+  display:grid;
+  place-items:center;
+  font-size:17px;
+}
+
+.ico.o{ background:var(--ol); color:var(--o); }
+.ico.b{ background:#eff6ff; color:var(--blue); }
+
+.lbl{
+  font-size:10.5px;
+  font-weight:700;
+  text-align:center;
+}
+
+.lembur-container{
+  background:linear-gradient(135deg, var(--g), var(--gd));
+  color:#fff;
+  border-radius:16px;
+  padding:12px;
+  margin-bottom:12px;
+  box-shadow:0 5px 12px #16a34a20;
+}
+
+#lemburSlider{ width:100%; overflow:hidden; }
+
+.lembur-track{
+  display:flex;
+  width:100%;
+  transition:transform .3s ease;
+}
+
+.lembur-slide{
+  min-width:100%;
+  width:100%;
+  flex:0 0 100%;
+}
+
+.lembur-dots{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:5px;
+}
+
+.lembur-dot{
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:#ffffff66;
+  cursor:pointer;
+}
+
+.lembur-dot.active{
+  background:#fff;
+  width:20px;
+  border-radius:6px;
+}
+
+.lembur-nav{
+  display:grid;
+  grid-template-columns:36px minmax(0,1fr) auto 36px;
+  column-gap:6px;
+  align-items:center;
+  margin-top:10px;
+}
+
+.lembur-arrow{
+  border:1px solid #ffffff45;
+  background:#ffffff18;
+  color:#fff;
+  width:36px;
+  height:36px;
+  border-radius:50%;
+  font-size:22px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.lembur-arrow:disabled{ opacity:.3; }
+
+.lembur-count{
+  font-size:10.5px;
+  font-weight:700;
+  text-align:right;
+}
+
+.lh{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:8px;
+}
+
+.lt{
+  font-size:15px;
+  font-weight:800;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+
+.badge{
+  background:var(--o);
+  font-size:10px;
+  font-weight:800;
+  padding:5px 10px;
+  border-radius:8px;
+  white-space:nowrap;
+}
+
+.ld{
+  font-size:11.5px;
+  opacity:.9;
+  margin-bottom:8px;
+}
+
+.grid2{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+}
+
+.cell{
+  background:#ffffff1f;
+  padding:9px 10px;
+  border-radius:10px;
+}
+
+.cell span{
+  font-size:9.5px;
+  opacity:.75;
+  display:block;
+}
+
+.cell b{
+  font-size:13px;
+  display:block;
+  margin-top:2px;
+  font-weight:700;
+}
+
+.card{
+  background:#fff;
+  border:1px solid var(--b);
+  border-radius:12px;
+  padding:11px;
+  margin-bottom:8px;
+}
+
+.card h4{
+  font-size:12.5px;
+  color:var(--t);
+  margin-bottom:2px;
+  font-weight:800;
+}
+
+.card p{
+  font-size:11px;
+  line-height:1.45;
+  color:var(--s);
+}
+
+.nav{
+  background:#fff;
+  border-top:1px solid var(--b);
+  display:flex;
+  padding:7px 3px calc(8px + env(safe-area-inset-bottom)) 3px;
+  flex:0 0 auto;
+  min-height:67px;
+  z-index:30;
+}
+
+.nav a{
+  flex:1;
+  min-height:48px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:3px;
+  text-decoration:none;
+  color:var(--s);
+  font-size:9.5px;
+  font-weight:700;
+  cursor:pointer;
+  border-radius:9px;
+}
+
+.nav i{ font-size:18px; line-height:18px; }
+.nav a.active{ color:var(--g); background:var(--gl); }
+
+.form-input, .form-textarea, .form-select{
+  width:100%;
+  border:1px solid var(--b);
+  border-radius:9px;
+  padding:11px 10px;
+  font-size:16px;
+  background:#fff;
+  color:var(--t);
+  outline:none;
+  min-height:44px;
+}
+
+.form-input:focus, .form-textarea:focus{
+  border-color:var(--g);
+  box-shadow:0 0 0 2px rgba(22,163,74,.10);
+}
+
+.form-textarea{ min-height:90px; resize:vertical; }
+
+.form-label{
+  font-size:10.5px;
+  font-weight:800;
+  color:var(--t);
+  display:block;
+  margin:9px 0 4px;
+}
+
+.btn{
+  width:100%;
+  min-height:45px;
+  border:0;
+  border-radius:9px;
+  background:var(--g);
+  color:#fff;
+  padding:11px;
+  font-size:13px;
+  font-weight:800;
+  margin-top:10px;
+  cursor:pointer;
+}
+
+.btn.o{ background:var(--o); }
+.btn:disabled{ opacity:.6; }
+
+.back{
+  border:0;
+  background:none;
+  color:var(--g);
+  font-weight:800;
+  font-size:13px;
+  margin-bottom:8px;
+  cursor:pointer;
+  padding:5px 0;
+}
+
+.row{
+  background:#fff;
+  border:1px solid var(--b);
+  border-radius:10px;
+  padding:10px;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  margin-bottom:7px;
+  cursor:pointer;
+}
+
+.pic{
+  width:38px;
+  height:38px;
+  border-radius:50%;
+  background:var(--gl);
+  color:var(--g);
+  display:grid;
+  place-items:center;
+  font-weight:800;
+  overflow:hidden;
+  flex:none;
+}
+
+.pic img{ width:100%; height:100%; object-fit:cover; }
+
+.rowmain{ flex:1; min-width:0; }
+.rowmain b{ font-size:12.5px; display:block; }
+.rowmain small{ display:block; color:var(--s); font-size:9.5px; margin-top:2px; }
+.arrow{ color:#94a3b8; font-size:11px; }
+
+.anggota-detail{
+  display:none;
+  background:#fff;
+  border:1px solid var(--b);
+  border-radius:14px;
+  padding:12px;
+  margin-bottom:10px;
+}
+
+.anggota-detail.active{ display:block; }
+
+.anggota-detail-head{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:10px;
+}
+
+.detail-pic{
+  width:56px;
+  height:56px;
+  border-radius:50%;
+  background:var(--gl);
+  color:var(--g);
+  display:grid;
+  place-items:center;
+  font-size:20px;
+  font-weight:800;
+  overflow:hidden;
+  border:2px solid var(--g);
+  flex:none;
+}
+
+.detail-pic img{ width:100%; height:100%; object-fit:cover; }
+
+.detail-name{ font-size:15px; font-weight:800; }
+.detail-role{
+  font-size:9.5px;
+  font-weight:700;
+  color:var(--g);
+  background:var(--gl);
+  padding:3px 8px;
+  border-radius:8px;
+  margin-top:3px;
+  display:inline-block;
+}
+
+.detail-close{
+  margin-left:auto;
+  border:0;
+  background:#f1f5f9;
+  color:var(--s);
+  width:32px;
+  height:32px;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.detail-info{
+  background:#f8fafc;
+  border:1px solid var(--b);
+  border-radius:10px;
+  padding:9px;
+  margin-bottom:9px;
+}
+
+.detail-info-item{
+  display:flex;
+  gap:8px;
+  font-size:10.5px;
+  margin-bottom:6px;
+}
+
+.btn-wa{
+  background:#25d366;
+  color:#fff;
+  border:0;
+  border-radius:8px;
+  padding:12px;
+  width:100%;
+  font-size:12px;
+  font-weight:800;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  text-decoration:none;
+}
+
+.jadwal-cols{ display:flex; flex-direction:column; gap:8px; }
+.jcol{ background:#fff; border:1px solid var(--b); border-radius:11px; overflow:hidden; }
+.jhead{ padding:10px 11px; color:#fff; font-size:11.5px; font-weight:800; background:var(--g); }
+.jitem{ border:1px solid var(--b); border-radius:8px; padding:9px; margin-bottom:6px; }
+.jitem b{ font-size:11px; display:block; margin-bottom:3px; }
+.jitem small{ font-size:9px; color:var(--s); display:block; margin-bottom:5px; }
+
+.priority{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+.priority label{
+  border:1px solid var(--b);
+  border-radius:8px;
+  padding:9px 4px;
+  text-align:center;
+  font-size:10.5px;
+  font-weight:800;
+  cursor:pointer;
+  background:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.priority input{ display:none; }
+.priority input:checked+span{
+  background:var(--gl);
+  color:var(--g);
+  border-radius:5px;
+  padding:4px 5px;
+  display:block;
+  width:100%;
+}
+
+.camera-file-input{ display:none; }
+.camera-trigger-btn{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  width:100%;
+  background:#f8fafc;
+  border:1.5px dashed var(--g);
+  color:var(--g);
+  padding:13px;
+  border-radius:9px;
+  font-size:12px;
+  font-weight:800;
+  cursor:pointer;
+  min-height:46px;
+  text-align:center;
+}
+.camera-trigger-btn.orange-mode{ border-color:var(--o); color:var(--o); }
+
+.photo-preview{
+  display:none;
+  width:100%;
+  max-height:190px;
+  object-fit:cover;
+  border-radius:8px;
+  margin-top:7px;
+}
+
+.status{
+  display:inline-block;
+  font-size:9px;
+  font-weight:800;
+  border-radius:6px;
+  padding:3px 7px;
+  background:var(--gl);
+  color:var(--g);
+  margin-top:4px;
+}
+.status.selesai{ background:var(--gl); color:var(--g); border:1px solid #bbf7d0; }
+.muted{ color:var(--s); font-size:10.5px; text-align:center; padding:10px; }
+.danger{ color:#b91c1c!important; }
+
+.badge-status{
+  font-size:8.5px;
+  font-weight:800;
+  border-radius:6px;
+  padding:3px 7px;
+  display:inline-block;
+  text-transform:uppercase;
+  white-space:nowrap;
+}
+.badge-status.selesai{ background:var(--gl); color:var(--g); border:1px solid #bbf7d0; }
+.badge-status.progres{ background:var(--ol); color:var(--o); border:1px solid #fed7aa; }
+.badge-status.cek{ background:#fef2f2; color:#dc2626; border:1px solid #fecaca; }
+
+#toastNotification{
+  position:absolute;
+  top:calc(12px + env(safe-area-inset-top));
+  left:50%;
+  transform:translateX(-50%) translateY(-90px);
+  background:#0f172a;
+  color:#fff;
+  padding:9px 17px;
+  border-radius:25px;
+  font-size:11.5px;
+  font-weight:800;
+  box-shadow:0 8px 20px rgba(15,23,42,.25);
+  display:flex;
+  align-items:center;
+  gap:7px;
+  transition:transform .3s cubic-bezier(.175,.885,.32,1.275);
+  z-index:999;
+  white-space:nowrap;
+  pointer-events:none;
+}
+#toastNotification.show{ transform:translateX(-50%) translateY(0); }
+
+.home-info-card, .home-pengaduan-card{
+  background:#f8fafc;
+  border:1px solid #e2e8f0;
+  border-radius:14px;
+  padding:11px 13px;
+  margin-bottom:9px;
+  width:100%;
+}
+.home-pengaduan-card{ background:#fffbeb; border-color:#fef3c7; }
+</style>
 </head>
+
 <body>
-    <iframe src="https://script.google.com/macros/s/AKfycby-s9QvKc46gkQPetYPWiJYu3ViT-uD3zW2Yye7IoFX3EEgV7JBIm5wiwjg0IgS0MYR/exec"></iframe>
+<div class="app">
+
+<!-- TOAST -->
+<div id="toastNotification">
+  <i class="fa-solid fa-circle-check"></i>
+  <span id="toastText">BERHASIL DIKIRIM</span>
+</div>
+
+<!-- PULL REFRESH -->
+<div class="pull-refresh-indicator" id="pullIndicator">
+  <i class="fa-solid fa-rotate fa-spin" style="margin-right:6px;"></i>
+  Memperbarui data...
+</div>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="avatar" id="headerAvatar">D</div>
+  <div style="flex:1;min-width:0">
+    <div class="greet">Selamat bekerja,</div>
+    <select id="memberSelectTop" class="top-member-select" onchange="changeActiveMember(this.value)"></select>
+    <div class="top-area" id="headerArea">• Anggota</div>
+  </div>
+</header>
+
+<!-- CONTENT -->
+<main class="content">
+
+<!-- HOME -->
+<section id="home" class="page active">
+  <div class="hero">
+    <h2>Assalamualaikum 👋</h2>
+    <p>Selamat Datang di Pusat Informasi TIM SABER</p>
+    <div style="font-size:10.5px;font-weight:800;margin-top:4px">NURUL IMAM ISLAMIC SCHOOL</div>
+  </div>
+
+  <!-- LEMBUR SLIDER -->
+  <div class="lembur-container">
+    <div id="lemburSlider">
+      <div class="lembur-track" id="lemburTrack">
+        <div class="lembur-slide">
+          <div class="lh">
+            <div class="lt"><i class="fa-solid fa-user-clock"></i> Jadwal Lembur</div>
+            <span class="badge">Keterangan</span>
+          </div>
+          <div class="ld">Memuat data lembur...</div>
+        </div>
+      </div>
+      <div class="lembur-nav">
+        <button class="lembur-arrow" id="lemburPrev" onclick="lemburPrev()" aria-label="Sebelumnya">‹</button>
+        <div class="lembur-dots" id="lemburDots"></div>
+        <span class="lembur-count" id="lemburCount">1/1</span>
+        <button class="lembur-arrow" id="lemburNext" onclick="lemburNext()" aria-label="Berikutnya">›</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MENU -->
+  <div class="section">Menu Tim SABER</div>
+  <div class="menu">
+    <a class="mi" onclick="showPage('informasi')">
+      <div class="ico"><i class="fa-solid fa-bullhorn"></i></div>
+      <span class="lbl">Informasi</span>
+    </a>
+    <a class="mi" onclick="showPage('jadwal')">
+      <div class="ico"><i class="fa-solid fa-calendar-days"></i></div>
+      <span class="lbl">Jadwal</span>
+    </a>
+    <a class="mi" onclick="showPage('lapor')">
+      <div class="ico b"><i class="fa-solid fa-clipboard-check"></i></div>
+      <span class="lbl">Lapor Kerja</span>
+    </a>
+    <a class="mi" onclick="showPage('lembur')">
+      <div class="ico o"><i class="fa-solid fa-user-clock"></i></div>
+      <span class="lbl">Lembur</span>
+    </a>
+    <a class="mi" onclick="showPage('pengajuan')">
+      <div class="ico"><i class="fa-solid fa-file-signature"></i></div>
+      <span class="lbl">Pengajuan</span>
+    </a>
+    <a class="mi" onclick="showPage('anggota')">
+      <div class="ico"><i class="fa-solid fa-users"></i></div>
+      <span class="lbl">Anggota</span>
+    </a>
+    <a class="mi" onclick="showPage('pengaduan')">
+      <div class="ico o"><i class="fa-solid fa-triangle-exclamation"></i></div>
+      <span class="lbl">Pengaduan</span>
+    </a>
+  </div>
+
+  <div class="section-header">
+    <div class="section">Informasi</div>
+    <a class="section-link" onclick="showPage('informasi')">Lihat Semua</a>
+  </div>
+  <div id="homeInfoBox"></div>
+
+  <div class="section-header">
+    <div class="section">Pengaduan Terakhir</div>
+    <a class="section-link" onclick="showPage('pengaduan')">Lihat Semua</a>
+  </div>
+  <div id="homePengaduanBox"></div>
+</section>
+
+<!-- INFORMASI -->
+<section id="informasi" class="page">
+  <button class="back" onclick="showPage('home')">← Beranda</button>
+  <div class="section">Pusat Informasi & Kegiatan</div>
+  <div id="infoList"></div>
+</section>
+
+<!-- JADWAL -->
+<section id="jadwal" class="page">
+  <button class="back" onclick="showPage('home')">← Beranda</button>
+  <div class="section">Jadwal & Status Pekerjaan</div>
+  <div class="card" style="background:var(--gl);border-color:#bbf7d0;margin-bottom:9px">
+    <b id="jadwalHariIni" style="font-size:11.5px">Jadwal hari ini</b>
+    <div id="jadwalTanggalHariIni" class="muted" style="margin-top:2px;font-size:9.5px"></div>
+  </div>
+  <div id="jadwalCols" class="jadwal-cols"></div>
+  <div class="section" style="margin-top:14px">Riwayat Laporan Selesai</div>
+  <div id="laporanListFull"></div>
+</section>
+
+<!-- LAPOR KERJA -->
+<section id="lapor" class="page">
+  <button class="back" onclick="showPage('home')">← Beranda</button>
+  <div class="section">Laporan Kerja</div>
+  <div class="card">
+    <div class="form-label">Nama Petugas</div>
+    <input class="form-input" id="laporNama" disabled>
+    <div class="form-label">Area</div>
+    <input class="form-input" id="laporArea" placeholder="Area kerja">
+    <div class="form-label">Pekerjaan</div>
+    <input class="form-input" id="laporPekerjaan" placeholder="Pekerjaan yang dilakukan">
+    <div class="form-label">Catatan</div>
+    <textarea class="form-textarea" id="laporCatatan" placeholder="Catatan pekerjaan"></textarea>
+    <div class="form-label">Foto Pekerjaan</div>
+    <div class="camera-upload-box">
+      <div id="laporInputContainer">
+        <input type="file" id="laporFoto" class="camera-file-input" accept="image/*" capture="environment" onchange="previewPhoto(this,'laporPreview','laporTextBtn')">
+      </div>
+      <div class="camera-trigger-btn" onclick="openCameraBox('laporFoto')">
+        <i class="fa-solid fa-camera" style="font-size:15px"></i>
+        <span id="laporTextBtn">Buka Kamera / Pilih Foto</span>
+      </div>
+      <img id="laporPreview" class="photo-preview">
+    </div>
+    <button class="btn" id="btnLaporan" onclick="kirimLaporan()">Kirim Laporan (Selesai)</button>
+  </div>
+</section>
+
+<!-- LEMBUR -->
+<section id="lembur" class="page">
+  <button class="back" onclick="showPage('home')">← Beranda</button>
+  <div class="section">Jadwal Lembur</div>
+  <div id="lemburPageList"></div>
+</section>
+
+<!-- PENGAJUAN -->
+<section id="pengajuan" class="page">
+  <button class="back" onclick="showPage('home')">← Beranda</button>
+  <div class="section">Pengajuan Alat / Bahan</div>
+  <div class="card">
+    <div class="form-label">Nama</div>
+    <input class="form-input" id="pengajuanNama" disabled>
+    <div class="form-label">Area</div>
+    <input class="form-input" id="pengajuanArea" placeholder="Area kerja">
+    <div class="form-label">Prioritas</div>
+    <div class="priority">
+      <label><input type="radio" name="prioritas" value="Normal" checked><span>Normal</span></label>
+      <label><input type="radio" name="prioritas" value="Penting"><span>Penting</span></label>
+      <label><input type="radio" name="prioritas" value="Mendesak"><span>Mendesak</span></label>
+    </div>
+    <div class="form-label">Kebutuhan Alat / Bahan</div>
+    <input class="form-input" id="kebutuhan1" placeholder="1. Kebutuhan pertama">
+    <input class="form-input" id="kebutuhan2" placeholder="2. Kebutuhan kedua" style="margin-top:5px">
+    <input class="form-input" id="kebutuhan3" placeholder="3. Kebutuhan ketiga" style="margin-top:5px">
+    <input class="form-input" id="kebutuhan4" placeholder="4. Kebutuhan keempat" style="margin-top:5px">
+    <button class="btn" id="btnPengajuan" onclick="kirimPengajuan()">Kirim Pengajuan</button>
+  </div>
+</section>
+
+<!-- ANGGOTA -->
+<section id="anggota" class="page">
+  <button class="back" onclick="showPage('home')">← Beranda</button>
+  <div class="section">Anggota & PJ</div>
+  <div id="anggotaDetail" class="anggota-detail"></div>
+  <div id="anggotaList"></div>
+</section>
+
+<!-- PENGADUAN -->
+<section id="pengaduan" class="page">
+  <button class="back" onclick="showPage('home')">← Beranda</button>
+  <div class="section">Pengaduan Kendala</div>
+  <div class="card">
+    <div class="form-label">Nama Pelapor</div>
+    <input class="form-input" id="pengaduanNama" disabled>
+    <div class="form-label">Area / Lokasi</div>
+    <input class="form-input" id="pengaduanArea" placeholder="Lokasi kendala">
+    <div class="form-label">Deskripsi Kendala</div>
+    <textarea class="form-textarea" id="pengaduanTeks" placeholder="Tuliskan kendala yang dihadapi..."></textarea>
+    <div class="form-label">Foto Kendala (Opsional)</div>
+    <div class="camera-upload-box">
+      <div id="pengaduanInputContainer">
+        <input type="file" id="pengaduanFoto" class="camera-file-input" accept="image/*" capture="environment" onchange="previewPhoto(this,'pengaduanPreview','pengaduanTextBtn')">
+      </div>
+      <div class="camera-trigger-btn orange-mode" onclick="openCameraBox('pengaduanFoto')">
+        <i class="fa-solid fa-camera" style="font-size:15px"></i>
+        <span id="pengaduanTextBtn">Buka Kamera / Pilih Foto</span>
+      </div>
+      <img id="pengaduanPreview" class="photo-preview">
+    </div>
+    <button class="btn o" id="btnPengaduan" onclick="kirimPengaduan()">Kirim Pengaduan</button>
+  </div>
+  <div class="section" style="margin-top:14px">Riwayat Pengaduan</div>
+  <div id="pengaduanListFull"></div>
+</section>
+
+</main>
+
+<!-- BOTTOM NAV -->
+<nav class="nav">
+  <a onclick="showPage('home')" data-page="home" class="active">
+    <i class="fa-solid fa-house"></i>Beranda
+  </a>
+  <a onclick="showPage('jadwal')" data-page="jadwal">
+    <i class="fa-solid fa-calendar-days"></i>Jadwal
+  </a>
+  <a onclick="showPage('pengajuan')" data-page="pengajuan">
+    <i class="fa-solid fa-paper-plane"></i>Pengajuan
+  </a>
+  <a onclick="showPage('anggota')" data-page="anggota">
+    <i class="fa-solid fa-users"></i>Anggota
+  </a>
+  <a onclick="showPage('pengaduan')" data-page="pengaduan">
+    <i class="fa-solid fa-headset"></i>Pengaduan
+  </a>
+</nav>
+
+</div>
+
+<script>
+let DB = {
+  anggota: [], lembur: [], informasi: [], pengaduan: [], pengajuan: [], jadwal: [], laporan: []
+};
+let activeMemberIndex = 0;
+let lemburIndex = 0;
+
+function showToast(text = "BERHASIL DIKIRIM") {
+  const t = document.getElementById('toastNotification');
+  const span = document.getElementById('toastText');
+  if (span) span.textContent = text;
+  if (t) {
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+  }
+}
+
+function esc(v) {
+  return String(v ?? '').replace(/[&<>"']/g, m => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+  }[m]));
+}
+
+function showPage(id, pushHistory = true) {
+  document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
+  const t = document.getElementById(id);
+  if (t) t.classList.add('active');
+
+  document.querySelectorAll('.nav a').forEach(x => {
+    x.classList.toggle('active', x.dataset.page === id);
+  });
+
+  const contentEl = document.querySelector('.content');
+  if (contentEl) contentEl.scrollTop = 0;
+
+  if (pushHistory) {
+    history.pushState({ page: id }, '', window.location.href.split('#')[0] + '#' + id);
+  }
+}
+
+(function() {
+  let homeGuard = false;
+  history.replaceState({ page: 'home', home: true }, '', window.location.href.split('#')[0] + '#home');
+
+  window.addEventListener('popstate', function() {
+    const active = document.querySelector('.page.active');
+    const current = active ? active.id : 'home';
+
+    if (current !== 'home') {
+      showPage('home', false);
+      history.pushState({ page: 'home', home: true }, '', window.location.href.split('#')[0] + '#home');
+      homeGuard = true;
+      return;
+    }
+
+    if (homeGuard) {
+      homeGuard = false;
+      history.back();
+    } else {
+      history.pushState({ page: 'home', home: true }, '', window.location.href.split('#')[0] + '#home');
+    }
+  });
+})();
+
+function loadData() {
+  if (typeof google === 'undefined' || !google.script) {
+    showLoadError('Aplikasi harus dibuka dari Web App Google Apps Script.');
+    return;
+  }
+
+  const cachedData = localStorage.getItem('timSaberCacheData');
+  if (cachedData) {
+    try {
+      DB = Object.assign(DB, JSON.parse(cachedData));
+      initApp();
+    } catch (e) {}
+  }
+
+  google.script.run
+    .withSuccessHandler(d => {
+      if (d) {
+        DB = Object.assign(DB, d);
+        localStorage.setItem('timSaberCacheData', JSON.stringify(d));
+        initApp();
+      }
+    })
+    .withFailureHandler(e => {
+      if (!cachedData) showLoadError('Gagal memuat data: ' + (e.message || e));
+    })
+    .getDashboardData();
+}
+
+function showLoadError(msg) {
+  ['homeInfoBox', 'homePengaduanBox'].forEach(id => {
+    const e = document.getElementById(id);
+    if (e) e.innerHTML = '<div class="card"><p class="danger">' + esc(msg) + '</p></div>';
+  });
+}
+
+function initApp() {
+  const sel = document.getElementById('memberSelectTop');
+  if (!sel) return;
+
+  sel.innerHTML = DB.anggota.length
+    ? DB.anggota.map((m, i) => `<option value="${i}">${esc(m.Nama)}</option>`).join('')
+    : '<option value="0">Belum ada anggota</option>';
+
+  const savedIndex = localStorage.getItem('timSaberActiveMemberIndex');
+  if (savedIndex !== null && DB.anggota[parseInt(savedIndex, 10)]) {
+    activeMemberIndex = parseInt(savedIndex, 10);
+    sel.value = activeMemberIndex;
+  } else {
+    activeMemberIndex = 0;
+  }
+
+  updateActiveMemberForms();
+  renderAnggotaList();
+  renderLemburCard();
+  renderInformasiPage();
+  renderPengaduanPage();
+  renderLaporanPage();
+  renderJadwalByDay();
+}
+
+function changeActiveMember(i) {
+  activeMemberIndex = parseInt(i, 10) || 0;
+  localStorage.setItem('timSaberActiveMemberIndex', activeMemberIndex);
+  updateActiveMemberForms();
+}
+
+function updateActiveMemberForms() {
+  const m = DB.anggota[activeMemberIndex] || { Nama: '', Jabatan: 'Anggota', Area: '' };
+  const a = document.getElementById('headerAvatar');
+  if (a) {
+    a.innerHTML = m.Foto ? `<img src="${esc(m.Foto)}">` : esc((m.Nama || 'D').charAt(0).toUpperCase());
+  }
+
+  const area = document.getElementById('headerArea');
+  if (area) {
+    area.innerText = `• ${m.Jabatan || 'Anggota'}${m.Area ? ' (' + m.Area + ')' : ''}`;
+  }
+
+  ['laporNama', 'pengajuanNama', 'pengaduanNama'].forEach(id => {
+    const e = document.getElementById(id);
+    if (e) e.value = m.Nama || '';
+  });
+
+  ['laporArea', 'pengajuanArea', 'pengaduanArea'].forEach(id => {
+    const e = document.getElementById(id);
+    if (e && m.Area) e.value = m.Area;
+  });
+}
+
+function renderAnggotaList() {
+  const b = document.getElementById('anggotaList');
+  if (!b) return;
+
+  b.innerHTML = (DB.anggota || []).map((m, i) => `
+    <div class="row" onclick="openAnggotaDetail(${i})">
+      <div class="pic">
+        ${m.Foto ? `<img src="${esc(m.Foto)}">` : esc((m.Nama || 'D').charAt(0).toUpperCase())}
+      </div>
+      <div class="rowmain">
+        <b>${esc(m.Nama || '-')}</b>
+        <small>${esc(m.Jabatan || 'Anggota')} • ${esc(m.Area || 'Umum')}</small>
+      </div>
+      <i class="fa-solid fa-chevron-right arrow"></i>
+    </div>
+  `).join('') || '<div class="card"><p class="muted">Belum ada anggota.</p></div>';
+}
+
+function openAnggotaDetail(i) {
+  const m = DB.anggota[i];
+  if (!m) return;
+  const box = document.getElementById('anggotaDetail');
+  if (!box) return;
+
+  const w = String(m.WA || '').replace(/[^0-9]/g, '');
+  const wa = w ? (w.startsWith('0') ? '62' + w.slice(1) : w) : '';
+
+  box.innerHTML = `
+    <div class="anggota-detail-head">
+      <div class="detail-pic">
+        ${m.Foto ? `<img src="${esc(m.Foto)}">` : esc((m.Nama || 'D').charAt(0).toUpperCase())}
+      </div>
+      <div style="min-width:0">
+        <div class="detail-name">${esc(m.Nama || '-')}</div>
+        <div class="detail-role">${esc(m.Jabatan || 'Anggota')}</div>
+      </div>
+      <button class="detail-close" onclick="closeAnggotaDetail()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="detail-info">
+      <div class="detail-info-item"><i class="fa-solid fa-location-dot" style="color:var(--g)"></i><span>Area: <b>${esc(m.Area || '-')}</b></span></div>
+      <div class="detail-info-item"><i class="fa-solid fa-phone" style="color:var(--g)"></i><span>WA: <b>${esc(m.WA || '-')}</b></span></div>
+    </div>
+    ${wa ? `<a href="https://wa.me/${wa}" target="_blank" class="btn-wa"><i class="fa-brands fa-whatsapp"></i> Hubungi via WhatsApp</a>` : ''}
+  `;
+  box.classList.add('active');
+  setTimeout(() => box.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+}
+
+function closeAnggotaDetail() {
+  const box = document.getElementById('anggotaDetail');
+  if (box) { box.classList.remove('active'); box.innerHTML = ''; }
+}
+
+function parseSmartDate(dateStr) {
+  if (!dateStr) return null;
+  let cleanStr = String(dateStr).replace(/^(Senin|Selasa|Rabu|Kamis|Jum'at|Jumat|Sabtu|Minggu),?\s*/i, '').trim();
+  const months = {
+    'januari': 'January', 'februari': 'February', 'maret': 'March', 'april': 'April',
+    'mei': 'May', 'juni': 'June', 'juli': 'July', 'agustus': 'August',
+    'september': 'September', 'oktober': 'October', 'november': 'November', 'desember': 'December'
+  };
+  for (let idName in months) {
+    cleanStr = cleanStr.replace(new RegExp(idName, 'gi'), months[idName]);
+  }
+  let timestamp = Date.parse(cleanStr);
+  if (!isNaN(timestamp)) {
+    let d = new Date(timestamp);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+  return null;
+}
+
+function getFutureLemburData() {
+  const rawData = DB.lembur || [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return rawData.filter(x => {
+    const parsedDate = parseSmartDate(x['Hari/tgl'] || x['Hari/Tanggal'] || '');
+    return !parsedDate || parsedDate >= today;
+  });
+}
+
+function renderLemburCard() {
+  const s = document.getElementById('lemburTrack');
+  const p = document.getElementById('lemburPageList');
+  const dots = document.getElementById('lemburDots');
+  const prev = document.getElementById('lemburPrev');
+  const next = document.getElementById('lemburNext');
+  const count = document.getElementById('lemburCount');
+  const data = getFutureLemburData();
+
+  if (!data.length) {
+    if (s) s.innerHTML = `<div class="lembur-slide"><div class="lh"><div class="lt"><i class="fa-solid fa-user-clock"></i> Jadwal Lembur</div><span class="badge">Lembur</span></div><div class="ld">Tidak ada jadwal lembur aktif mendatang.</div></div>`;
+    if (dots) dots.innerHTML = '';
+    if (prev) prev.style.display = 'none';
+    if (next) next.style.display = 'none';
+    if (count) count.textContent = '0/0';
+    if (p) p.innerHTML = '<div class="card"><p class="muted">Belum ada data lembur.</p></div>';
+    return;
+  }
+
+  if (s) {
+    s.innerHTML = data.map(x => {
+      const petugas = x.Petugas || x.PIC || x['Petugas/PIC'] || x.Nama || '-';
+      return `
+        <div class="lembur-slide">
+          <div class="lh">
+            <div class="lt"><i class="fa-solid fa-user-clock"></i> Jadwal Lembur</div>
+            <span class="badge">${esc(x.Keterangan || 'Lembur')}</span>
+          </div>
+          <div class="ld"><i class="fa-regular fa-calendar"></i> ${esc(x['Hari/tgl'] || x['Hari/Tanggal'] || '-')}</div>
+          <div class="grid2">
+            <div class="cell"><span>Petugas</span><b>${esc(petugas)}</b></div>
+            <div class="cell"><span>Kegiatan</span><b>${esc(x.Kegiatan || '-')}</b></div>
+            <div class="cell"><span>In</span><b>${esc(x.In || '-')}</b></div>
+            <div class="cell"><span>Out</span><b>${esc(x.Out || '-')}</b></div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  if (p) {
+    p.innerHTML = data.map(x => `
+      <div class="card">
+        <h4>${esc(x.Kegiatan || '-')}</h4>
+        <p><b>Petugas:</b> ${esc(x.Petugas || x.PIC || '-')}</p>
+        <p><b>Hari/Tanggal:</b> ${esc(x['Hari/tgl'] || x['Hari/Tanggal'] || '-')}</p>
+        <p><b>Jam:</b> ${esc(x.In || '-')} - ${esc(x.Out || '-')}</p>
+        <p><b>Keterangan:</b> ${esc(x.Keterangan || '-')}</p>
+      </div>`).join('');
+  }
+
+  lemburIndex = 0;
+  if (dots) dots.innerHTML = data.map((_, i) => `<span class="lembur-dot${i === 0 ? ' active' : ''}" onclick="goLembur(${i})"></span>`).join('');
+  if (prev) prev.style.display = data.length > 1 ? 'flex' : 'none';
+  if (next) next.style.display = data.length > 1 ? 'flex' : 'none';
+  updateLemburSlider();
+}
+
+function updateLemburSlider() {
+  const track = document.getElementById('lemburTrack');
+  const dots = document.querySelectorAll('#lemburDots .lembur-dot');
+  const prev = document.getElementById('lemburPrev');
+  const next = document.getElementById('lemburNext');
+  const count = document.getElementById('lemburCount');
+  const total = getFutureLemburData().length;
+
+  if (lemburIndex >= total) lemburIndex = Math.max(0, total - 1);
+  if (track) track.style.transform = `translateX(-${lemburIndex * 100}%)`;
+  dots.forEach((d, i) => d.classList.toggle('active', i === lemburIndex));
+  if (prev) prev.disabled = lemburIndex <= 0;
+  if (next) next.disabled = lemburIndex >= total - 1;
+  if (count) count.textContent = total ? `${lemburIndex + 1}/${total}` : '0/0';
+}
+
+function goLembur(i) {
+  lemburIndex = Math.max(0, Math.min(i, getFutureLemburData().length - 1));
+  updateLemburSlider();
+}
+function lemburPrev() { goLembur(lemburIndex - 1); }
+function lemburNext() { goLembur(lemburIndex + 1); }
+
+function getInformasiData() {
+  return DB.informasi || DB.berita || DB.info || [];
+}
+function parseDateVal(dStr) {
+  const parsed = parseSmartDate(dStr);
+  return parsed ? parsed.getTime() : 0;
+}
+
+function renderInformasiPage() {
+  const list = [...getInformasiData()].sort((a, b) => parseDateVal(b.Tanggal || b.Timestamp || '') - parseDateVal(a.Tanggal || a.Timestamp || ''));
+  const b = document.getElementById('infoList');
+  const h = document.getElementById('homeInfoBox');
+  const empty = '<div class="card"><p class="muted">Belum ada informasi.</p></div>';
+
+  const mapper = x => `
+    <div class="home-info-card">
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:800;margin-bottom:3px">${esc(x.Judul || x.Title || 'Informasi')}</div>
+        <div style="font-size:10.5px;color:var(--s);line-height:1.4">${esc(x.Informasi || x.Keterangan || x.Isi || '-')}</div>
+        ${x.Tanggal ? `<div style="font-size:9px;color:var(--s);margin-top:5px"><i class="fa-regular fa-calendar-days"></i> ${esc(x.Tanggal)}</div>` : ''}
+      </div>
+    </div>`;
+
+  if (b) b.innerHTML = list.length ? list.map(mapper).join('') : empty;
+  if (h) h.innerHTML = list.length ? list.slice(0, 2).map(mapper).join('') : empty;
+}
+
+function renderPengaduanPage() {
+  const list = [...(DB.pengaduan || [])].sort((a, b) => parseDateVal(b.Tanggal || b.Timestamp || '') - parseDateVal(a.Tanggal || a.Timestamp || ''));
+  const h = document.getElementById('homePengaduanBox');
+  const f = document.getElementById('pengaduanListFull');
+  const empty = '<div class="card"><p class="muted">Belum ada pengaduan.</p></div>';
+
+  const mapper = x => {
+    const st = String(x.Status || 'Progres').trim().toLowerCase();
+    const cls = st === 'selesai' ? 'selesai' : (st.includes('cek') ? 'cek' : 'progres');
+    return `
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div><h4>${esc(x.Nama || 'Pengguna')}</h4><p><b>Area:</b> ${esc(x.Area || '-')}</p></div>
+          <span class="badge-status ${cls}">${esc(x.Status || 'Progres')}</span>
+        </div>
+        <p style="margin-top:5px">${esc(x.Kendala || '-')}</p>
+        <span class="status"><i class="fa-regular fa-calendar"></i> ${esc(x.Tanggal || '-')}</span>
+      </div>`;
+  };
+
+  if (h) {
+    const active = list.filter(x => String(x.Status || '').trim().toLowerCase() !== 'selesai');
+    h.innerHTML = active.length ? active.slice(0, 2).map(mapper).join('') : '<p class="muted">Tidak ada pengaduan aktif.</p>';
+  }
+  if (f) f.innerHTML = list.length ? list.map(mapper).join('') : empty;
+}
+
+function renderLaporanPage() {
+  const list = [...(DB.laporan || [])].sort((a, b) => parseDateVal(b.Tanggal || b.Timestamp || '') - parseDateVal(a.Tanggal || a.Timestamp || ''));
+  const fullBox = document.getElementById('laporanListFull');
+  const empty = '<div class="card"><p class="muted">Belum ada laporan kerja selesai.</p></div>';
+
+  if (fullBox) {
+    fullBox.innerHTML = list.length ? list.map(x => `
+      <div class="card">
+        <div style="display:flex;justify-content:space-between">
+          <div><h4>${esc(x.Nama || 'Petugas')} (${esc(x.Area || '-')})</h4><p><b>Pekerjaan:</b> ${esc(x.Pekerjaan || '-')}</p></div>
+          <span class="badge-status selesai">Selesai</span>
+        </div>
+        ${x.Catatan ? `<p style="margin-top:5px"><b>Catatan:</b> ${esc(x.Catatan)}</p>` : ''}
+        ${x.Tanggal ? `<span class="status">${esc(x.Tanggal)}</span>` : ''}
+      </div>`).join('') : empty;
+  }
+}
+
+function renderJadwalByDay() {
+  const now = new Date();
+  const d = now.getDay();
+  const hariNama = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+  const tanggalStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+  const isWeekend = d === 0 || d === 6;
+
+  const box = document.getElementById('jadwalCols');
+  const hariEl = document.getElementById('jadwalHariIni');
+  const tanggalEl = document.getElementById('jadwalTanggalHariIni');
+
+  if (hariEl) hariEl.textContent = 'Jadwal Kerja: ' + hariNama[d] + ', ' + tanggalStr;
+  if (tanggalEl) tanggalEl.textContent = isWeekend ? 'Hari Libur: Tidak ada jadwal pekerjaan rutin hari ini.' : 'Pekerjaan dengan tanda hijau wajib dikerjakan hari ini.';
+
+  const all = [
+    ['Glass cleaning kelas / ruangan', 'Harian', 'Senin - Jumat', d >= 1 && d <= 5],
+    ['Cleaning masjid', 'Harian', 'Senin - Jumat', d >= 1 && d <= 5],
+    ['Toilet cleaning', 'Harian', 'Senin - Jumat', d >= 1 && d <= 5],
+    ['Membuang sampah', 'Harian', 'Senin - Jumat', d >= 1 && d <= 5],
+    ['Cleaning karpet toilet Dan keset', '1x Seminggu', 'Setiap Jumat', d === 5],
+    ['General cleaning toilet', '1x Seminggu', 'Setiap Jumat', d === 5]
+  ];
+
+  if (box) {
+    box.innerHTML = `
+      <div class="jcol">
+        <div class="jhead">Pekerjaan Rutin</div>
+        <div style="padding:7px">
+          ${all.map(x => `
+            <div class="jitem" style="${x[3] ? 'background:#f0fdf4;border:2px solid #16a34a;' : ''}">
+              <div><b>${esc(x[0])}</b><small>${esc(x[1])} •${esc(x[2])}</small></div>
+              <span class="status" style="${x[3] ? 'background:#16a34a;color:#fff;' : ''}">${x[3] ? '✓ KERJAKAN HARI INI' : (isWeekend ? 'LIBUR' : 'Terjadwal')}</span>
+            </div>`).join('')}
+        </div>
+      </div>`;
+  }
+}
+
+// PERBAIKAN UTAMA: Sistem Dinamis untuk Pemilihan Berulang & Bebas Pilih Folder Foto
+function openCameraBox(inputId) {
+  const containerId = inputId === 'laporFoto' ? 'laporInputContainer' : 'pengaduanInputContainer';
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  container.innerHTML = '';
+  const newInput = document.createElement('input');
+  newInput.type = 'file';
+  newInput.id = inputId;
+  newInput.className = 'camera-file-input';
+  newInput.accept = 'image/*';
+  newInput.setAttribute('capture', 'environment');
+  
+  newInput.onchange = function() {
+    previewPhoto(this, inputId === 'laporFoto' ? 'laporPreview' : 'pengaduanPreview', inputId === 'laporFoto' ? 'laporTextBtn' : 'pengaduanTextBtn');
+  };
+  
+  container.appendChild(newInput);
+  newInput.click();
+}
+
+function previewPhoto(input, previewId, textBtnId) {
+  const file = input.files && input.files[0];
+  const img = document.getElementById(previewId);
+  const textBtn = document.getElementById(textBtnId);
+
+  if (!file) { if (img) img.style.display = 'none'; return; }
+  if (file.size > 5 * 1024 * 1024) { alert('Ukuran foto maksimal 5 MB.'); input.value = ''; if (img) img.style.display = 'none'; return; }
+
+  if (textBtn) textBtn.textContent = 'Foto berhasil dipilih (Ketuk untuk ganti)';
+  const reader = new FileReader();
+  reader.onload = e => {
+    if (img) { img.src = e.target.result; img.style.display = 'block'; }
+  };
+  reader.readAsDataURL(file);
+}
+
+function fileToBase64(inputId) {
+  return new Promise((resolve, reject) => {
+    const input = document.getElementById(inputId);
+    const file = input.files && input.files[0];
+    if (!file) { resolve(null); return; }
+    if (file.size > 5 * 1024 * 1024) { reject(new Error('Ukuran foto maksimal 5 MB.')); return; }
+    const r = new FileReader();
+    r.onload = () => resolve({ base64: r.result, name: file.name });
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+
+async function sendWithPhoto(method, data, fileId, buttonId, after) {
+  const btn = document.getElementById(buttonId);
+  if (btn) { btn.disabled = true; btn.innerText = 'Mengirim...'; }
+
+  try {
+    const photo = await fileToBase64(fileId);
+    if (photo) { data.FotoBase64 = photo.base64; data.FotoNama = photo.name; }
+
+    google.script.run
+      .withSuccessHandler(res => {
+        if (btn) { btn.disabled = false; btn.innerText = buttonId === 'btnPengaduan' ? 'Kirim Pengaduan' : 'Kirim Laporan (Selesai)'; }
+        if (res && res.success) { showToast('BERHASIL DIKIRIM'); if (after) after(); }
+        else { alert('Gagal: ' + (res && res.message || 'Data tidak tersimpan.')); }
+      })
+      .withFailureHandler(e => {
+        if (btn) { btn.disabled = false; btn.innerText = buttonId === 'btnPengaduan' ? 'Kirim Pengaduan' : 'Kirim Laporan (Selesai)'; }
+        alert('Terjadi kesalahan: ' + (e.message || e));
+      })
+      [method](data);
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.innerText = buttonId === 'btnPengaduan' ? 'Kirim Pengaduan' : 'Kirim Laporan (Selesai)'; }
+    alert(e.message || e);
+  }
+}
+
+function kirimLaporan() {
+  const d = {
+    Nama: document.getElementById('laporNama').value.trim(),
+    Area: document.getElementById('laporArea').value.trim(),
+    Pekerjaan: document.getElementById('laporPekerjaan').value.trim(),
+    Catatan: document.getElementById('laporCatatan').value.trim()
+  };
+  if (!d.Nama || !d.Area || !d.Pekerjaan) { alert('Nama, area, dan pekerjaan wajib diisi.'); return; }
+
+  sendWithPhoto('simpanLaporan', d, 'laporFoto', 'btnLaporan', () => {
+    document.getElementById('laporPekerjaan').value = '';
+    document.getElementById('laporCatatan').value = '';
+    document.getElementById('laporPreview').style.display = 'none';
+    document.getElementById('laporTextBtn').textContent = 'Buka Kamera / Pilih Foto';
+    document.getElementById('laporInputContainer').innerHTML = '<input type="file" id="laporFoto" class="camera-file-input" accept="image/*" capture="environment" onchange="previewPhoto(this,\'laporPreview\',\'laporTextBtn\')">';
+    loadData();
+    showPage('jadwal');
+  });
+}
+
+function kirimPengajuan() {
+  const btn = document.getElementById('btnPengajuan');
+  const d = {
+    Nama: document.getElementById('pengajuanNama').value.trim(),
+    Area: document.getElementById('pengajuanArea').value.trim(),
+    Prioritas: (document.querySelector('input[name="prioritas"]:checked') || {}).value || 'Normal'
+  };
+  for (let i = 1; i <= 4; i++) { d['Kebutuhan' + i] = document.getElementById('kebutuhan' + i).value.trim(); }
+  if (!d.Nama || !d.Area || ![d.Kebutuhan1, d.Kebutuhan2, d.Kebutuhan3, d.Kebutuhan4].some(Boolean)) {
+    alert('Isi minimal satu kebutuhan alat/bahan.'); return;
+  }
+
+  btn.disabled = true; btn.innerText = 'Mengirim...';
+  google.script.run
+    .withSuccessHandler(res => {
+      btn.disabled = false; btn.innerText = 'Kirim Pengajuan';
+      if (res && res.success) {
+        showToast('BERHASIL DIKIRIM');
+        for (let i = 1; i <= 4; i++) { document.getElementById('kebutuhan' + i).value = ''; }
+        showPage('home');
+      } else { alert('Gagal: ' + (res && res.message || 'Data tidak tersimpan.')); }
+    })
+    .withFailureHandler(e => { btn.disabled = false; btn.innerText = 'Kirim Pengajuan'; alert(e.message || e); })
+    .simpanPengajuan(d);
+}
+
+function kirimPengaduan() {
+  const now = new Date();
+  const d = {
+    Nama: document.getElementById('pengaduanNama').value.trim(),
+    Area: document.getElementById('pengaduanArea').value.trim(),
+    Kendala: document.getElementById('pengaduanTeks').value.trim(),
+    Tanggal: ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'][now.getDay()] + ', ' + now.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
+  };
+  if (!d.Nama || !d.Area || !d.Kendala) { alert('Nama, area, dan pengaduan wajib diisi.'); return; }
+
+  sendWithPhoto('simpanPengaduan', d, 'pengaduanFoto', 'btnPengaduan', () => {
+    document.getElementById('pengaduanTeks').value = '';
+    document.getElementById('pengaduanPreview').style.display = 'none';
+    document.getElementById('pengaduanTextBtn').textContent = 'Buka Kamera / Pilih Foto';
+    document.getElementById('pengaduanInputContainer').innerHTML = '<input type="file" id="pengaduanFoto" class="camera-file-input" accept="image/*" capture="environment" onchange="previewPhoto(this,\'pengaduanPreview\',\'pengaduanTextBtn\')">';
+    loadData();
+    showPage('pengaduan');
+  });
+}
+
+// Pull to refresh
+let touchStartY = 0, isPulling = false;
+const appContainer = document.querySelector('.app');
+const pullIndicator = document.getElementById('pullIndicator');
+
+appContainer.addEventListener('touchstart', e => {
+  const c = document.querySelector('.content');
+  if (c && c.scrollTop === 0) { touchStartY = e.touches[0].clientY; isPulling = true; }
+}, { passive: true });
+
+appContainer.addEventListener('touchmove', e => {
+  if (!isPulling) return;
+  const diff = e.touches[0].clientY - touchStartY;
+  if (diff > 75 && diff < 160) pullIndicator.style.transform = `translateY(${Math.min(diff - 75, 52)}px)`;
+}, { passive: true });
+
+appContainer.addEventListener('touchend', e => {
+  if (!isPulling) return;
+  isPulling = false;
+  if (e.changedTouches[0].clientY - touchStartY > 90 && document.querySelector('.content').scrollTop === 0) {
+    pullIndicator.style.transform = 'translateY(52px)';
+    if (typeof google !== 'undefined' && google.script) {
+      google.script.run.withSuccessHandler(d => {
+        if (d) { DB = Object.assign(DB, d); localStorage.setItem('timSaberCacheData', JSON.stringify(d)); initApp(); }
+        setTimeout(() => pullIndicator.style.transform = 'translateY(0)', 400);
+      }).getDashboardData();
+    } else { setTimeout(() => pullIndicator.style.transform = 'translateY(0)', 400); }
+  } else { pullIndicator.style.transform = 'translateY(0)'; }
+});
+
+loadData();
+</script>
+
 </body>
 </html>
