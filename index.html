@@ -731,10 +731,10 @@ html, body{
 #toastNotification.show{ transform:translateX(-50%) translateY(0); }
 
 .home-info-card, .home-pengaduan-card{
-  background:#f8fafc;
+  background:#fff;
   border:1px solid #e2e8f0;
   border-radius:14px;
-  padding:11px 13px;
+  padding:12px 14px;
   margin-bottom:9px;
   width:100%;
 }
@@ -838,7 +838,7 @@ html, body{
   </div>
 
   <div class="section-header">
-    <div class="section">Informasi Terkini</div>
+    <div class="section">Informasi</div>
     <a class="section-link" onclick="showPage('informasi')">Lihat Semua</a>
   </div>
   <div id="homeInfoBox"></div>
@@ -1253,17 +1253,41 @@ function parseSmartDate(dateStr) {
   const months = {
     'januari': 'January', 'februari': 'February', 'maret': 'March', 'april': 'April',
     'mei': 'May', 'juni': 'June', 'juli': 'July', 'agustus': 'August',
-    'september': 'September', 'oktober': 'October', 'november': 'November', 'desember': 'December'
+    'september': 'September', 'oktober': 'October', 'november': 'November', 'desember': 'December',
+    'jan': 'Jan', 'feb': 'Feb', 'mar': 'Mar', 'apr': 'Apr', 'mei': 'May', 'jun': 'Jun',
+    'jul': 'Jul', 'agu': 'Aug', 'sep': 'Sep', 'okt': 'Oct', 'nov': 'Nov', 'des': 'Dec'
   };
+
   for (let idName in months) {
-    cleanStr = cleanStr.replace(new RegExp(idName, 'gi'), months[idName]);
+    cleanStr = cleanStr.replace(new RegExp('\\b' + idName + '\\b', 'gi'), months[idName]);
   }
+
   let timestamp = Date.parse(cleanStr);
+  if (isNaN(timestamp)) {
+    let parts = cleanStr.match(/(\d{1,2})[\/\-\s]+(\d{1,2}|[a-zA-Z]+)[\/\-\s]+(\d{2,4})/);
+    if (parts) {
+      let day = parseInt(parts[1], 10);
+      let month = parts[2];
+      let year = parseInt(parts[3], 10);
+      if (year < 100) year += 2000;
+      
+      if (!isNaN(parseInt(month, 10))) {
+        month = parseInt(month, 10) - 1;
+      } else {
+        month = new Date(Date.parse(month + " 1, 2000")).getMonth();
+      }
+      let d = new Date(year, month, day);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    }
+  }
+
   if (!isNaN(timestamp)) {
     let d = new Date(timestamp);
     d.setHours(0, 0, 0, 0);
     return d;
   }
+
   return null;
 }
 
@@ -1386,22 +1410,31 @@ function renderInformasiPage() {
     localStorage.setItem('lastSeenInfo', infoTerbaru);
   }
 
-  const todayStr = new Date().toDateString();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
+  // Tampilan persis Gambar 2 (menggunakan border hijau dan badge hijau "KEGIATAN HARI INI" TANPA BINTANG)
   const mapper = x => {
     const rawTgl = extractDisplayDate(x);
     const tglInfo = parseSmartDate(rawTgl);
-    const isToday = tglInfo && tglInfo.toDateString() === todayStr;
-    const badgeHariIni = isToday ? '<span class="status" style="background:var(--g); color:#fff; margin-bottom:5px; font-weight:800; border-radius:4px; padding:2px 6px;">Hari Ini</span>' : '';
+    const isToday = tglInfo && tglInfo.getTime() === today.getTime();
+
+    // Badge "KEGIATAN HARI INI" tanpa ikon bintang
+    const badgeKegiatanHariIni = isToday ? `
+      <span style="background:var(--g); color:#fff; font-size:10px; font-weight:800; padding:3px 8px; border-radius:12px; display:inline-block; margin-left:8px; text-transform:uppercase; vertical-align:middle;">
+        KEGIATAN HARI INI
+      </span>` : '';
+
+    const cardStyle = isToday ? 'border: 2px solid var(--g); background: #f0fdf4;' : 'border: 1px solid var(--b); background: #fff;';
 
     return `
-      <div class="home-info-card" ${isToday ? 'style="border-left: 4px solid var(--g); background:#f0fdf4;"' : ''}>
-        <div style="flex:1">
-          ${badgeHariIni}
-          <div style="font-size:12px;font-weight:800;margin-bottom:3px">${esc(x.Judul || x.Title || 'Informasi')}</div>
-          <div style="font-size:10.5px;color:var(--s);line-height:1.4">${esc(x.Informasi || x.Keterangan || x.Isi || '-')}</div>
-          <div style="font-size:9px;color:var(--s);margin-top:6px;"><i class="fa-regular fa-calendar-days"></i> ${esc(rawTgl)}</div>
+      <div class="home-info-card" style="${cardStyle} border-radius: 14px; padding: 12px 14px; margin-bottom: 9px;">
+        <div style="display:flex; align-items:center; flex-wrap:wrap; gap:4px; margin-bottom:4px;">
+          <span style="font-size:13px; font-weight:800; color:var(--t);">${esc(x.Judul || x.Title || 'Informasi')}</span>
+          ${badgeKegiatanHariIni}
         </div>
+        <div style="font-size:11px; color:var(--s); line-height:1.4; margin-bottom:6px;">${esc(x.Informasi || x.Keterangan || x.Isi || '-')}</div>
+        <div style="font-size:9.5px; color:var(--s); font-weight:600;"><i class="fa-regular fa-calendar-days" style="margin-right:4px;"></i>${esc(rawTgl)}</div>
       </div>`;
   };
 
@@ -1411,19 +1444,23 @@ function renderInformasiPage() {
     if (list.length === 0) {
       h.innerHTML = empty;
     } else {
-      const todayList = list.filter(x => {
-        const d = parseSmartDate(extractDisplayDate(x));
-        return d && d.toDateString() === todayStr;
+      // Prioritaskan kegiatan hari ini & mendatang untuk Beranda (urutan Gambar 2)
+      const sortedForHome = [...list].sort((a, b) => {
+        const dA = parseSmartDate(extractDisplayDate(a));
+        const dB = parseSmartDate(extractDisplayDate(b));
+        const isTodayA = dA && dA.getTime() === today.getTime();
+        const isTodayB = dB && dB.getTime() === today.getTime();
+        
+        if (isTodayA && !isTodayB) return -1;
+        if (!isTodayA && isTodayB) return 1;
+
+        // Tampilkan yang terdekat lebih dulu
+        const diffA = dA ? Math.abs(dA.getTime() - today.getTime()) : Infinity;
+        const diffB = dB ? Math.abs(dB.getTime() - today.getTime()) : Infinity;
+        return diffA - diffB;
       });
 
-      let listToDisplay = [];
-      if (todayList.length > 2) {
-        listToDisplay = todayList;
-      } else {
-        listToDisplay = list.slice(0, Math.max(2, todayList.length));
-      }
-
-      h.innerHTML = listToDisplay.map(mapper).join('');
+      h.innerHTML = sortedForHome.slice(0, 2).map(mapper).join('');
     }
   }
 }
@@ -1508,7 +1545,6 @@ function renderJadwalByDay() {
       : 'Pekerjaan dengan tanda hijau (✓ KERJAKAN HARI INI) wajib diselesaikan hari ini.';
   }
 
-  // Master Data Jobdesk Tanpa Nomor Urut
   const masterTugas = [
     { tugas: 'Glass cleaning kelas / ruangan', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
     { tugas: 'Cleaning masjid', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
