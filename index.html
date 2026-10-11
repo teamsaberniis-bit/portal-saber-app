@@ -15,6 +15,7 @@
 <title>Portal Tim SABER</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#16a34a">
+
 <link rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -980,6 +981,8 @@ html, body{
 </div>
 
 <script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby-s9QvKc46gkQPetYPWiJYu3ViT-uD3zW2Yye7IoFX3EEgV7JBIm5wiwjg0IgS0MYR/exec";
+
 let DB = {
   anggota: [], lembur: [], informasi: [], pengaduan: [], pengajuan: [], jadwal: [], laporan: []
 };
@@ -1044,11 +1047,6 @@ function showPage(id, pushHistory = true) {
 })();
 
 function loadData() {
-  if (typeof google === 'undefined' || !google.script) {
-    showLoadError('Aplikasi harus dibuka dari Web App Google Apps Script.');
-    return;
-  }
-
   const cachedData = localStorage.getItem('timSaberCacheData');
   if (cachedData) {
     try {
@@ -1057,18 +1055,18 @@ function loadData() {
     } catch (e) {}
   }
 
-  google.script.run
-    .withSuccessHandler(d => {
+  fetch(SCRIPT_URL + "?action=getDashboardData")
+    .then(res => res.json())
+    .then(d => {
       if (d) {
         DB = Object.assign(DB, d);
         localStorage.setItem('timSaberCacheData', JSON.stringify(d));
         initApp();
       }
     })
-    .withFailureHandler(e => {
-      if (!cachedData) showLoadError('Gagal memuat data: ' + (e.message || e));
-    })
-    .getDashboardData();
+    .catch(e => {
+      if (!cachedData) showLoadError('Gagal memuat data dari server: ' + (e.message || e));
+    });
 }
 
 function showLoadError(msg) {
@@ -1405,7 +1403,6 @@ function renderJadwalByDay() {
   }
 }
 
-// PERBAIKAN UTAMA: Sistem Dinamis untuk Pemilihan Berulang & Bebas Pilih Folder Foto
 function openCameraBox(inputId) {
   const containerId = inputId === 'laporFoto' ? 'laporInputContainer' : 'pengaduanInputContainer';
   const container = document.getElementById(containerId);
@@ -1456,25 +1453,29 @@ function fileToBase64(inputId) {
   });
 }
 
-async function sendWithPhoto(method, data, fileId, buttonId, after) {
+async function sendWithPhoto(actionName, data, fileId, buttonId, after) {
   const btn = document.getElementById(buttonId);
   if (btn) { btn.disabled = true; btn.innerText = 'Mengirim...'; }
 
   try {
     const photo = await fileToBase64(fileId);
     if (photo) { data.FotoBase64 = photo.base64; data.FotoNama = photo.name; }
+    data.action = actionName;
 
-    google.script.run
-      .withSuccessHandler(res => {
-        if (btn) { btn.disabled = false; btn.innerText = buttonId === 'btnPengaduan' ? 'Kirim Pengaduan' : 'Kirim Laporan (Selesai)'; }
-        if (res && res.success) { showToast('BERHASIL DIKIRIM'); if (after) after(); }
-        else { alert('Gagal: ' + (res && res.message || 'Data tidak tersimpan.')); }
-      })
-      .withFailureHandler(e => {
-        if (btn) { btn.disabled = false; btn.innerText = buttonId === 'btnPengaduan' ? 'Kirim Pengaduan' : 'Kirim Laporan (Selesai)'; }
-        alert('Terjadi kesalahan: ' + (e.message || e));
-      })
-      [method](data);
+    fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    })
+    .then(res => res.json())
+    .then(res => {
+      if (btn) { btn.disabled = false; btn.innerText = buttonId === 'btnPengaduan' ? 'Kirim Pengaduan' : 'Kirim Laporan (Selesai)'; }
+      if (res && res.success) { showToast('BERHASIL DIKIRIM'); if (after) after(); }
+      else { alert('Gagal: ' + (res && res.message || 'Data tidak tersimpan.')); }
+    })
+    .catch(e => {
+      if (btn) { btn.disabled = false; btn.innerText = buttonId === 'btnPengaduan' ? 'Kirim Pengaduan' : 'Kirim Laporan (Selesai)'; }
+      alert('Terjadi kesalahan: ' + (e.message || e));
+    });
   } catch (e) {
     if (btn) { btn.disabled = false; btn.innerText = buttonId === 'btnPengaduan' ? 'Kirim Pengaduan' : 'Kirim Laporan (Selesai)'; }
     alert(e.message || e);
@@ -1504,6 +1505,7 @@ function kirimLaporan() {
 function kirimPengajuan() {
   const btn = document.getElementById('btnPengajuan');
   const d = {
+    action: 'simpanPengajuan',
     Nama: document.getElementById('pengajuanNama').value.trim(),
     Area: document.getElementById('pengajuanArea').value.trim(),
     Prioritas: (document.querySelector('input[name="prioritas"]:checked') || {}).value || 'Normal'
@@ -1514,17 +1516,20 @@ function kirimPengajuan() {
   }
 
   btn.disabled = true; btn.innerText = 'Mengirim...';
-  google.script.run
-    .withSuccessHandler(res => {
-      btn.disabled = false; btn.innerText = 'Kirim Pengajuan';
-      if (res && res.success) {
-        showToast('BERHASIL DIKIRIM');
-        for (let i = 1; i <= 4; i++) { document.getElementById('kebutuhan' + i).value = ''; }
-        showPage('home');
-      } else { alert('Gagal: ' + (res && res.message || 'Data tidak tersimpan.')); }
-    })
-    .withFailureHandler(e => { btn.disabled = false; btn.innerText = 'Kirim Pengajuan'; alert(e.message || e); })
-    .simpanPengajuan(d);
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify(d)
+  })
+  .then(res => res.json())
+  .then(res => {
+    btn.disabled = false; btn.innerText = 'Kirim Pengajuan';
+    if (res && res.success) {
+      showToast('BERHASIL DIKIRIM');
+      for (let i = 1; i <= 4; i++) { document.getElementById('kebutuhan' + i).value = ''; }
+      showPage('home');
+    } else { alert('Gagal: ' + (res && res.message || 'Data tidak tersimpan.')); }
+  })
+  .catch(e => { btn.disabled = false; btn.innerText = 'Kirim Pengajuan'; alert(e.message || e); });
 }
 
 function kirimPengaduan() {
@@ -1568,12 +1573,13 @@ appContainer.addEventListener('touchend', e => {
   isPulling = false;
   if (e.changedTouches[0].clientY - touchStartY > 90 && document.querySelector('.content').scrollTop === 0) {
     pullIndicator.style.transform = 'translateY(52px)';
-    if (typeof google !== 'undefined' && google.script) {
-      google.script.run.withSuccessHandler(d => {
+    fetch(SCRIPT_URL + "?action=getDashboardData")
+      .then(res => res.json())
+      .then(d => {
         if (d) { DB = Object.assign(DB, d); localStorage.setItem('timSaberCacheData', JSON.stringify(d)); initApp(); }
         setTimeout(() => pullIndicator.style.transform = 'translateY(0)', 400);
-      }).getDashboardData();
-    } else { setTimeout(() => pullIndicator.style.transform = 'translateY(0)', 400); }
+      })
+      .catch(() => { setTimeout(() => pullIndicator.style.transform = 'translateY(0)', 400); });
   } else { pullIndicator.style.transform = 'translateY(0)'; }
 });
 
