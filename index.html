@@ -986,7 +986,7 @@ html, body{
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby-s9QvKc46gkQPetYPWiJYu3ViT-uD3zW2Yye7IoFX3EEgV7JBIm5wiwjg0IgS0MYR/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzVak_9Cl3xbgXC8-V7JcVWfgXwui9BACJGwiz1q38A4HRSarvDPgwLv9m6v_7d99X-/exec";
 
 let DB = {
   anggota: [], lembur: [], informasi: [], pengaduan: [], pengajuan: [], jadwal: [], laporan: []
@@ -1060,7 +1060,10 @@ function loadData() {
     } catch (e) {}
   }
 
-  fetch(SCRIPT_URL + "?action=getDashboardData")
+  fetch(SCRIPT_URL + "?action=getDashboardData", {
+    method: "GET",
+    redirect: "follow"
+  })
     .then(res => res.json())
     .then(d => {
       if (d) {
@@ -1070,8 +1073,26 @@ function loadData() {
       }
     })
     .catch(e => {
-      if (!cachedData) showLoadError('Gagal memuat data dari server: ' + (e.message || e));
+      loadDataFallback();
     });
+}
+
+function loadDataFallback() {
+  const oldScript = document.getElementById('jsonpScript');
+  if (oldScript) oldScript.remove();
+
+  window.handleDashboardResponse = function(d) {
+    if (d) {
+      DB = Object.assign(DB, d);
+      localStorage.setItem('timSaberCacheData', JSON.stringify(d));
+      initApp();
+    }
+  };
+
+  const script = document.createElement('script');
+  script.id = 'jsonpScript';
+  script.src = SCRIPT_URL + "?action=getDashboardData&callback=handleDashboardResponse";
+  document.body.appendChild(script);
 }
 
 function showLoadError(msg) {
@@ -1602,7 +1623,10 @@ appContainer.addEventListener('touchend', e => {
         if (d) { DB = Object.assign(DB, d); localStorage.setItem('timSaberCacheData', JSON.stringify(d)); initApp(); }
         setTimeout(() => pullIndicator.style.transform = 'translateY(0)', 400);
       })
-      .catch(() => { setTimeout(() => pullIndicator.style.transform = 'translateY(0)', 400); });
+      .catch(() => {
+        loadDataFallback();
+        setTimeout(() => pullIndicator.style.transform = 'translateY(0)', 400);
+      });
   } else { pullIndicator.style.transform = 'translateY(0)'; }
 });
 
