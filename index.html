@@ -924,6 +924,8 @@ html, body{
     <input class="form-input" id="kebutuhan2" placeholder="2. Kebutuhan kedua" style="margin-top:5px">
     <input class="form-input" id="kebutuhan3" placeholder="3. Kebutuhan ketiga" style="margin-top:5px">
     <input class="form-input" id="kebutuhan4" placeholder="4. Kebutuhan keempat" style="margin-top:5px">
+    <input class="form-input" id="kebutuhan5" placeholder="5. Kebutuhan kelima" style="margin-top:5px">
+    <input class="form-input" id="kebutuhan6" placeholder="6. Kebutuhan keenam" style="margin-top:5px">
     <button class="btn" id="btnPengajuan" onclick="kirimPengajuan()">Kirim Pengajuan</button>
   </div>
 </section>
@@ -1413,26 +1415,82 @@ function renderLaporanPage() {
 
 function renderJadwalByDay() {
   const now = new Date();
-  const d = now.getDay();
+  const day = now.getDay(); // 0 = Minggu, 1 = Senin, 2 = Selasa, 3 = Rabu, 4 = Kamis, 5 = Jumat, 6 = Sabtu
   const hariNama = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
   const tanggalStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
-  const isWeekend = d === 0 || d === 6;
+  const isWeekend = (day === 0 || day === 6); // Sabtu (6) dan Minggu (0) Libur
 
   const box = document.getElementById('jadwalCols');
   const hariEl = document.getElementById('jadwalHariIni');
   const tanggalEl = document.getElementById('jadwalTanggalHariIni');
 
-  if (hariEl) hariEl.textContent = 'Jadwal Kerja: ' + hariNama[d] + ', ' + tanggalStr;
-  if (tanggalEl) tanggalEl.textContent = isWeekend ? 'Hari Libur: Tidak ada jadwal pekerjaan rutin hari ini.' : 'Pekerjaan dengan tanda hijau wajib dikerjakan hari ini.';
+  if (hariEl) hariEl.textContent = 'Jadwal Kerja: ' + hariNama[day] + ', ' + tanggalStr;
+  if (tanggalEl) {
+    tanggalEl.textContent = isWeekend 
+      ? 'Hari Libur: Tidak ada jadwal pekerjaan rutin pada hari Sabtu & Minggu.' 
+      : 'Pekerjaan dengan tanda hijau (✓ KERJAKAN HARI INI) wajib diselesaikan hari ini.';
+  }
 
-  const all = [
-    ['Glass cleaning kelas / ruangan', 'Harian', 'Senin - Jumat', d >= 1 && d <= 5],
-    ['Cleaning masjid', 'Harian', 'Senin - Jumat', d >= 1 && d <= 5],
-    ['Toilet cleaning', 'Harian', 'Senin - Jumat', d >= 1 && d <= 5],
-    ['Membuang sampah', 'Harian', 'Senin - Jumat', d >= 1 && d <= 5],
-    ['Cleaning karpet toilet Dan keset', '1x Seminggu', 'Setiap Jumat', d === 5],
-    ['General cleaning toilet', '1x Seminggu', 'Setiap Jumat', d === 5]
+  // Master Data 20 Jobdesk
+  const masterTugas = [
+    { no: 1, tugas: 'Glass cleaning kelas / ruangan', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5] },
+    { no: 2, tugas: 'Cleaning masjid', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5] },
+    { no: 3, tugas: 'Cleaning kelas / ruangan secara menyeluruh', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5] },
+    { no: 4, tugas: 'Cleaning list kaca & lemari prasman siswa', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5] },
+    { no: 5, tugas: 'Toilet cleaning', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5] },
+    { no: 6, tugas: 'Membuang sampah', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5] },
+    { no: 7, tugas: 'Cleaning karpet toilet & keset', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5] },
+    { no: 8, tugas: 'General cleaning toilet', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5] },
+    { no: 9, tugas: 'Cleaning tempat sampah', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5] },
+    { no: 10, tugas: 'Penggantian sprei', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5] },
+    { no: 11, tugas: 'Vaccum karpet Masjid', frekuensi: '2x Seminggu', pelaksanaan: "Rabu & Jum'at", days: [3,5] },
+    { no: 12, tugas: 'Vaccum karpet', frekuensi: '2x Seminggu', pelaksanaan: 'Selasa & Kamis', days: [2,4] },
+    { no: 13, tugas: 'Cleaning sawang-sawang', frekuensi: '2x Seminggu', pelaksanaan: 'Selasa & Kamis', days: [2,4] },
+    { no: 14, tugas: 'Cleaning dinding kelas', frekuensi: '2x Seminggu', pelaksanaan: 'Senin & Rabu', days: [1,3] },
+    { no: 15, tugas: 'Cleaning balkon dan kaca', frekuensi: '2x Sebulan', pelaksanaan: 'Minggu ke 1 & Minggu ke 3', days: [1,2,3,4,5] },
+    { no: 16, tugas: 'Cleaning dispenser', frekuensi: '2x Sebulan', pelaksanaan: 'Minggu ke 2 & Minggu ke 4', days: [1,2,3,4,5] },
+    { no: 17, tugas: 'General cleaning Masjid', frekuensi: '1x Sebulan', pelaksanaan: 'Minggu ke 4', days: [5] },
+    { no: 18, tugas: 'Brusing lantai koridor', frekuensi: '1x Sebulan', pelaksanaan: 'Minggu ke 3', days: [5] },
+    { no: 19, tugas: 'Penyemprotan disinfektan', frekuensi: '1x Sebulan', pelaksanaan: 'Minggu ke 2', days: [5] },
+    { no: 20, tugas: 'Fogging', frekuensi: '1x 3 bulan', pelaksanaan: 'Minggu ke 1', days: [5] }
   ];
+
+  if (box) {
+    box.innerHTML = `
+      <div class="jcol">
+        <div class="jhead">Daftar Jobdesk & Status Pekerjaan</div>
+        <div style="padding:7px">
+          ${masterTugas.map(x => {
+            // Cek apakah tugas ini wajib dikerjakan HARI INI
+            const wajibHariIni = !isWeekend && x.days.includes(day);
+
+            // Styling jika wajib dikerjakan hari ini
+            const bgStyle = wajibHariIni ? 'background:#f0fdf4; border:2px solid #16a34a;' : 'background:#fff; border:1px solid #e2e8f0;';
+            const statusLabel = isWeekend 
+              ? '<span class="status" style="background:#f1f5f9; color:#64748b;">LIBUR</span>'
+              : (wajibHariIni 
+                  ? '<span class="status" style="background:#16a34a; color:#fff; font-weight:bold;">✓ KERJAKAN HARI INI</span>' 
+                  : '<span class="status" style="background:#f8fafc; color:#94a3b8;">Terjadwal</span>');
+
+            return `
+              <div class="jitem" style="${bgStyle} margin-bottom: 8px; padding: 9px; border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                  <div style="flex:1;">
+                    <b>${x.no}.${esc(x.tugas)}</b>
+                    <small style="display:block; color:#64748b; font-size:10px; margin-top:2px;">
+                      <i class="fa-regular fa-clock me-1"></i>${esc(x.frekuensi)} (${esc(x.pelaksanaan)})
+                    </small>
+                  </div>
+                </div>
+                <div style="margin-top: 6px;">
+                  ${statusLabel}
+                </div>
+              </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+  }
+}
 
   if (box) {
     box.innerHTML = `
