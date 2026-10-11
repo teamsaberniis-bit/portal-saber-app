@@ -620,9 +620,9 @@ html, body{
   text-decoration:none;
 }
 
-.jadwal-cols{ display:flex; flex-direction:column; gap:8px; }
+.jadwal-cols{ display:flex; flex-direction:column; gap:12px; }
 .jcol{ background:#fff; border:1px solid var(--b); border-radius:11px; overflow:hidden; }
-.jhead{ padding:10px 11px; color:#fff; font-size:11.5px; font-weight:800; background:var(--g); }
+.jhead{ padding:10px 11px; color:#fff; font-size:12px; font-weight:800; background:var(--g); }
 .jitem{ border:1px solid var(--b); border-radius:8px; padding:9px; margin-bottom:6px; }
 .jitem b{ font-size:11px; display:block; margin-bottom:3px; }
 .jitem small{ font-size:9px; color:var(--s); display:block; margin-bottom:5px; }
@@ -705,6 +705,7 @@ html, body{
 }
 .badge-status.selesai{ background:var(--gl); color:var(--g); border:1px solid #bbf7d0; }
 .badge-status.progres{ background:var(--ol); color:var(--o); border:1px solid #fed7aa; }
+.badge-status.baru{ background:var(--ol); color:var(--o); border:1px solid #fed7aa; }
 .badge-status.cek{ background:#fef2f2; color:#dc2626; border:1px solid #fecaca; }
 
 #toastNotification{
@@ -837,7 +838,7 @@ html, body{
   </div>
 
   <div class="section-header">
-    <div class="section">Informasi</div>
+    <div class="section">Informasi Terkini</div>
     <a class="section-link" onclick="showPage('informasi')">Lihat Semua</a>
   </div>
   <div id="homeInfoBox"></div>
@@ -1099,6 +1100,13 @@ function loadDataFallback() {
   document.body.appendChild(script);
 }
 
+function showLoadError(msg) {
+  ['homeInfoBox', 'homePengaduanBox'].forEach(id => {
+    const e = document.getElementById(id);
+    if (e) e.innerHTML = '<div class="card"><p class="danger">' + esc(msg) + '</p></div>';
+  });
+}
+
 function initApp() {
   const sel = document.getElementById('memberSelectTop');
   if (!sel) return;
@@ -1206,9 +1214,46 @@ function closeAnggotaDetail() {
   if (box) { box.classList.remove('active'); box.innerHTML = ''; }
 }
 
+// Fungsi serbaguna untuk ekstraksi tanggal/waktu dari berbagai nama property
+function extractDisplayDate(item) {
+  if (!item) return '-';
+  // Mengecek seluruh variasi property tanggal dari Google Sheets JSON
+  let val = item.Tanggal || item['Hari/tgl'] || item['Hari/Tanggal'] || item.Timestamp || item.timestamp || item.Waktu || item.waktu || item.Date || item.date || item.CreatedAt || item.created_at || '';
+  
+  if (!val) {
+    // Jika tidak ada key standar, cari key apapun yang mengandung kata 'tgl', 'date', atau 'time'
+    for (let k in item) {
+      if (k.toLowerCase().includes('tgl') || k.toLowerCase().includes('date') || k.toLowerCase().includes('time') || k.toLowerCase().includes('waktu')) {
+        if (item[k]) { val = item[k]; break; }
+      }
+    }
+  }
+
+  if (!val) return 'Terbaru';
+
+  // Format standar jika data berupa String ISO Date dari GAS
+  if (typeof val === 'string' && val.includes('T')) {
+    let d = new Date(val);
+    if (!isNaN(d.getTime())) {
+      const days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+      return days[d.getDay()] + ', ' + d.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+    }
+  }
+  return String(val);
+}
+
 function parseSmartDate(dateStr) {
   if (!dateStr) return null;
-  let cleanStr = String(dateStr).replace(/^(Senin|Selasa|Rabu|Kamis|Jum'at|Jumat|Sabtu|Minggu),?\s*/i, '').trim();
+  let rawStr = String(dateStr).trim();
+  if (rawStr.includes('T')) {
+    let dIso = new Date(rawStr);
+    if (!isNaN(dIso.getTime())) {
+      dIso.setHours(0, 0, 0, 0);
+      return dIso;
+    }
+  }
+
+  let cleanStr = rawStr.replace(/^(Senin|Selasa|Rabu|Kamis|Jum'at|Jumat|Sabtu|Minggu),?\s*/i, '').trim();
   const months = {
     'januari': 'January', 'februari': 'February', 'maret': 'March', 'april': 'April',
     'mei': 'May', 'juni': 'June', 'juli': 'July', 'agustus': 'August',
@@ -1231,7 +1276,7 @@ function getFutureLemburData() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   return rawData.filter(x => {
-    const parsedDate = parseSmartDate(x['Hari/tgl'] || x['Hari/Tanggal'] || '');
+    const parsedDate = parseSmartDate(extractDisplayDate(x));
     return !parsedDate || parsedDate >= today;
   });
 }
@@ -1264,7 +1309,7 @@ function renderLemburCard() {
             <div class="lt"><i class="fa-solid fa-user-clock"></i> Jadwal Lembur</div>
             <span class="badge">${esc(x.Keterangan || 'Lembur')}</span>
           </div>
-          <div class="ld"><i class="fa-regular fa-calendar"></i> ${esc(x['Hari/tgl'] || x['Hari/Tanggal'] || '-')}</div>
+          <div class="ld"><i class="fa-regular fa-calendar"></i> ${esc(extractDisplayDate(x))}</div>
           <div class="grid2">
             <div class="cell"><span>Petugas</span><b>${esc(petugas)}</b></div>
             <div class="cell"><span>Kegiatan</span><b>${esc(x.Kegiatan || '-')}</b></div>
@@ -1280,7 +1325,7 @@ function renderLemburCard() {
       <div class="card">
         <h4>${esc(x.Kegiatan || '-')}</h4>
         <p><b>Petugas:</b> ${esc(x.Petugas || x.PIC || '-')}</p>
-        <p><b>Hari/Tanggal:</b> ${esc(x['Hari/tgl'] || x['Hari/Tanggal'] || '-')}</p>
+        <p><b>Hari/Tanggal:</b> ${esc(extractDisplayDate(x))}</p>
         <p><b>Jam:</b> ${esc(x.In || '-')} - ${esc(x.Out || '-')}</p>
         <p><b>Keterangan:</b> ${esc(x.Keterangan || '-')}</p>
       </div>`).join('');
@@ -1319,27 +1364,23 @@ function lemburNext() { goLembur(lemburIndex + 1); }
 function getInformasiData() {
   return DB.informasi || DB.berita || DB.info || [];
 }
-function parseDateVal(dStr) {
-  const parsed = parseSmartDate(dStr);
-  return parsed ? parsed.getTime() : 0;
+function parseDateVal(x) {
+  let dStr = extractDisplayDate(x);
+  if (!dStr) return 0;
+  let d = parseSmartDate(dStr);
+  if (d) return d.getTime();
+  let t = Date.parse(dStr);
+  return !isNaN(t) ? t : 0;
 }
 
 function renderInformasiPage() {
-  const allInfo = getInformasiData();
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-
-  const threeDaysLater = new Date(now);
-  threeDaysLater.setDate(now.getDate() + 3);
-
-  const sortedList = [...allInfo].sort((a, b) => parseDateVal(b.Tanggal || b.Timestamp || '') - parseDateVal(a.Tanggal || a.Timestamp || ''));
-
+  const list = [...getInformasiData()].sort((a, b) => parseDateVal(b) - parseDateVal(a));
   const b = document.getElementById('infoList');
   const h = document.getElementById('homeInfoBox');
   const empty = '<div class="card"><p class="muted">Belum ada informasi.</p></div>';
 
-  if (sortedList.length > 0) {
-    const infoTerbaru = (sortedList[0].Judul || '') + '|' + (sortedList[0].Informasi || sortedList[0].Isi || '');
+  if (list.length > 0) {
+    const infoTerbaru = (list[0].Judul || list[0].Title || '') + '|' + (list[0].Informasi || list[0].Isi || '');
     const lastSeenInfo = localStorage.getItem('lastSeenInfo');
 
     if (lastSeenInfo && lastSeenInfo !== infoTerbaru) {
@@ -1349,37 +1390,48 @@ function renderInformasiPage() {
     localStorage.setItem('lastSeenInfo', infoTerbaru);
   }
 
-  const homeFiltered = sortedList.filter(x => {
-    let pDate = parseSmartDate(x.Tanggal || x.Timestamp || '');
-    if (!pDate) return true;
-    return pDate >= now && pDate <= threeDaysLater;
-  });
+  const todayStr = new Date().toDateString();
 
   const mapper = x => {
-    let pDate = parseSmartDate(x.Tanggal || x.Timestamp || '');
-    let isToday = pDate && pDate.getTime() === now.getTime();
-
-    const todayBadge = isToday 
-      ? '<span style="background:#16a34a; color:#fff; font-size:9px; font-weight:800; padding:2px 7px; border-radius:6px; margin-left:6px;">⭐ KEGIATAN HARI INI</span>' 
-      : '';
-
-    const cardStyle = isToday ? 'background:#f0fdf4; border:1.5px solid #16a34a;' : 'background:#f8fafc; border:1px solid #e2e8f0;';
+    const rawTgl = extractDisplayDate(x);
+    const tglInfo = parseSmartDate(rawTgl);
+    const isToday = tglInfo && tglInfo.toDateString() === todayStr;
+    const badgeHariIni = isToday ? '<span class="status" style="background:var(--g); color:#fff; margin-bottom:5px; font-weight:bold;"><i class="fa-solid fa-bell"></i> Hari Ini</span>' : '';
 
     return `
-      <div class="home-info-card" style="${cardStyle}">
+      <div class="home-info-card" ${isToday ? 'style="border-left: 4px solid var(--g); background:#f0fdf4;"' : ''}>
         <div style="flex:1">
-          <div style="display:flex; align-items:center; flex-wrap:wrap; margin-bottom:3px;">
-            <span style="font-size:12px; font-weight:800;">${esc(x.Judul || x.Title || 'Informasi')}</span>
-            ${todayBadge}
-          </div>
+          ${badgeHariIni}
+          <div style="font-size:12px;font-weight:800;margin-bottom:3px">${esc(x.Judul || x.Title || 'Informasi')}</div>
           <div style="font-size:10.5px;color:var(--s);line-height:1.4">${esc(x.Informasi || x.Keterangan || x.Isi || '-')}</div>
-          ${x.Tanggal ? `<div style="font-size:9px;color:var(--s);margin-top:5px"><i class="fa-regular fa-calendar-days"></i> ${esc(x.Tanggal)}</div>` : ''}
+          <div style="font-size:9px;color:var(--s);margin-top:6px;"><i class="fa-regular fa-calendar-days"></i> ${esc(rawTgl)}</div>
         </div>
       </div>`;
   };
 
-  if (b) b.innerHTML = sortedList.length ? sortedList.map(mapper).join('') : empty;
-  if (h) h.innerHTML = homeFiltered.length ? homeFiltered.map(mapper).join('') : '<p class="muted">Tidak ada informasi untuk 3 hari ke depan.</p>';
+  if (b) b.innerHTML = list.length ? list.map(mapper).join('') : empty;
+  
+  if (h) {
+    if (list.length === 0) {
+      h.innerHTML = empty;
+    } else {
+      // Ambil informasi hari ini
+      const todayList = list.filter(x => {
+        const d = parseSmartDate(extractDisplayDate(x));
+        return d && d.toDateString() === todayStr;
+      });
+
+      // Tampilkan seluruh informasi hari ini jika > 2, atau tampilkan minimal 2 informasi paling baru
+      let listToDisplay = [];
+      if (todayList.length > 2) {
+        listToDisplay = todayList;
+      } else {
+        listToDisplay = list.slice(0, Math.max(2, todayList.length));
+      }
+
+      h.innerHTML = listToDisplay.map(mapper).join('');
+    }
+  }
 }
 
 function playNotifSound() {
@@ -1390,36 +1442,44 @@ function playNotifSound() {
 }
 
 function renderPengaduanPage() {
-  const list = [...(DB.pengaduan || [])].sort((a, b) => parseDateVal(b['Hari/Tanggal'] || b.Timestamp || b.Tanggal || '') - parseDateVal(a['Hari/Tanggal'] || a.Timestamp || a.Tanggal || ''));
+  const list = [...(DB.pengaduan || [])].sort((a, b) => parseDateVal(b) - parseDateVal(a));
   const h = document.getElementById('homePengaduanBox');
   const f = document.getElementById('pengaduanListFull');
   const empty = '<div class="card"><p class="muted">Belum ada pengaduan.</p></div>';
 
   const mapper = x => {
-    const st = String(x.Status || 'Progres').trim().toLowerCase();
-    const cls = st === 'selesai' ? 'selesai' : (st.includes('cek') ? 'cek' : 'progres');
-    const tglDisplay = x['Hari/Tanggal'] || x.Timestamp || x.Tanggal || x.Waktu || '-';
-    
+    const st = String(x.Status || 'Baru').trim();
+    const stLower = st.toLowerCase();
+    const cls = stLower === 'selesai' ? 'selesai' : (stLower.includes('cek') ? 'cek' : 'baru');
+    const tglDisplay = extractDisplayDate(x);
+
     return `
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:flex-start">
-          <div><h4>${esc(x.Nama || 'Pengguna')}</h4><p><b>Area:</b> ${esc(x.Area || '-')}</p></div>
-          <span class="badge-status ${cls}">${esc(x.Status || 'Progres')}</span>
+          <div>
+            <h4>${esc(x.Nama || 'Pengguna')}</h4>
+            <p style="font-size:10.5px; color:var(--s); margin-top:2px;"><b>Area:</b> ${esc(x.Area || '-')}</p>
+          </div>
+          <span class="badge-status ${cls}">${esc(st)}</span>
         </div>
-        <p style="margin-top:5px">${esc(x.Kendala || x.Pengaduan || '-')}</p>
-        <span class="status"><i class="fa-regular fa-calendar"></i> ${esc(tglDisplay)}</span>
+        <p style="margin-top:7px; font-size:11.5px; color:var(--t); font-weight:600;">${esc(x.Kendala || x.Pengaduan || x.Deskripsi || '-')}</p>
+        <div style="margin-top:8px; border-top:1px dashed #e2e8f0; padding-top:6px;">
+          <span class="status" style="background:#f8fafc; color:#64748b; border:1px solid #e2e8f0; font-weight:700;">
+            <i class="fa-regular fa-calendar-days" style="color:var(--g); margin-right:4px;"></i> ${esc(tglDisplay)}
+          </span>
+        </div>
       </div>`;
   };
 
   if (h) {
     const active = list.filter(x => String(x.Status || '').trim().toLowerCase() !== 'selesai');
-    h.innerHTML = active.length ? active.slice(0, 2).map(mapper).join('') : '<p class="muted">Tidak ada pengaduan aktif.</p>';
+    h.innerHTML = active.length ? active.slice(0, 2).map(mapper).join('') : (list.length ? list.slice(0, 2).map(mapper).join('') : '<p class="muted">Tidak ada pengaduan.</p>');
   }
   if (f) f.innerHTML = list.length ? list.map(mapper).join('') : empty;
 }
 
 function renderLaporanPage() {
-  const list = [...(DB.laporan || [])].sort((a, b) => parseDateVal(b.Tanggal || b.Timestamp || '') - parseDateVal(a.Tanggal || a.Timestamp || ''));
+  const list = [...(DB.laporan || [])].sort((a, b) => parseDateVal(b) - parseDateVal(a));
   const fullBox = document.getElementById('laporanListFull');
   const empty = '<div class="card"><p class="muted">Belum ada laporan kerja selesai.</p></div>';
 
@@ -1431,14 +1491,14 @@ function renderLaporanPage() {
           <span class="badge-status selesai">Selesai</span>
         </div>
         ${x.Catatan ? `<p style="margin-top:5px"><b>Catatan:</b> ${esc(x.Catatan)}</p>` : ''}
-        ${x.Tanggal ? `<span class="status">${esc(x.Tanggal)}</span>` : ''}
+        <div style="margin-top:6px"><span class="status"><i class="fa-regular fa-calendar-days"></i> ${esc(extractDisplayDate(x))}</span></div>
       </div>`).join('') : empty;
   }
 }
 
 function renderJadwalByDay() {
   const now = new Date();
-  const day = now.getDay();
+  const day = now.getDay(); 
   const hariNama = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
   const tanggalStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
   const isWeekend = (day === 0 || day === 6);
@@ -1455,58 +1515,70 @@ function renderJadwalByDay() {
   }
 
   const masterTugas = [
-    { no: 1, tugas: 'Glass cleaning kelas / ruangan', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5] },
-    { no: 2, tugas: 'Cleaning masjid', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5] },
-    { no: 3, tugas: 'Cleaning kelas / ruangan secara menyeluruh', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5] },
-    { no: 4, tugas: 'Cleaning list kaca & lemari prasman siswa', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5] },
-    { no: 5, tugas: 'Toilet cleaning', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5] },
-    { no: 6, tugas: 'Membuang sampah', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5] },
-    { no: 7, tugas: 'Cleaning karpet toilet & keset', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5] },
-    { no: 8, tugas: 'General cleaning toilet', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5] },
-    { no: 9, tugas: 'Cleaning tempat sampah', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5] },
-    { no: 10, tugas: 'Penggantian sprei', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5] },
-    { no: 11, tugas: 'Vaccum karpet Masjid', frekuensi: '2x Seminggu', pelaksanaan: "Rabu & Jum'at", days: [3,5] },
-    { no: 12, tugas: 'Vaccum karpet', frekuensi: '2x Seminggu', pelaksanaan: 'Selasa & Kamis', days: [2,4] },
-    { no: 13, tugas: 'Cleaning sawang-sawang', frekuensi: '2x Seminggu', pelaksanaan: 'Selasa & Kamis', days: [2,4] },
-    { no: 14, tugas: 'Cleaning dinding kelas', frekuensi: '2x Seminggu', pelaksanaan: 'Senin & Rabu', days: [1,3] },
-    { no: 15, tugas: 'Cleaning balkon dan kaca', frekuensi: '2x Sebulan', pelaksanaan: 'Minggu ke 1 & Minggu ke 3', days: [1,2,3,4,5] },
-    { no: 16, tugas: 'Cleaning dispenser', frekuensi: '2x Sebulan', pelaksanaan: 'Minggu ke 2 & Minggu ke 4', days: [1,2,3,4,5] },
-    { no: 17, tugas: 'General cleaning Masjid', frekuensi: '1x Sebulan', pelaksanaan: 'Minggu ke 4', days: [5] },
-    { no: 18, tugas: 'Brusing lantai koridor', frekuensi: '1x Sebulan', pelaksanaan: 'Minggu ke 3', days: [5] },
-    { no: 19, tugas: 'Penyemprotan disinfektan', frekuensi: '1x Sebulan', pelaksanaan: 'Minggu ke 2', days: [5] },
-    { no: 20, tugas: 'Fogging', frekuensi: '1x 3 bulan', pelaksanaan: 'Minggu ke 1', days: [5] }
+    { no: 1, tugas: 'Glass cleaning kelas / ruangan', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
+    { no: 2, tugas: 'Cleaning masjid', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
+    { no: 3, tugas: 'Cleaning kelas / ruangan secara menyeluruh', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
+    { no: 4, tugas: 'Cleaning list kaca & lemari prasman siswa', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
+    { no: 5, tugas: 'Toilet cleaning', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
+    { no: 6, tugas: 'Membuang sampah', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
+    { no: 7, tugas: 'Cleaning karpet toilet & keset', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5], kategori: 'Mingguan' },
+    { no: 8, tugas: 'General cleaning toilet', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5], kategori: 'Mingguan' },
+    { no: 9, tugas: 'Cleaning tempat sampah', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5], kategori: 'Mingguan' },
+    { no: 10, tugas: 'Penggantian sprei', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5], kategori: 'Mingguan' },
+    { no: 11, tugas: 'Vaccum karpet Masjid', frekuensi: '2x Seminggu', pelaksanaan: "Rabu & Jum'at", days: [3,5], kategori: 'Mingguan' },
+    { no: 12, tugas: 'Vaccum karpet', frekuensi: '2x Seminggu', pelaksanaan: 'Selasa & Kamis', days: [2,4], kategori: 'Mingguan' },
+    { no: 13, tugas: 'Cleaning sawang-sawang', frekuensi: '2x Seminggu', pelaksanaan: 'Selasa & Kamis', days: [2,4], kategori: 'Mingguan' },
+    { no: 14, tugas: 'Cleaning dinding kelas', frekuensi: '2x Seminggu', pelaksanaan: 'Senin & Rabu', days: [1,3], kategori: 'Mingguan' },
+    { no: 15, tugas: 'Cleaning balkon dan kaca', frekuensi: '2x Sebulan', pelaksanaan: 'Minggu ke 1 & Minggu ke 3', days: [1,2,3,4,5], kategori: 'Bulanan' },
+    { no: 16, tugas: 'Cleaning dispenser', frekuensi: '2x Sebulan', pelaksanaan: 'Minggu ke 2 & Minggu ke 4', days: [1,2,3,4,5], kategori: 'Bulanan' },
+    { no: 17, tugas: 'General cleaning Masjid', frekuensi: '1x Sebulan', pelaksanaan: 'Minggu ke 4', days: [5], kategori: 'Bulanan' },
+    { no: 18, tugas: 'Brusing lantai koridor', frekuensi: '1x Sebulan', pelaksanaan: 'Minggu ke 3', days: [5], kategori: 'Bulanan' },
+    { no: 19, tugas: 'Penyemprotan disinfektan', frekuensi: '1x Sebulan', pelaksanaan: 'Minggu ke 2', days: [5], kategori: 'Bulanan' },
+    { no: 20, tugas: 'Fogging', frekuensi: '1x 3 bulan', pelaksanaan: 'Minggu ke 1', days: [5], kategori: 'Bulanan' }
   ];
+
+  const renderItemHTML = (x) => {
+    const wajibHariIni = !isWeekend && x.days.includes(day);
+    const bgStyle = wajibHariIni ? 'background:#f0fdf4; border:2px solid #16a34a;' : 'background:#fff; border:1px solid #e2e8f0;';
+    const statusLabel = isWeekend 
+      ? '<span class="status" style="background:#f1f5f9; color:#64748b;">LIBUR</span>'
+      : (wajibHariIni 
+          ? '<span class="status" style="background:#16a34a; color:#fff; font-weight:bold;">✓ KERJAKAN HARI INI</span>' 
+          : '<span class="status" style="background:#f8fafc; color:#94a3b8;">Terjadwal</span>');
+
+    return `
+      <div class="jitem" style="${bgStyle} margin-bottom: 8px; padding: 9px; border-radius: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <div style="flex:1;">
+            <b>${x.no}.${esc(x.tugas)}</b>
+            <small style="display:block; color:#64748b; font-size:10px; margin-top:2px;">
+              <i class="fa-regular fa-clock me-1"></i>${esc(x.frekuensi)} (${esc(x.pelaksanaan)})
+            </small>
+          </div>
+        </div>
+        <div style="margin-top: 6px;">
+          ${statusLabel}
+        </div>
+      </div>`;
+  };
+
+  const harianList = masterTugas.filter(x => x.kategori === 'Harian');
+  const mingguanList = masterTugas.filter(x => x.kategori === 'Mingguan');
+  const bulananList = masterTugas.filter(x => x.kategori === 'Bulanan');
 
   if (box) {
     box.innerHTML = `
       <div class="jcol">
-        <div class="jhead">Daftar Jobdesk & Status Pekerjaan (20 Item)</div>
-        <div style="padding:7px">
-          ${masterTugas.map(x => {
-            const wajibHariIni = !isWeekend && x.days.includes(day);
-            const bgStyle = wajibHariIni ? 'background:#f0fdf4; border:2px solid #16a34a;' : 'background:#fff; border:1px solid #e2e8f0;';
-            const statusLabel = isWeekend 
-              ? '<span class="status" style="background:#f1f5f9; color:#64748b;">LIBUR</span>'
-              : (wajibHariIni 
-                  ? '<span class="status" style="background:#16a34a; color:#fff; font-weight:bold;">✓ KERJAKAN HARI INI</span>' 
-                  : '<span class="status" style="background:#f8fafc; color:#94a3b8;">Terjadwal</span>');
-
-            return `
-              <div class="jitem" style="${bgStyle} margin-bottom: 8px; padding: 9px; border-radius: 8px;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                  <div style="flex:1;">
-                    <b>${x.no}.${esc(x.tugas)}</b>
-                    <small style="display:block; color:#64748b; font-size:10px; margin-top:2px;">
-                      <i class="fa-regular fa-clock me-1"></i>${esc(x.frekuensi)} (${esc(x.pelaksanaan)})
-                    </small>
-                  </div>
-                </div>
-                <div style="margin-top: 6px;">
-                  ${statusLabel}
-                </div>
-              </div>`;
-          }).join('')}
-        </div>
+        <div class="jhead"><i class="fa-solid fa-sun"></i> 1. Jadwal Harian (Senin - Jumat)</div>
+        <div style="padding:7px">${harianList.map(renderItemHTML).join('')}</div>
+      </div>
+      <div class="jcol" style="margin-top:4px;">
+        <div class="jhead" style="background:var(--blue);"><i class="fa-solid fa-calendar-week"></i> 2. Jadwal Mingguan</div>
+        <div style="padding:7px">${mingguanList.map(renderItemHTML).join('')}</div>
+      </div>
+      <div class="jcol" style="margin-top:4px;">
+        <div class="jhead" style="background:var(--o);"><i class="fa-solid fa-calendar-alt"></i> 3. Jadwal Bulanan / Berkala</div>
+        <div style="padding:7px">${bulananList.map(renderItemHTML).join('')}</div>
       </div>`;
   }
 }
@@ -1591,11 +1663,13 @@ async function sendWithPhoto(actionName, data, fileId, buttonId, after) {
 }
 
 function kirimLaporan() {
+  const now = new Date();
   const d = {
     Nama: document.getElementById('laporNama').value.trim(),
     Area: document.getElementById('laporArea').value.trim(),
     Pekerjaan: document.getElementById('laporPekerjaan').value.trim(),
-    Catatan: document.getElementById('laporCatatan').value.trim()
+    Catatan: document.getElementById('laporCatatan').value.trim(),
+    Tanggal: ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'][now.getDay()] + ', ' + now.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
   };
   if (!d.Nama || !d.Area || !d.Pekerjaan) { alert('Nama, area, dan pekerjaan wajib diisi.'); return; }
 
@@ -1647,11 +1721,14 @@ function kirimPengajuan() {
 
 function kirimPengaduan() {
   const now = new Date();
+  const tglFormatted = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'][now.getDay()] + ', ' + now.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
   const d = {
     Nama: document.getElementById('pengaduanNama').value.trim(),
     Area: document.getElementById('pengaduanArea').value.trim(),
     Kendala: document.getElementById('pengaduanTeks').value.trim(),
-    Tanggal: ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'][now.getDay()] + ', ' + now.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
+    Tanggal: tglFormatted,
+    Timestamp: tglFormatted,
+    Waktu: tglFormatted
   };
   if (!d.Nama || !d.Area || !d.Kendala) { alert('Nama, area, dan pengaduan wajib diisi.'); return; }
 
