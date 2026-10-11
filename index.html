@@ -1099,13 +1099,6 @@ function loadDataFallback() {
   document.body.appendChild(script);
 }
 
-function showLoadError(msg) {
-  ['homeInfoBox', 'homePengaduanBox'].forEach(id => {
-    const e = document.getElementById(id);
-    if (e) e.innerHTML = '<div class="card"><p class="danger">' + esc(msg) + '</p></div>';
-  });
-}
-
 function initApp() {
   const sel = document.getElementById('memberSelectTop');
   if (!sel) return;
@@ -1331,7 +1324,6 @@ function parseDateVal(dStr) {
   return parsed ? parsed.getTime() : 0;
 }
 
-// 1. Perbaikan Halaman Informasi & Beranda (Filter 3 Hari ke Depan & Tampilkan Semua yang ada di hari tersebut)
 function renderInformasiPage() {
   const allInfo = getInformasiData();
   const now = new Date();
@@ -1341,7 +1333,6 @@ function renderInformasiPage() {
   const threeDaysLater = new Date(now);
   threeDaysLater.setDate(now.getDate() + 3);
 
-  // Filter informasi yang tanggalnya dalam rentang hari ini sampai 3 hari ke depan, atau urutkan dari yang terbaru
   const sortedList = [...allInfo].sort((a, b) => parseDateVal(b.Tanggal || b.Timestamp || '') - parseDateVal(a.Tanggal || a.Timestamp || ''));
 
   const b = document.getElementById('infoList');
@@ -1359,15 +1350,14 @@ function renderInformasiPage() {
     localStorage.setItem('lastSeenInfo', infoTerbaru);
   }
 
-  // Filter khusus untuk beranda: Tampilkan kegiatan hari ini s.d 3 hari ke depan (tampilkan SEMUA yang ada)
+  // Filter khusus untuk beranda: Tampilkan semua kegiatan dalam rentang hari ini s.d 3 hari ke depan
   const homeFiltered = sortedList.filter(x => {
     let pDate = parseSmartDate(x.Tanggal || x.Timestamp || '');
-    if (!pDate) return true; // Jika tidak ada tanggal, tetap tampilkan agar tidak hilang
+    if (!pDate) return true;
     return pDate >= now && pDate <= threeDaysLater;
   });
 
   const mapper = x => {
-    // Cek apakah kegiatan ini berlangsung HARI INI
     let pDate = parseSmartDate(x.Tanggal || x.Timestamp || '');
     let isToday = pDate && pDate.getTime() === now.getTime();
 
@@ -1391,63 +1381,7 @@ function renderInformasiPage() {
   };
 
   if (b) b.innerHTML = sortedList.length ? sortedList.map(mapper).join('') : empty;
-  
-  // Menampilkan SEMua informasi yang masuk dalam rentang di Beranda (tidak dibatasi 2 item lagi)
   if (h) h.innerHTML = homeFiltered.length ? homeFiltered.map(mapper).join('') : '<p class="muted">Tidak ada informasi untuk 3 hari ke depan.</p>';
-}
-function renderPengaduanPage() {
-  const list = [...(DB.pengaduan || [])].sort((a, b) => parseDateVal(b['Hari/Tanggal'] || b.Timestamp || b.Tanggal || '') - parseDateVal(a['Hari/Tanggal'] || a.Timestamp || a.Tanggal || ''));
-  const h = document.getElementById('homePengaduanBox');
-  const f = document.getElementById('pengaduanListFull');
-  const empty = '<div class="card"><p class="muted">Belum ada pengaduan.</p></div>';
-
-  const mapper = x => {
-    const st = String(x.Status || 'Progres').trim().toLowerCase();
-    const cls = st === 'selesai' ? 'selesai' : (st.includes('cek') ? 'cek' : 'progres');
-    
-    // Menangkap semua kemungkinan nama kolom tanggal/waktu dari Google Sheets
-    const tglDisplay = x['Hari/Tanggal'] || x.Timestamp || x.Tanggal || x.Waktu || '-';
-    
-    return `
-      <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start">
-          <div><h4>${esc(x.Nama || 'Pengguna')}</h4><p><b>Area:</b> ${esc(x.Area || '-')}</p></div>
-          <span class="badge-status ${cls}">${esc(x.Status || 'Progres')}</span>
-        </div>
-        <p style="margin-top:5px">${esc(x.Kendala || x.Pengaduan || '-')}</p>
-        <span class="status"><i class="fa-regular fa-calendar"></i> ${esc(tglDisplay)}</span>
-      </div>`;
-  };
-
-  if (h) {
-    const active = list.filter(x => String(x.Status || '').trim().toLowerCase() !== 'selesai');
-    h.innerHTML = active.length ? active.map(mapper).join('') : '<p class="muted">Tidak ada pengaduan aktif.</p>';
-  }
-  if (f) f.innerHTML = list.length ? list.map(mapper).join('') : empty;
-}
-
-  if (list.length > 0) {
-    const infoTerbaru = (list[0].Judul || '') + '|' + (list[0].Informasi || list[0].Isi || '');
-    const lastSeenInfo = localStorage.getItem('lastSeenInfo');
-
-    if (lastSeenInfo && lastSeenInfo !== infoTerbaru) {
-      playNotifSound();
-      showToast('ADA INFORMASI TERBARU!');
-    }
-    localStorage.setItem('lastSeenInfo', infoTerbaru);
-  }
-
-  const mapper = x => `
-    <div class="home-info-card">
-      <div style="flex:1">
-        <div style="font-size:12px;font-weight:800;margin-bottom:3px">${esc(x.Judul || x.Title || 'Informasi')}</div>
-        <div style="font-size:10.5px;color:var(--s);line-height:1.4">${esc(x.Informasi || x.Keterangan || x.Isi || '-')}</div>
-        ${x.Tanggal ? `<div style="font-size:9px;color:var(--s);margin-top:5px"><i class="fa-regular fa-calendar-days"></i> ${esc(x.Tanggal)}</div>` : ''}
-      </div>
-    </div>`;
-
-  if (b) b.innerHTML = list.length ? list.map(mapper).join('') : empty;
-  if (h) h.innerHTML = list.length ? list.slice(0, 2).map(mapper).join('') : empty;
 }
 
 function playNotifSound() {
@@ -1467,31 +1401,9 @@ function renderPengaduanPage() {
     const st = String(x.Status || 'Progres').trim().toLowerCase();
     const cls = st === 'selesai' ? 'selesai' : (st.includes('cek') ? 'cek' : 'progres');
     
-    // Menangkap berbagai kemungkinan nama kolom tanggal di Google Sheets
+    // Menangkap semua kemungkinan nama kolom tanggal/waktu dari Google Sheets
     const tglDisplay = x['Hari/Tanggal'] || x.Timestamp || x.Tanggal || x.Waktu || '-';
     
-    return `
-      <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start">
-          <div><h4>${esc(x.Nama || 'Pengguna')}</h4><p><b>Area:</b> ${esc(x.Area || '-')}</p></div>
-          <span class="badge-status ${cls}">${esc(x.Status || 'Progres')}</span>
-        </div>
-        <p style="margin-top:5px">${esc(x.Kendala || x.Pengaduan || '-')}</p>
-        <span class="status"><i class="fa-regular fa-calendar"></i> ${esc(tglDisplay)}</span>
-      </div>`;
-  };
-
-  if (h) {
-    const active = list.filter(x => String(x.Status || '').trim().toLowerCase() !== 'selesai');
-    h.innerHTML = active.length ? active.slice(0, 2).map(mapper).join('') : '<p class="muted">Tidak ada pengaduan aktif.</p>';
-  }
-  if (f) f.innerHTML = list.length ? list.map(mapper).join('') : empty;
-}
-
-  const mapper = x => {
-    const st = String(x.Status || 'Progres').trim().toLowerCase();
-    const cls = st === 'selesai' ? 'selesai' : (st.includes('cek') ? 'cek' : 'progres');
-    const tglDisplay = x.Timestamp || x.Tanggal || x.Waktu || '-';
     return `
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:flex-start">
@@ -1530,10 +1442,10 @@ function renderLaporanPage() {
 
 function renderJadwalByDay() {
   const now = new Date();
-  const day = now.getDay(); // 0 = Minggu, 1 = Senin, 2 = Selasa, 3 = Rabu, 4 = Kamis, 5 = Jumat, 6 = Sabtu
+  const day = now.getDay();
   const hariNama = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
   const tanggalStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
-  const isWeekend = (day === 0 || day === 6); // Sabtu (6) dan Minggu (0) Libur
+  const isWeekend = (day === 0 || day === 6);
 
   const box = document.getElementById('jadwalCols');
   const hariEl = document.getElementById('jadwalHariIni');
@@ -1546,7 +1458,6 @@ function renderJadwalByDay() {
       : 'Pekerjaan dengan tanda hijau (✓ KERJAKAN HARI INI) wajib diselesaikan hari ini.';
   }
 
-  // Master Data 20 Jobdesk Lengkap
   const masterTugas = [
     { no: 1, tugas: 'Glass cleaning kelas / ruangan', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5] },
     { no: 2, tugas: 'Cleaning masjid', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5] },
@@ -1712,7 +1623,6 @@ function kirimPengajuan() {
     Prioritas: (document.querySelector('input[name="prioritas"]:checked') || {}).value || 'Normal'
   };
   
-  // Mengambil 6 kolom kebutuhan alat/bahan
   for (let i = 1; i <= 6; i++) { 
     d['Kebutuhan' + i] = document.getElementById('kebutuhan' + i).value.trim(); 
   }
