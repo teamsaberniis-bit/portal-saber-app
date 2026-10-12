@@ -1063,9 +1063,9 @@ function showPage(id, pushHistory = true) {
   });
 })();
 
-// OPTIMASI LOAD DATA INSTAN DARI CACHE
+// LOAD DATA
 function loadData() {
-  const cachedData = localStorage.getItem('timSaberCacheData_v3');
+  const cachedData = localStorage.getItem('timSaberCacheData_v4');
   if (cachedData) {
     try {
       DB = Object.assign(DB, JSON.parse(cachedData));
@@ -1073,7 +1073,7 @@ function loadData() {
     } catch (e) {}
   }
 
-  fetch(SCRIPT_URL + "?action=getDashboardData", {
+  fetch(SCRIPT_URL + "?action=getDashboardData&t=" + new Date().getTime(), {
     method: "GET",
     redirect: "follow"
   })
@@ -1081,11 +1081,9 @@ function loadData() {
     .then(d => {
       if (d) {
         const newStr = JSON.stringify(d);
-        if (newStr !== cachedData) {
-          DB = Object.assign(DB, d);
-          localStorage.setItem('timSaberCacheData_v3', newStr);
-          initApp();
-        }
+        DB = Object.assign(DB, d);
+        localStorage.setItem('timSaberCacheData_v4', newStr);
+        initApp();
       }
     })
     .catch(e => {
@@ -1100,14 +1098,14 @@ function loadDataFallback() {
   window.handleDashboardResponse = function(d) {
     if (d) {
       DB = Object.assign(DB, d);
-      localStorage.setItem('timSaberCacheData_v3', JSON.stringify(d));
+      localStorage.setItem('timSaberCacheData_v4', JSON.stringify(d));
       initApp();
     }
   };
 
   const script = document.createElement('script');
   script.id = 'jsonpScript';
-  script.src = SCRIPT_URL + "?action=getDashboardData&callback=handleDashboardResponse";
+  script.src = SCRIPT_URL + "?action=getDashboardData&t=" + new Date().getTime() + "&callback=handleDashboardResponse";
   document.body.appendChild(script);
 }
 
@@ -1472,6 +1470,7 @@ function playNotifSound() {
   }
 }
 
+// RENDER PENGADUAN DINAMIS
 function renderPengaduanPage() {
   const list = [...(DB.pengaduan || [])].sort((a, b) => parseDateVal(b) - parseDateVal(a));
   const h = document.getElementById('homePengaduanBox');
@@ -1484,10 +1483,8 @@ function renderPengaduanPage() {
     let fotoUrl = values.find(v => v.startsWith('http://') || v.startsWith('https://')) || '';
     let tglPelaporan = values.find(v => (v.includes('202') || v.match(/\d{2}\/\d{2}/)) && !v.startsWith('http')) || extractDisplayDate(x);
 
-    // [PERBAIKAN UTAMA] Membaca status langsung secara dinamis dari properti x.Status atau x.status di Sheet
     let statusText = String(x.Status || x.status || '').trim();
     if (!statusText) {
-      // Fallback jika properti tidak ditemukan, cari dari baris
       let rawStatus = values.find(v => {
         let vLow = v.toLowerCase();
         return (vLow === 'baru' || vLow.includes('progres') || vLow.includes('proses') || vLow.includes('cek') || vLow.includes('selesai')) && !v.startsWith('http');
@@ -1504,7 +1501,7 @@ function renderPengaduanPage() {
     } else if (stLow.includes('progres') || stLow.includes('proses') || stLow.includes('cek')) {
       badgeStyle = 'background:#fff7ed; color:#ea580c; border:1px solid #fed7aa;';
     } else {
-      badgeStyle = 'background:#fff7ed; color:#o; border:1px solid #fed7aa;';
+      badgeStyle = 'background:#fff7ed; color:#ea580c; border:1px solid #fed7aa;';
     }
 
     let namaUser = String(x.Nama || x.nama || values[0] || 'Pengguna').trim();
@@ -1739,15 +1736,38 @@ function resizeAndCompressImage(file) {
 
 async function fileToBase64(inputId) {
   const input = document.getElementById(inputId);
-  const file = input.files && input.files[0];
-  if (!file) return null;
+  if (!input || !input.files || !input.files[0]) return null;
+  const file = input.files[0];
   if (file.size > 10 * 1024 * 1024) throw new Error('Ukuran foto maksimal 10 MB.');
   
   const compressedDataUrl = await resizeAndCompressImage(file);
   return { base64: compressedDataUrl, name: file.name };
 }
 
-async function sendWithPhoto(actionName, data, fileId, buttonId, after) {
+// FUNGSI PENGIRIMAN DATA DENGAN AMAN
+function sendToServer(payload, buttonId, defaultBtnText, successCallback) {
+  const btn = document.getElementById(buttonId);
+  if (btn) { btn.disabled = true; btn.innerText = 'Mengirim...'; }
+
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload)
+  })
+  .then(() => {
+    if (btn) { btn.disabled = false; btn.innerText = defaultBtnText; }
+    showToast('BERHASIL DIKIRIM');
+    if (successCallback) successCallback();
+    loadData();
+  })
+  .catch(e => {
+    if (btn) { btn.disabled = false; btn.innerText = defaultBtnText; }
+    alert('Terjadi kesalahan koneksi: ' + (e.message || e));
+  });
+}
+
+async function sendWithPhoto(actionName, data, fileId, buttonId, defaultBtnText, after) {
   const btn = document.getElementById(buttonId);
   if (btn) { btn.disabled = true; btn.innerText = 'Mengirim...'; }
 
@@ -1758,20 +1778,22 @@ async function sendWithPhoto(actionName, data, fileId, buttonId, after) {
 
     fetch(SCRIPT_URL, {
       method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(data)
     })
-    .then(res => res.json())
-    .then(res => {
-      if (btn) { btn.disabled = false; btn.innerText = buttonId === 'btnPengaduan' ? 'Kirim Pengaduan' : 'Kirim Laporan (Selesai)'; }
-      if (res && res.success) { showToast('BERHASIL DIKIRIM'); if (after) after(); }
-      else { alert('Gagal: ' + (res && res.message || 'Data tidak tersimpan.')); }
+    .then(() => {
+      if (btn) { btn.disabled = false; btn.innerText = defaultBtnText; }
+      showToast('BERHASIL DIKIRIM');
+      if (after) after();
+      loadData();
     })
     .catch(e => {
-      if (btn) { btn.disabled = false; btn.innerText = buttonId === 'btnPengaduan' ? 'Kirim Pengaduan' : 'Kirim Laporan (Selesai)'; }
+      if (btn) { btn.disabled = false; btn.innerText = defaultBtnText; }
       alert('Terjadi kesalahan: ' + (e.message || e));
     });
   } catch (e) {
-    if (btn) { btn.disabled = false; btn.innerText = buttonId === 'btnPengaduan' ? 'Kirim Pengaduan' : 'Kirim Laporan (Selesai)'; }
+    if (btn) { btn.disabled = false; btn.innerText = defaultBtnText; }
     alert(e.message || e);
   }
 }
@@ -1787,19 +1809,17 @@ function kirimLaporan() {
   };
   if (!d.Nama || !d.Area || !d.Pekerjaan) { alert('Nama, area, dan pekerjaan wajib diisi.'); return; }
 
-  sendWithPhoto('simpanLaporan', d, 'laporFoto', 'btnLaporan', () => {
+  sendWithPhoto('simpanLaporan', d, 'laporFoto', 'btnLaporan', 'Kirim Laporan (Selesai)', () => {
     document.getElementById('laporPekerjaan').value = '';
     document.getElementById('laporCatatan').value = '';
     document.getElementById('laporPreview').style.display = 'none';
     document.getElementById('laporTextBtn').textContent = 'Buka Kamera / Pilih Foto';
     document.getElementById('laporInputContainer').innerHTML = '<input type="file" id="laporFoto" class="camera-file-input" accept="image/*" capture="environment" onchange="previewPhoto(this,\'laporPreview\',\'laporTextBtn\')">';
-    loadData();
     showPage('jadwal');
   });
 }
 
 function kirimPengajuan() {
-  const btn = document.getElementById('btnPengajuan');
   const d = {
     action: 'simpanPengajuan',
     Nama: document.getElementById('pengajuanNama').value.trim(),
@@ -1816,21 +1836,10 @@ function kirimPengajuan() {
     alert('Nama, area, dan minimal isi satu kebutuhan alat/bahan.'); return;
   }
 
-  btn.disabled = true; btn.innerText = 'Mengirim...';
-  fetch(SCRIPT_URL, {
-    method: 'POST',
-    body: JSON.stringify(d)
-  })
-  .then(res => res.json())
-  .then(res => {
-    btn.disabled = false; btn.innerText = 'Kirim Pengajuan';
-    if (res && res.success) {
-      showToast('BERHASIL DIKIRIM');
-      for (let i = 1; i <= 6; i++) { document.getElementById('kebutuhan' + i).value = ''; }
-      showPage('home');
-    } else { alert('Gagal: ' + (res && res.message || 'Data tidak tersimpan.')); }
-  })
-  .catch(e => { btn.disabled = false; btn.innerText = 'Kirim Pengajuan'; alert(e.message || e); });
+  sendToServer(d, 'btnPengajuan', 'Kirim Pengajuan', () => {
+    for (let i = 1; i <= 6; i++) { document.getElementById('kebutuhan' + i).value = ''; }
+    showPage('home');
+  });
 }
 
 function kirimPengaduan() {
@@ -1840,19 +1849,18 @@ function kirimPengaduan() {
     Nama: document.getElementById('pengaduanNama').value.trim(),
     Area: document.getElementById('pengaduanArea').value.trim(),
     Kendala: document.getElementById('pengaduanTeks').value.trim(),
-    Status: 'Baru', // Status default saat pengaduan baru dikirim
+    Status: 'Baru',
     Tanggal: tglFormatted,
     Timestamp: tglFormatted,
     Waktu: tglFormatted
   };
   if (!d.Nama || !d.Area || !d.Kendala) { alert('Nama, area, dan pengaduan wajib diisi.'); return; }
 
-  sendWithPhoto('simpanPengaduan', d, 'pengaduanFoto', 'btnPengaduan', () => {
+  sendWithPhoto('simpanPengaduan', d, 'pengaduanFoto', 'btnPengaduan', 'Kirim Pengaduan', () => {
     document.getElementById('pengaduanTeks').value = '';
     document.getElementById('pengaduanPreview').style.display = 'none';
     document.getElementById('pengaduanTextBtn').textContent = 'Buka Kamera / Pilih Foto';
     document.getElementById('pengaduanInputContainer').innerHTML = '<input type="file" id="pengaduanFoto" class="camera-file-input" accept="image/*" capture="environment" onchange="previewPhoto(this,\'pengaduanPreview\',\'pengaduanTextBtn\')">';
-    loadData();
     showPage('pengaduan');
   });
 }
@@ -1878,10 +1886,10 @@ appContainer.addEventListener('touchend', e => {
   isPulling = false;
   if (e.changedTouches[0].clientY - touchStartY > 90 && document.querySelector('.content').scrollTop === 0) {
     pullIndicator.style.transform = 'translateY(52px)';
-    fetch(SCRIPT_URL + "?action=getDashboardData")
+    fetch(SCRIPT_URL + "?action=getDashboardData&t=" + new Date().getTime())
       .then(res => res.json())
       .then(d => {
-        if (d) { DB = Object.assign(DB, d); localStorage.setItem('timSaberCacheData_v3', JSON.stringify(d)); initApp(); }
+        if (d) { DB = Object.assign(DB, d); localStorage.setItem('timSaberCacheData_v4', JSON.stringify(d)); initApp(); }
         setTimeout(() => pullIndicator.style.transform = 'translateY(0)', 400);
       })
       .catch(() => {
@@ -1891,9 +1899,7 @@ appContainer.addEventListener('touchend', e => {
   } else { pullIndicator.style.transform = 'translateY(0)'; }
 });
 
-// ==========================================
 // MODUL: DATA SISWA
-// ==========================================
 function bukaDataSiswa() {
   if (typeof Swal === 'undefined') {
     alert('Library modal sedang dimuat. Silakan coba sebentar lagi.');
@@ -1910,13 +1916,13 @@ function bukaDataSiswa() {
     allowOutsideClick: false,
     didOpen: () => {
       Swal.showLoading();
-      fetch(SCRIPT_URL + "?action=getDashboardData")
+      fetch(SCRIPT_URL + "?action=getDashboardData&t=" + new Date().getTime())
         .then(res => res.json())
         .then(d => {
           Swal.close();
           const listSiswa = d.dataSiswa || DB.dataSiswa || [];
           DB.dataSiswa = listSiswa;
-          localStorage.setItem('timSaberCacheData_v3', JSON.stringify(DB));
+          localStorage.setItem('timSaberCacheData_v4', JSON.stringify(DB));
           tampilkanModalDataSiswa(listSiswa);
         })
         .catch(err => {
@@ -1970,7 +1976,6 @@ function tampilkanModalDataSiswa(data) {
 
 loadData();
 
-// Clean Service Worker cache
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(regs => {
     for (let reg of regs) reg.unregister();
