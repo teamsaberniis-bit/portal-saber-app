@@ -1004,9 +1004,9 @@ html, body{
 
 <script>
 // BERSIHKAN CACHE LAMA OTOMATIS
-if (localStorage.getItem('timSaberCacheVersion') !== 'v9') {
+if (localStorage.getItem('timSaberCacheVersion') !== 'v10') {
   localStorage.clear();
-  localStorage.setItem('timSaberCacheVersion', 'v9');
+  localStorage.setItem('timSaberCacheVersion', 'v10');
 }
 
 // URL WEB APP APPS SCRIPT TERBARU
@@ -1077,7 +1077,7 @@ function showPage(id, pushHistory = true) {
 
 // LOAD DATA
 function loadData() {
-  const cachedData = localStorage.getItem('timSaberCacheData_v9');
+  const cachedData = localStorage.getItem('timSaberCacheData_v10');
   if (cachedData) {
     try {
       DB = Object.assign(DB, JSON.parse(cachedData));
@@ -1094,7 +1094,7 @@ function loadData() {
       if (d) {
         const newStr = JSON.stringify(d);
         DB = Object.assign(DB, d);
-        localStorage.setItem('timSaberCacheData_v9', newStr);
+        localStorage.setItem('timSaberCacheData_v10', newStr);
         initApp();
       }
     })
@@ -1110,7 +1110,7 @@ function loadDataFallback() {
   window.handleDashboardResponse = function(d) {
     if (d) {
       DB = Object.assign(DB, d);
-      localStorage.setItem('timSaberCacheData_v9', JSON.stringify(d));
+      localStorage.setItem('timSaberCacheData_v10', JSON.stringify(d));
       initApp();
     }
   };
@@ -1502,14 +1502,12 @@ function renderInformasiPage() {
 
 function playNotifSound() {
   try {
-    // 1. Coba putar elemen audio utama jika ada
     const audio = document.getElementById('notifSound');
     if (audio) {
       audio.currentTime = 0;
       let playPromise = audio.play();
       if (playPromise !== undefined) {
         playPromise.catch(() => {
-          // 2. Jika diblokir browser, gunakan Web Audio API (suara Beep internal HP)
           playBeepSound();
         });
       }
@@ -1532,8 +1530,8 @@ function playBeepSound() {
     const gain = ctx.createGain();
     
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(587.33, ctx.currentTime); // Nada D5
-    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1); // Nada A5 (Bunyi "Ting!")
+    osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1);
     
     gain.gain.setValueAtTime(0.3, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.35);
@@ -1859,7 +1857,7 @@ function kirimLaporan() {
       d.FotoNama = photo.name;
     }
     postViaHiddenForm(d, 'btnLaporan', 'Kirim Laporan (Selesai)', () => {
-      playNotifSound(); // Nada berbunyi saat laporan sukses dikirim
+      playNotifSound(); // Suara Laporan
       document.getElementById('laporPekerjaan').value = '';
       document.getElementById('laporCatatan').value = '';
       document.getElementById('laporPreview').style.display = 'none';
@@ -1888,6 +1886,7 @@ function kirimPengajuan() {
   }
 
   postViaHiddenForm(d, 'btnPengajuan', 'Kirim Pengajuan', () => {
+    playNotifSound(); // Suara Pengajuan
     for (let i = 1; i <= 6; i++) { document.getElementById('kebutuhan' + i).value = ''; }
     showPage('home');
   });
@@ -1909,6 +1908,7 @@ function kirimPengaduan() {
       d.FotoNama = photo.name;
     }
     postViaHiddenForm(d, 'btnPengaduan', 'Kirim Pengaduan', () => {
+      playNotifSound(); // Suara Pengaduan
       document.getElementById('pengaduanTeks').value = '';
       document.getElementById('pengaduanPreview').style.display = 'none';
       document.getElementById('pengaduanTextBtn').textContent = 'Buka Kamera / Pilih Foto';
@@ -1942,7 +1942,7 @@ appContainer.addEventListener('touchend', e => {
     fetch(SCRIPT_URL + "?action=getDashboardData&t=" + new Date().getTime())
       .then(res => res.json())
       .then(d => {
-        if (d) { DB = Object.assign(DB, d); localStorage.setItem('timSaberCacheData_v9', JSON.stringify(d)); initApp(); }
+        if (d) { DB = Object.assign(DB, d); localStorage.setItem('timSaberCacheData_v10', JSON.stringify(d)); initApp(); }
         setTimeout(() => pullIndicator.style.transform = 'translateY(0)', 400);
       })
       .catch(() => {
@@ -1975,7 +1975,7 @@ function bukaDataSiswa() {
           Swal.close();
           const listSiswa = d.dataSiswa || DB.dataSiswa || [];
           DB.dataSiswa = listSiswa;
-          localStorage.setItem('timSaberCacheData_v9', JSON.stringify(DB));
+          localStorage.setItem('timSaberCacheData_v10', JSON.stringify(DB));
           tampilkanModalDataSiswa(listSiswa);
         })
         .catch(err => {
