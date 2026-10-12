@@ -1744,25 +1744,31 @@ async function fileToBase64(inputId) {
   return { base64: compressedDataUrl, name: file.name };
 }
 
-// FUNGSI PENGIRIMAN DATA YANG DIPERBAIKI (MENDUKUNG RESPON JSON DARI APPS SCRIPT)
-function sendToServer(payload, buttonId, defaultBtnText, successCallback) {
+// FUNGSI PENGIRIMAN UNIVERSAL FORM-DATA (Paling Kompatibel dengan Google Apps Script)
+function sendFormData(payload, buttonId, defaultBtnText, successCallback) {
   const btn = document.getElementById(buttonId);
   if (btn) { btn.disabled = true; btn.innerText = 'Mengirim...'; }
 
+  const formData = new URLSearchParams();
+  for (const key in payload) {
+    if (payload.hasOwnProperty(key)) {
+      formData.append(key, payload[key]);
+    }
+  }
+
   fetch(SCRIPT_URL, {
     method: 'POST',
-    body: JSON.stringify(payload)
+    mode: 'no-cors',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+    },
+    body: formData.toString()
   })
-  .then(res => res.json())
-  .then(res => {
+  .then(() => {
     if (btn) { btn.disabled = false; btn.innerText = defaultBtnText; }
-    if (res && res.success) {
-      showToast('BERHASIL DIKIRIM');
-      if (successCallback) successCallback();
-      loadData();
-    } else {
-      alert('Gagal menyimpan: ' + (res.message || 'Unknown error'));
-    }
+    showToast('BERHASIL DIKIRIM');
+    if (successCallback) successCallback();
+    setTimeout(() => { loadData(); }, 1500);
   })
   .catch(e => {
     if (btn) { btn.disabled = false; btn.innerText = defaultBtnText; }
@@ -1770,43 +1776,10 @@ function sendToServer(payload, buttonId, defaultBtnText, successCallback) {
   });
 }
 
-async function sendWithPhoto(actionName, data, fileId, buttonId, defaultBtnText, after) {
-  const btn = document.getElementById(buttonId);
-  if (btn) { btn.disabled = true; btn.innerText = 'Mengirim...'; }
-
-  try {
-    const photo = await fileToBase64(fileId);
-    if (photo) { data.FotoBase64 = photo.base64; data.FotoNama = photo.name; }
-    data.action = actionName;
-
-    fetch(SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify(data)
-    })
-    .then(res => res.json())
-    .then(res => {
-      if (btn) { btn.disabled = false; btn.innerText = defaultBtnText; }
-      if (res && res.success) {
-        showToast('BERHASIL DIKIRIM');
-        if (after) after();
-        loadData();
-      } else {
-        alert('Gagal menyimpan: ' + (res.message || 'Unknown error'));
-      }
-    })
-    .catch(e => {
-      if (btn) { btn.disabled = false; btn.innerText = defaultBtnText; }
-      alert('Terjadi kesalahan koneksi: ' + (e.message || e));
-    });
-  } catch (e) {
-    if (btn) { btn.disabled = false; btn.innerText = defaultBtnText; }
-    alert(e.message || e);
-  }
-}
-
 function kirimLaporan() {
   const now = new Date();
   const d = {
+    action: 'simpanLaporan',
     Nama: document.getElementById('laporNama').value.trim(),
     Area: document.getElementById('laporArea').value.trim(),
     Pekerjaan: document.getElementById('laporPekerjaan').value.trim(),
@@ -1815,14 +1788,20 @@ function kirimLaporan() {
   };
   if (!d.Nama || !d.Area || !d.Pekerjaan) { alert('Nama, area, dan pekerjaan wajib diisi.'); return; }
 
-  sendWithPhoto('simpanLaporan', d, 'laporFoto', 'btnLaporan', 'Kirim Laporan (Selesai)', () => {
-    document.getElementById('laporPekerjaan').value = '';
-    document.getElementById('laporCatatan').value = '';
-    document.getElementById('laporPreview').style.display = 'none';
-    document.getElementById('laporTextBtn').textContent = 'Buka Kamera / Pilih Foto';
-    document.getElementById('laporInputContainer').innerHTML = '<input type="file" id="laporFoto" class="camera-file-input" accept="image/*" capture="environment" onchange="previewPhoto(this,\'laporPreview\',\'laporTextBtn\')">';
-    showPage('jadwal');
-  });
+  fileToBase64('laporFoto').then(photo => {
+    if (photo) {
+      d.FotoBase64 = photo.base64;
+      d.FotoNama = photo.name;
+    }
+    sendFormData(d, 'btnLaporan', 'Kirim Laporan (Selesai)', () => {
+      document.getElementById('laporPekerjaan').value = '';
+      document.getElementById('laporCatatan').value = '';
+      document.getElementById('laporPreview').style.display = 'none';
+      document.getElementById('laporTextBtn').textContent = 'Buka Kamera / Pilih Foto';
+      document.getElementById('laporInputContainer').innerHTML = '<input type="file" id="laporFoto" class="camera-file-input" accept="image/*" capture="environment" onchange="previewPhoto(this,\'laporPreview\',\'laporTextBtn\')">';
+      showPage('jadwal');
+    });
+  }).catch(e => alert(e.message || e));
 }
 
 function kirimPengajuan() {
@@ -1842,7 +1821,7 @@ function kirimPengajuan() {
     alert('Nama, area, dan minimal isi satu kebutuhan alat/bahan.'); return;
   }
 
-  sendToServer(d, 'btnPengajuan', 'Kirim Pengajuan', () => {
+  sendFormData(d, 'btnPengajuan', 'Kirim Pengajuan', () => {
     for (let i = 1; i <= 6; i++) { document.getElementById('kebutuhan' + i).value = ''; }
     showPage('home');
   });
@@ -1852,6 +1831,7 @@ function kirimPengaduan() {
   const now = new Date();
   const tglFormatted = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'][now.getDay()] + ', ' + now.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
   const d = {
+    action: 'simpanPengaduan',
     Nama: document.getElementById('pengaduanNama').value.trim(),
     Area: document.getElementById('pengaduanArea').value.trim(),
     Kendala: document.getElementById('pengaduanTeks').value.trim(),
@@ -1862,13 +1842,19 @@ function kirimPengaduan() {
   };
   if (!d.Nama || !d.Area || !d.Kendala) { alert('Nama, area, dan pengaduan wajib diisi.'); return; }
 
-  sendWithPhoto('simpanPengaduan', d, 'pengaduanFoto', 'btnPengaduan', 'Kirim Pengaduan', () => {
-    document.getElementById('pengaduanTeks').value = '';
-    document.getElementById('pengaduanPreview').style.display = 'none';
-    document.getElementById('pengaduanTextBtn').textContent = 'Buka Kamera / Pilih Foto';
-    document.getElementById('pengaduanInputContainer').innerHTML = '<input type="file" id="pengaduanFoto" class="camera-file-input" accept="image/*" capture="environment" onchange="previewPhoto(this,\'pengaduanPreview\',\'pengaduanTextBtn\')">';
-    showPage('pengaduan');
-  });
+  fileToBase64('pengaduanFoto').then(photo => {
+    if (photo) {
+      d.FotoBase64 = photo.base64;
+      d.FotoNama = photo.name;
+    }
+    sendFormData(d, 'btnPengaduan', 'Kirim Pengaduan', () => {
+      document.getElementById('pengaduanTeks').value = '';
+      document.getElementById('pengaduanPreview').style.display = 'none';
+      document.getElementById('pengaduanTextBtn').textContent = 'Buka Kamera / Pilih Foto';
+      document.getElementById('pengaduanInputContainer').innerHTML = '<input type="file" id="pengaduanFoto" class="camera-file-input" accept="image/*" capture="environment" onchange="previewPhoto(this,\'pengaduanPreview\',\'pengaduanTextBtn\')">';
+      showPage('pengaduan');
+    });
+  }).catch(e => alert(e.message || e));
 }
 
 // Pull to refresh
