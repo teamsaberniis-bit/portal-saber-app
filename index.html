@@ -997,7 +997,8 @@ html, body{
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzVak_9Cl3xbgXC8-V7JcVWfgXwui9BACJGwiz1q38A4HRSarvDPgwLv9m6v_7d99X-/exec";
+// URL SCRIPT TERBARU YANG SUDAH DI-DEPLOY
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwE5kZtIedZH944f6pRYkmDltwolW5HZuDgRy7TAY7O9Ztny7QgJrM30DbCgseMoa23cA/exec";
 
 let DB = {
   anggota: [], lembur: [], informasi: [], pengaduan: [], pengajuan: [], jadwal: [], laporan: [], dataSiswa: []
@@ -1842,7 +1843,7 @@ appContainer.addEventListener('touchend', e => {
 });
 
 // ==========================================
-// MODUL TAMBAHAN: DATA SISWA (FAST LOADING)
+// MODUL: DATA SISWA
 // ==========================================
 function bukaDataSiswa() {
   if (typeof Swal === 'undefined') {
@@ -1850,7 +1851,6 @@ function bukaDataSiswa() {
     return;
   }
 
-  // Cek cache data siswa agar terbuka instan tanpa berputar
   if (DB.dataSiswa && DB.dataSiswa.length > 0) {
     tampilkanModalDataSiswa(DB.dataSiswa);
     return;
