@@ -1004,9 +1004,9 @@ html, body{
 
 <script>
 // BERSIHKAN CACHE LAMA OTOMATIS
-if (localStorage.getItem('timSaberCacheVersion') !== 'v8') {
+if (localStorage.getItem('timSaberCacheVersion') !== 'v9') {
   localStorage.clear();
-  localStorage.setItem('timSaberCacheVersion', 'v8');
+  localStorage.setItem('timSaberCacheVersion', 'v9');
 }
 
 // URL WEB APP APPS SCRIPT TERBARU
@@ -1077,7 +1077,7 @@ function showPage(id, pushHistory = true) {
 
 // LOAD DATA
 function loadData() {
-  const cachedData = localStorage.getItem('timSaberCacheData_v8');
+  const cachedData = localStorage.getItem('timSaberCacheData_v9');
   if (cachedData) {
     try {
       DB = Object.assign(DB, JSON.parse(cachedData));
@@ -1094,7 +1094,7 @@ function loadData() {
       if (d) {
         const newStr = JSON.stringify(d);
         DB = Object.assign(DB, d);
-        localStorage.setItem('timSaberCacheData_v8', newStr);
+        localStorage.setItem('timSaberCacheData_v9', newStr);
         initApp();
       }
     })
@@ -1110,7 +1110,7 @@ function loadDataFallback() {
   window.handleDashboardResponse = function(d) {
     if (d) {
       DB = Object.assign(DB, d);
-      localStorage.setItem('timSaberCacheData_v8', JSON.stringify(d));
+      localStorage.setItem('timSaberCacheData_v9', JSON.stringify(d));
       initApp();
     }
   };
@@ -1818,6 +1818,7 @@ function kirimLaporan() {
       d.FotoNama = photo.name;
     }
     postViaHiddenForm(d, 'btnLaporan', 'Kirim Laporan (Selesai)', () => {
+      playNotifSound(); // Nada berbunyi saat laporan sukses dikirim
       document.getElementById('laporPekerjaan').value = '';
       document.getElementById('laporCatatan').value = '';
       document.getElementById('laporPreview').style.display = 'none';
@@ -1900,7 +1901,7 @@ appContainer.addEventListener('touchend', e => {
     fetch(SCRIPT_URL + "?action=getDashboardData&t=" + new Date().getTime())
       .then(res => res.json())
       .then(d => {
-        if (d) { DB = Object.assign(DB, d); localStorage.setItem('timSaberCacheData_v8', JSON.stringify(d)); initApp(); }
+        if (d) { DB = Object.assign(DB, d); localStorage.setItem('timSaberCacheData_v9', JSON.stringify(d)); initApp(); }
         setTimeout(() => pullIndicator.style.transform = 'translateY(0)', 400);
       })
       .catch(() => {
@@ -1933,7 +1934,7 @@ function bukaDataSiswa() {
           Swal.close();
           const listSiswa = d.dataSiswa || DB.dataSiswa || [];
           DB.dataSiswa = listSiswa;
-          localStorage.setItem('timSaberCacheData_v8', JSON.stringify(DB));
+          localStorage.setItem('timSaberCacheData_v9', JSON.stringify(DB));
           tampilkanModalDataSiswa(listSiswa);
         })
         .catch(err => {
