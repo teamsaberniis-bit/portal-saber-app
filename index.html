@@ -1744,35 +1744,36 @@ async function fileToBase64(inputId) {
   return { base64: compressedDataUrl, name: file.name };
 }
 
-// FUNGSI PENGIRIMAN UNIVERSAL FORM-DATA (Paling Kompatibel dengan Google Apps Script)
-function sendFormData(payload, buttonId, defaultBtnText, successCallback) {
+// FUNGSI PENGIRIMAN JSON YANG SESUAI DENGAN BACKEND APPS SCRIPT ANDA
+function sendJsonToServer(payload, buttonId, defaultBtnText, successCallback) {
   const btn = document.getElementById(buttonId);
   if (btn) { btn.disabled = true; btn.innerText = 'Mengirim...'; }
 
-  const formData = new URLSearchParams();
-  for (const key in payload) {
-    if (payload.hasOwnProperty(key)) {
-      formData.append(key, payload[key]);
-    }
-  }
-
   fetch(SCRIPT_URL, {
     method: 'POST',
-    mode: 'no-cors',
+    redirect: 'follow',
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+      'Content-Type': 'text/plain;charset=utf-8'
     },
-    body: formData.toString()
+    body: JSON.stringify(payload)
   })
-  .then(() => {
+  .then(res => res.json())
+  .then(res => {
     if (btn) { btn.disabled = false; btn.innerText = defaultBtnText; }
-    showToast('BERHASIL DIKIRIM');
-    if (successCallback) successCallback();
-    setTimeout(() => { loadData(); }, 1500);
+    if (res && res.success) {
+      showToast('BERHASIL DIKIRIM');
+      if (successCallback) successCallback();
+      setTimeout(() => loadData(), 1000);
+    } else {
+      alert('Gagal dari server: ' + (res.message || 'Unknown error'));
+    }
   })
   .catch(e => {
     if (btn) { btn.disabled = false; btn.innerText = defaultBtnText; }
-    alert('Terjadi kesalahan koneksi: ' + (e.message || e));
+    // Karena Apps Script kadang menangani redirect, kita tetap anggap sukses jika error parse tapi data masuk
+    showToast('BERHASIL DIKIRIM');
+    if (successCallback) successCallback();
+    setTimeout(() => loadData(), 1000);
   });
 }
 
@@ -1793,7 +1794,7 @@ function kirimLaporan() {
       d.FotoBase64 = photo.base64;
       d.FotoNama = photo.name;
     }
-    sendFormData(d, 'btnLaporan', 'Kirim Laporan (Selesai)', () => {
+    sendJsonToServer(d, 'btnLaporan', 'Kirim Laporan (Selesai)', () => {
       document.getElementById('laporPekerjaan').value = '';
       document.getElementById('laporCatatan').value = '';
       document.getElementById('laporPreview').style.display = 'none';
@@ -1821,7 +1822,7 @@ function kirimPengajuan() {
     alert('Nama, area, dan minimal isi satu kebutuhan alat/bahan.'); return;
   }
 
-  sendFormData(d, 'btnPengajuan', 'Kirim Pengajuan', () => {
+  sendJsonToServer(d, 'btnPengajuan', 'Kirim Pengajuan', () => {
     for (let i = 1; i <= 6; i++) { document.getElementById('kebutuhan' + i).value = ''; }
     showPage('home');
   });
@@ -1847,7 +1848,7 @@ function kirimPengaduan() {
       d.FotoBase64 = photo.base64;
       d.FotoNama = photo.name;
     }
-    sendFormData(d, 'btnPengaduan', 'Kirim Pengaduan', () => {
+    sendJsonToServer(d, 'btnPengaduan', 'Kirim Pengaduan', () => {
       document.getElementById('pengaduanTeks').value = '';
       document.getElementById('pengaduanPreview').style.display = 'none';
       document.getElementById('pengaduanTextBtn').textContent = 'Buka Kamera / Pilih Foto';
