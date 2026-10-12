@@ -1484,15 +1484,17 @@ function renderPengaduanPage() {
     let fotoUrl = values.find(v => v.startsWith('http://') || v.startsWith('https://')) || '';
     let tglPelaporan = values.find(v => (v.includes('202') || v.match(/\d{2}\/\d{2}/)) && !v.startsWith('http')) || extractDisplayDate(x);
 
-    let statusText = 'BARU';
-    let rawStatus = values.find(v => {
-      let vLow = v.toLowerCase();
-      return (vLow === 'baru' || vLow.includes('progres') || vLow.includes('proses') || vLow.includes('cek') || vLow.includes('selesai')) && !v.startsWith('http');
-    });
-
-    if (rawStatus) {
-      statusText = rawStatus.toUpperCase();
+    // [PERBAIKAN UTAMA] Membaca status langsung secara dinamis dari properti x.Status atau x.status di Sheet
+    let statusText = String(x.Status || x.status || '').trim();
+    if (!statusText) {
+      // Fallback jika properti tidak ditemukan, cari dari baris
+      let rawStatus = values.find(v => {
+        let vLow = v.toLowerCase();
+        return (vLow === 'baru' || vLow.includes('progres') || vLow.includes('proses') || vLow.includes('cek') || vLow.includes('selesai')) && !v.startsWith('http');
+      });
+      statusText = rawStatus ? rawStatus : 'BARU';
     }
+    statusText = statusText.toUpperCase();
 
     let badgeStyle = 'background:#fef2f2; color:#dc2626; border:1px solid #fecaca;';
     let stLow = statusText.toLowerCase();
@@ -1501,6 +1503,8 @@ function renderPengaduanPage() {
       badgeStyle = 'background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0;';
     } else if (stLow.includes('progres') || stLow.includes('proses') || stLow.includes('cek')) {
       badgeStyle = 'background:#fff7ed; color:#ea580c; border:1px solid #fed7aa;';
+    } else {
+      badgeStyle = 'background:#fff7ed; color:#o; border:1px solid #fed7aa;';
     }
 
     let namaUser = String(x.Nama || x.nama || values[0] || 'Pengguna').trim();
@@ -1511,7 +1515,7 @@ function renderPengaduanPage() {
       if (v === namaUser || v === areaUser) return false;
       if (v === fotoUrl) return false;
       if (v === tglPelaporan) return false;
-      if (v === rawStatus) return false;
+      if (v.toLowerCase() === statusText.toLowerCase()) return false;
       if (v.startsWith('http')) return false;
       if (v.includes('202') && v.length < 25) return false;
       return v.length > 2;
@@ -1548,7 +1552,7 @@ function renderPengaduanPage() {
   };
 
   if (h) {
-    const active = list.filter(x => String(x.Status || '').trim().toLowerCase() !== 'selesai');
+    const active = list.filter(x => String(x.Status || x.status || '').trim().toLowerCase() !== 'selesai');
     h.innerHTML = active.length ? active.slice(0, 2).map(mapper).join('') : (list.length ? list.slice(0, 2).map(mapper).join('') : '<p class="muted">Tidak ada pengaduan.</p>');
   }
   if (f) f.innerHTML = list.length ? list.map(mapper).join('') : empty;
@@ -1836,6 +1840,7 @@ function kirimPengaduan() {
     Nama: document.getElementById('pengaduanNama').value.trim(),
     Area: document.getElementById('pengaduanArea').value.trim(),
     Kendala: document.getElementById('pengaduanTeks').value.trim(),
+    Status: 'Baru', // Status default saat pengaduan baru dikirim
     Tanggal: tglFormatted,
     Timestamp: tglFormatted,
     Waktu: tglFormatted
