@@ -1004,11 +1004,9 @@ html, body{
 
 <script>
 // BERSIHKAN CACHE LAMA OTOMATIS
-if (localStorage.getItem('timSaberCacheVersion') !== 'v7') {
-  localStorage.removeItem('timSaberCacheData_v4');
-  localStorage.removeItem('timSaberCacheData_v5');
-  localStorage.removeItem('timSaberCacheData_v6');
-  localStorage.setItem('timSaberCacheVersion', 'v7');
+if (localStorage.getItem('timSaberCacheVersion') !== 'v8') {
+  localStorage.clear();
+  localStorage.setItem('timSaberCacheVersion', 'v8');
 }
 
 // URL WEB APP APPS SCRIPT TERBARU
@@ -1079,7 +1077,7 @@ function showPage(id, pushHistory = true) {
 
 // LOAD DATA
 function loadData() {
-  const cachedData = localStorage.getItem('timSaberCacheData_v7');
+  const cachedData = localStorage.getItem('timSaberCacheData_v8');
   if (cachedData) {
     try {
       DB = Object.assign(DB, JSON.parse(cachedData));
@@ -1096,7 +1094,7 @@ function loadData() {
       if (d) {
         const newStr = JSON.stringify(d);
         DB = Object.assign(DB, d);
-        localStorage.setItem('timSaberCacheData_v7', newStr);
+        localStorage.setItem('timSaberCacheData_v8', newStr);
         initApp();
       }
     })
@@ -1112,7 +1110,7 @@ function loadDataFallback() {
   window.handleDashboardResponse = function(d) {
     if (d) {
       DB = Object.assign(DB, d);
-      localStorage.setItem('timSaberCacheData_v7', JSON.stringify(d));
+      localStorage.setItem('timSaberCacheData_v8', JSON.stringify(d));
       initApp();
     }
   };
@@ -1244,9 +1242,11 @@ function extractDisplayDate(item) {
 
   if (!val) return 'Terbaru';
 
-  // Konversi otomatis format UTC (Z) ke waktu WIB lokal
-  if (typeof val === 'string' && val.includes('T')) {
-    let d = new Date(val);
+  let strVal = String(val).trim();
+
+  // 1. Format ISO UTC berakhiran Z (contoh: 2026-10-12T13:38:34.000Z)
+  if (strVal.includes('T') && strVal.includes('Z')) {
+    let d = new Date(strVal);
     if (!isNaN(d.getTime())) {
       return d.toLocaleString('id-ID', {
         timeZone: 'Asia/Jakarta',
@@ -1259,7 +1259,22 @@ function extractDisplayDate(item) {
       });
     }
   }
-  return String(val);
+
+  // 2. Format Teks Google Sheets (contoh: 2026-10-12 20:44:33)
+  if (strVal.match(/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}/)) {
+    let parts = strVal.split(' ');
+    let dateParts = parts[0].split('-');
+    let timePart = parts[1] || '';
+    
+    const namaBulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    let tgl = dateParts[2];
+    let bln = namaBulan[parseInt(dateParts[1], 10) - 1] || dateParts[1];
+    let thn = dateParts[0];
+
+    return `${tgl} ${bln} ${thn} ${timePart}`;
+  }
+
+  return strVal;
 }
 
 function parseSmartDate(dateStr) {
@@ -1504,11 +1519,7 @@ function renderPengaduanPage() {
 
     let fotoUrl = values.find(v => v.startsWith('http://') || v.startsWith('https://')) || '';
     
-    let rawDateVal = x['Waktu System'] || x.Tanggal || x.Timestamp || values.find(v => (v.includes('202') || v.match(/\d{2}\/\d{2}/)) && !v.startsWith('http')) || '';
-    let tglPelaporan = extractDisplayDate({ Tanggal: rawDateVal });
-    if (tglPelaporan === 'Terbaru' || !tglPelaporan) {
-      tglPelaporan = extractDisplayDate(x);
-    }
+    let tglPelaporan = extractDisplayDate(x);
 
     let statusText = String(x.Status || x.status || '').trim();
     if (!statusText) {
@@ -1539,7 +1550,6 @@ function renderPengaduanPage() {
       if (v === namaUser || v === areaUser) return false;
       if (v === fotoUrl) return false;
       if (v.includes('T') && v.includes('Z')) return false;
-      if (v === rawDateVal) return false;
       if (v.toLowerCase() === statusText.toLowerCase()) return false;
       if (v.startsWith('http')) return false;
       if (v.includes('202') && v.length < 25) return false;
@@ -1590,11 +1600,7 @@ function renderLaporanPage() {
 
   if (fullBox) {
     fullBox.innerHTML = list.length ? list.map(x => {
-      let rawDateVal = x['Waktu System'] || x.Tanggal || '';
-      let tglLaporan = extractDisplayDate({ Tanggal: rawDateVal });
-      if (tglLaporan === 'Terbaru' || !tglLaporan) {
-        tglLaporan = extractDisplayDate(x);
-      }
+      let tglLaporan = extractDisplayDate(x);
 
       return `
       <div class="card">
@@ -1894,7 +1900,7 @@ appContainer.addEventListener('touchend', e => {
     fetch(SCRIPT_URL + "?action=getDashboardData&t=" + new Date().getTime())
       .then(res => res.json())
       .then(d => {
-        if (d) { DB = Object.assign(DB, d); localStorage.setItem('timSaberCacheData_v7', JSON.stringify(d)); initApp(); }
+        if (d) { DB = Object.assign(DB, d); localStorage.setItem('timSaberCacheData_v8', JSON.stringify(d)); initApp(); }
         setTimeout(() => pullIndicator.style.transform = 'translateY(0)', 400);
       })
       .catch(() => {
@@ -1927,7 +1933,7 @@ function bukaDataSiswa() {
           Swal.close();
           const listSiswa = d.dataSiswa || DB.dataSiswa || [];
           DB.dataSiswa = listSiswa;
-          localStorage.setItem('timSaberCacheData_v7', JSON.stringify(DB));
+          localStorage.setItem('timSaberCacheData_v8', JSON.stringify(DB));
           tampilkanModalDataSiswa(listSiswa);
         })
         .catch(err => {
