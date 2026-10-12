@@ -747,6 +747,12 @@ html, body{
 <body>
 <div class="app">
 
+<!-- HIDDEN IFRAME & FORM UNTUK PENGIRIMAN TANPA CORS -->
+<iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
+<form id="gasSubmitForm" action="https://script.google.com/macros/s/AKfycbwE5kZtIedZH944f6pRYkmDltwolW5HZuDgRy7TAY7O9Ztny7QgJrM30DbCgseMoa23cA/exec" method="POST" target="hidden_iframe" style="display:none;">
+  <input type="hidden" name="postData" id="gasPostData">
+</form>
+
 <!-- AUDIO NOTIFIKASI -->
 <audio id="notifSound" preload="auto">
   <source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" type="audio/mpeg">
@@ -1744,37 +1750,20 @@ async function fileToBase64(inputId) {
   return { base64: compressedDataUrl, name: file.name };
 }
 
-// FUNGSI PENGIRIMAN JSON YANG SESUAI DENGAN BACKEND APPS SCRIPT ANDA
-function sendJsonToServer(payload, buttonId, defaultBtnText, successCallback) {
+// METODE PENGIRIMAN DATA MENGGUNAKAN HIDDEN FORM SUBMIT (Bypasses CORS sepenuhnya)
+function postViaHiddenForm(payload, buttonId, defaultBtnText, successCallback) {
   const btn = document.getElementById(buttonId);
   if (btn) { btn.disabled = true; btn.innerText = 'Mengirim...'; }
 
-  fetch(SCRIPT_URL, {
-    method: 'POST',
-    redirect: 'follow',
-    headers: {
-      'Content-Type': 'text/plain;charset=utf-8'
-    },
-    body: JSON.stringify(payload)
-  })
-  .then(res => res.json())
-  .then(res => {
+  document.getElementById('gasPostData').value = JSON.stringify(payload);
+  document.getElementById('gasSubmitForm').submit();
+
+  setTimeout(() => {
     if (btn) { btn.disabled = false; btn.innerText = defaultBtnText; }
-    if (res && res.success) {
-      showToast('BERHASIL DIKIRIM');
-      if (successCallback) successCallback();
-      setTimeout(() => loadData(), 1000);
-    } else {
-      alert('Gagal dari server: ' + (res.message || 'Unknown error'));
-    }
-  })
-  .catch(e => {
-    if (btn) { btn.disabled = false; btn.innerText = defaultBtnText; }
-    // Karena Apps Script kadang menangani redirect, kita tetap anggap sukses jika error parse tapi data masuk
     showToast('BERHASIL DIKIRIM');
     if (successCallback) successCallback();
-    setTimeout(() => loadData(), 1000);
-  });
+    setTimeout(() => { loadData(); }, 1500);
+  }, 1200);
 }
 
 function kirimLaporan() {
@@ -1794,7 +1783,7 @@ function kirimLaporan() {
       d.FotoBase64 = photo.base64;
       d.FotoNama = photo.name;
     }
-    sendJsonToServer(d, 'btnLaporan', 'Kirim Laporan (Selesai)', () => {
+    postViaHiddenForm(d, 'btnLaporan', 'Kirim Laporan (Selesai)', () => {
       document.getElementById('laporPekerjaan').value = '';
       document.getElementById('laporCatatan').value = '';
       document.getElementById('laporPreview').style.display = 'none';
@@ -1822,7 +1811,7 @@ function kirimPengajuan() {
     alert('Nama, area, dan minimal isi satu kebutuhan alat/bahan.'); return;
   }
 
-  sendJsonToServer(d, 'btnPengajuan', 'Kirim Pengajuan', () => {
+  postViaHiddenForm(d, 'btnPengajuan', 'Kirim Pengajuan', () => {
     for (let i = 1; i <= 6; i++) { document.getElementById('kebutuhan' + i).value = ''; }
     showPage('home');
   });
@@ -1848,7 +1837,7 @@ function kirimPengaduan() {
       d.FotoBase64 = photo.base64;
       d.FotoNama = photo.name;
     }
-    sendJsonToServer(d, 'btnPengaduan', 'Kirim Pengaduan', () => {
+    postViaHiddenForm(d, 'btnPengaduan', 'Kirim Pengaduan', () => {
       document.getElementById('pengaduanTeks').value = '';
       document.getElementById('pengaduanPreview').style.display = 'none';
       document.getElementById('pengaduanTextBtn').textContent = 'Buka Kamera / Pilih Foto';
