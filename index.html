@@ -1479,16 +1479,11 @@ function renderPengaduanPage() {
   const empty = '<div class="card"><p class="muted">Belum ada pengaduan.</p></div>';
 
   const mapper = x => {
-    // KUMPULKAN SELURUH ISI DATA DARI SHEETS KE DALAM ARRAY
     const values = Object.values(x).map(v => String(v || '').trim());
 
-    // 1. CARI LINK FOTO (Yang diawali http/https)
     let fotoUrl = values.find(v => v.startsWith('http://') || v.startsWith('https://')) || '';
-
-    // 2. CARI TANGGAL (Yang berisi tahun 202, angka garis miring, atau format ISO T)
     let tglPelaporan = values.find(v => (v.includes('202') || v.match(/\d{2}\/\d{2}/)) && !v.startsWith('http')) || extractDisplayDate(x);
 
-    // 3. CARI STATUS ASLI (Baru, Progres, Cek, Selesai)
     let statusText = 'BARU';
     let rawStatus = values.find(v => {
       let vLow = v.toLowerCase();
@@ -1499,17 +1494,15 @@ function renderPengaduanPage() {
       statusText = rawStatus.toUpperCase();
     }
 
-    // Tentukan Warna Badge Status (Baru = Merah, Progres = Oren, Selesai = Hijau)
-    let badgeStyle = 'background:#fef2f2; color:#dc2626; border:1px solid #fecaca;'; // Merah (Baru)
+    let badgeStyle = 'background:#fef2f2; color:#dc2626; border:1px solid #fecaca;';
     let stLow = statusText.toLowerCase();
 
     if (stLow.includes('selesai')) {
-      badgeStyle = 'background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0;'; // Hijau (Selesai)
+      badgeStyle = 'background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0;';
     } else if (stLow.includes('progres') || stLow.includes('proses') || stLow.includes('cek')) {
-      badgeStyle = 'background:#fff7ed; color:#ea580c; border:1px solid #fed7aa;'; // Oren (Progres)
+      badgeStyle = 'background:#fff7ed; color:#ea580c; border:1px solid #fed7aa;';
     }
 
-    // 4. CARI DESKRIPSI KENDALA (Teks penjelasan pengaduan yang BUKAN nama, BUKAN area, BUKAN tanggal, BUKAN status, BUKAN foto)
     let namaUser = String(x.Nama || x.nama || values[0] || 'Pengguna').trim();
     let areaUser = String(x.Area || x.area || values[1] || '-').trim();
 
@@ -1520,30 +1513,26 @@ function renderPengaduanPage() {
       if (v === tglPelaporan) return false;
       if (v === rawStatus) return false;
       if (v.startsWith('http')) return false;
-      if (v.includes('202') && v.length < 25) return false; // Abaikan jika ini tanggal
-      return v.length > 2; // Mengambil teks deskripsi kendala
+      if (v.includes('202') && v.length < 25) return false;
+      return v.length > 2;
     }) || '-';
 
     return `
       <div class="card" style="position:relative; overflow:hidden; padding:12px; margin-bottom:10px;">
-        <!-- BARIS ATAS: Nama, Area, & BADGE STATUS KANAN ATAS (BARU/PROGRES/SELESAI) -->
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:8px;">
           <div style="flex:1; min-width:0;">
             <h4 style="font-size:13px; font-weight:800; color:var(--t); text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${esc(namaUser)}</h4>
             <p style="font-size:10.5px; color:var(--s); margin-top:2px;"><b>Area:</b> ${esc(areaUser)}</p>
           </div>
-          <!-- STATUS (BARU = MERAH, PROGRES = OREN, SELESAI = HIJAU) -->
           <span style="flex:none; font-size:9.5px; font-weight:800; padding:4px 10px; border-radius:6px; text-transform:uppercase; ${badgeStyle}">
             ${esc(statusText)}
           </span>
         </div>
         
-        <!-- KOTAK OREN GEDE (LINGKARAN MERAH): KHUSUS DESKRIPSI KENDALA / PENGADUAN -->
         <div style="font-size:11.5px; color:#c2410c; font-weight:700; line-height:1.4; word-break:break-word; margin:6px 0; background:#fff7ed; border:1px solid #ffedd5; padding:10px 12px; border-radius:9px;">
           ${esc(kendalaTeks)}
         </div>
 
-        <!-- BARIS BAWAH (LINGKARAN HIJAU): TANGGAL PELAPORAN & TOMBOL FOTO -->
         <div style="margin-top:8px; border-top:1px dashed #e2e8f0; padding-top:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
           <span class="status" style="background:#f8fafc; color:#64748b; border:1px solid #e2e8f0; font-weight:700; margin:0;">
             <i class="fa-regular fa-calendar-days" style="color:var(--g); margin-right:4px;"></i> ${esc(tglPelaporan)}
@@ -1558,12 +1547,6 @@ function renderPengaduanPage() {
       </div>`;
   };
 
-  if (h) {
-    const active = list.filter(x => String(x.Status || '').trim().toLowerCase() !== 'selesai');
-    h.innerHTML = active.length ? active.slice(0, 2).map(mapper).join('') : (list.length ? list.slice(0, 2).map(mapper).join('') : '<p class="muted">Tidak ada pengaduan.</p>');
-  }
-  if (f) f.innerHTML = list.length ? list.map(mapper).join('') : empty;
-}
   if (h) {
     const active = list.filter(x => String(x.Status || '').trim().toLowerCase() !== 'selesai');
     h.innerHTML = active.length ? active.slice(0, 2).map(mapper).join('') : (list.length ? list.slice(0, 2).map(mapper).join('') : '<p class="muted">Tidak ada pengaduan.</p>');
