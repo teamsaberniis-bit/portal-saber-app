@@ -1003,10 +1003,10 @@ html, body{
 </div>
 
 <script>
-// BERSIHKAN CACHE LAMA OTOMATIS
-if (localStorage.getItem('timSaberCacheVersion') !== 'v10') {
+// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 11)
+if (localStorage.getItem('timSaberCacheVersion') !== 'v11') {
   localStorage.clear();
-  localStorage.setItem('timSaberCacheVersion', 'v10');
+  localStorage.setItem('timSaberCacheVersion', 'v11');
 }
 
 // URL WEB APP APPS SCRIPT TERBARU
@@ -1077,7 +1077,7 @@ function showPage(id, pushHistory = true) {
 
 // LOAD DATA
 function loadData() {
-  const cachedData = localStorage.getItem('timSaberCacheData_v10');
+  const cachedData = localStorage.getItem('timSaberCacheData_v11');
   if (cachedData) {
     try {
       DB = Object.assign(DB, JSON.parse(cachedData));
@@ -1094,7 +1094,7 @@ function loadData() {
       if (d) {
         const newStr = JSON.stringify(d);
         DB = Object.assign(DB, d);
-        localStorage.setItem('timSaberCacheData_v10', newStr);
+        localStorage.setItem('timSaberCacheData_v11', newStr);
         initApp();
       }
     })
@@ -1110,7 +1110,7 @@ function loadDataFallback() {
   window.handleDashboardResponse = function(d) {
     if (d) {
       DB = Object.assign(DB, d);
-      localStorage.setItem('timSaberCacheData_v10', JSON.stringify(d));
+      localStorage.setItem('timSaberCacheData_v11', JSON.stringify(d));
       initApp();
     }
   };
@@ -1244,7 +1244,7 @@ function extractDisplayDate(item) {
 
   let strVal = String(val).trim();
 
-  // 1. Format ISO UTC berakhiran Z (contoh: 2026-10-12T13:38:34.000Z)
+  // 1. Format ISO UTC berakhiran Z
   if (strVal.includes('T') && strVal.includes('Z')) {
     let d = new Date(strVal);
     if (!isNaN(d.getTime())) {
@@ -1260,7 +1260,7 @@ function extractDisplayDate(item) {
     }
   }
 
-  // 2. Format Teks Google Sheets (contoh: 2026-10-12 20:44:33)
+  // 2. Format Teks Google Sheets
   if (strVal.match(/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}/)) {
     let parts = strVal.split(' ');
     let dateParts = parts[0].split('-');
@@ -1500,6 +1500,7 @@ function renderInformasiPage() {
   }
 }
 
+// SUARA NOTIFIKASI
 function playNotifSound() {
   try {
     const audio = document.getElementById('notifSound');
@@ -1519,7 +1520,7 @@ function playNotifSound() {
   }
 }
 
-// Fungsi Suara Beep Sukses (Bawaan Browser / Tanpa Koneksi Internet)
+// FUNGSI SUARA BEEP SUKSES INTERNAL HP (JIKA FILE MP3 DIBLOKIR)
 function playBeepSound() {
   try {
     const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -1825,10 +1826,13 @@ async function fileToBase64(inputId) {
   return { base64: compressedDataUrl, name: file.name };
 }
 
-// METODE PENGIRIMAN DENGAN HIDDEN FORM (MELEWATI PERIKSAAN CORS BROWSER)
+// METODE PENGIRIMAN UTAMA (SUARA LANGSUNG DIBUNYIKAN DI SINI)
 function postViaHiddenForm(payload, buttonId, defaultBtnText, successCallback) {
   const btn = document.getElementById(buttonId);
   if (btn) { btn.disabled = true; btn.innerText = 'Mengirim...'; }
+
+  // MEMUTAR NADA NOTIFIKASI SECARA PUSAT SAAAT PROSES PENGIRIMAN DIMULAI
+  playNotifSound(); 
 
   document.getElementById('gasPostData').value = JSON.stringify(payload);
   document.getElementById('gasSubmitForm').submit();
@@ -1857,7 +1861,6 @@ function kirimLaporan() {
       d.FotoNama = photo.name;
     }
     postViaHiddenForm(d, 'btnLaporan', 'Kirim Laporan (Selesai)', () => {
-      playNotifSound(); // Suara Laporan
       document.getElementById('laporPekerjaan').value = '';
       document.getElementById('laporCatatan').value = '';
       document.getElementById('laporPreview').style.display = 'none';
@@ -1886,7 +1889,6 @@ function kirimPengajuan() {
   }
 
   postViaHiddenForm(d, 'btnPengajuan', 'Kirim Pengajuan', () => {
-    playNotifSound(); // Suara Pengajuan
     for (let i = 1; i <= 6; i++) { document.getElementById('kebutuhan' + i).value = ''; }
     showPage('home');
   });
@@ -1908,7 +1910,6 @@ function kirimPengaduan() {
       d.FotoNama = photo.name;
     }
     postViaHiddenForm(d, 'btnPengaduan', 'Kirim Pengaduan', () => {
-      playNotifSound(); // Suara Pengaduan
       document.getElementById('pengaduanTeks').value = '';
       document.getElementById('pengaduanPreview').style.display = 'none';
       document.getElementById('pengaduanTextBtn').textContent = 'Buka Kamera / Pilih Foto';
@@ -1942,7 +1943,7 @@ appContainer.addEventListener('touchend', e => {
     fetch(SCRIPT_URL + "?action=getDashboardData&t=" + new Date().getTime())
       .then(res => res.json())
       .then(d => {
-        if (d) { DB = Object.assign(DB, d); localStorage.setItem('timSaberCacheData_v10', JSON.stringify(d)); initApp(); }
+        if (d) { DB = Object.assign(DB, d); localStorage.setItem('timSaberCacheData_v11', JSON.stringify(d)); initApp(); }
         setTimeout(() => pullIndicator.style.transform = 'translateY(0)', 400);
       })
       .catch(() => {
@@ -1975,7 +1976,7 @@ function bukaDataSiswa() {
           Swal.close();
           const listSiswa = d.dataSiswa || DB.dataSiswa || [];
           DB.dataSiswa = listSiswa;
-          localStorage.setItem('timSaberCacheData_v10', JSON.stringify(DB));
+          localStorage.setItem('timSaberCacheData_v11', JSON.stringify(DB));
           tampilkanModalDataSiswa(listSiswa);
         })
         .catch(err => {
