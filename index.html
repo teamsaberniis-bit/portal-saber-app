@@ -1004,9 +1004,10 @@ html, body{
 
 <script>
 // BERSIHKAN CACHE LAMA OTOMATIS
-if (localStorage.getItem('timSaberCacheVersion') !== 'v5') {
+if (localStorage.getItem('timSaberCacheVersion') !== 'v6') {
   localStorage.removeItem('timSaberCacheData_v4');
-  localStorage.setItem('timSaberCacheVersion', 'v5');
+  localStorage.removeItem('timSaberCacheData_v5');
+  localStorage.setItem('timSaberCacheVersion', 'v6');
 }
 
 // URL WEB APP APPS SCRIPT TERBARU
@@ -1077,7 +1078,7 @@ function showPage(id, pushHistory = true) {
 
 // LOAD DATA
 function loadData() {
-  const cachedData = localStorage.getItem('timSaberCacheData_v5');
+  const cachedData = localStorage.getItem('timSaberCacheData_v6');
   if (cachedData) {
     try {
       DB = Object.assign(DB, JSON.parse(cachedData));
@@ -1094,7 +1095,7 @@ function loadData() {
       if (d) {
         const newStr = JSON.stringify(d);
         DB = Object.assign(DB, d);
-        localStorage.setItem('timSaberCacheData_v5', newStr);
+        localStorage.setItem('timSaberCacheData_v6', newStr);
         initApp();
       }
     })
@@ -1110,7 +1111,7 @@ function loadDataFallback() {
   window.handleDashboardResponse = function(d) {
     if (d) {
       DB = Object.assign(DB, d);
-      localStorage.setItem('timSaberCacheData_v5', JSON.stringify(d));
+      localStorage.setItem('timSaberCacheData_v6', JSON.stringify(d));
       initApp();
     }
   };
@@ -1241,6 +1242,22 @@ function extractDisplayDate(item) {
   }
 
   if (!val) return 'Terbaru';
+
+  // Konversi otomatis format UTC (Z) ke waktu WIB lokal
+  if (typeof val === 'string' && val.includes('T')) {
+    let d = new Date(val);
+    if (!isNaN(d.getTime())) {
+      return d.toLocaleString('id-ID', {
+        timeZone: 'Asia/Jakarta',
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    }
+  }
   return String(val);
 }
 
@@ -1485,7 +1502,13 @@ function renderPengaduanPage() {
     const values = Object.values(x).map(v => String(v || '').trim());
 
     let fotoUrl = values.find(v => v.startsWith('http://') || v.startsWith('https://')) || '';
-    let tglPelaporan = String(x['Waktu System'] || x.Tanggal || x.Timestamp || values.find(v => (v.includes('202') || v.match(/\d{2}\/\d{2}/)) && !v.startsWith('http')) || extractDisplayDate(x));
+    
+    // Mengkonversi tanggal ISO ke WIB secara otomatis
+    let rawDateVal = x['Waktu System'] || x.Tanggal || x.Timestamp || values.find(v => (v.includes('202') || v.match(/\d{2}\/\d{2}/)) && !v.startsWith('http')) || '';
+    let tglPelaporan = extractDisplayDate({ Tanggal: rawDateVal });
+    if (tglPelaporan === 'Terbaru' || !tglPelaporan) {
+      tglPelaporan = extractDisplayDate(x);
+    }
 
     let statusText = String(x.Status || x.status || '').trim();
     if (!statusText) {
@@ -1515,7 +1538,8 @@ function renderPengaduanPage() {
       if (!v) return false;
       if (v === namaUser || v === areaUser) return false;
       if (v === fotoUrl) return false;
-      if (v === tglPelaporan) return false;
+      if (v.includes('T') && v.includes('Z')) return false;
+      if (v === rawDateVal) return false;
       if (v.toLowerCase() === statusText.toLowerCase()) return false;
       if (v.startsWith('http')) return false;
       if (v.includes('202') && v.length < 25) return false;
@@ -1865,7 +1889,7 @@ appContainer.addEventListener('touchend', e => {
     fetch(SCRIPT_URL + "?action=getDashboardData&t=" + new Date().getTime())
       .then(res => res.json())
       .then(d => {
-        if (d) { DB = Object.assign(DB, d); localStorage.setItem('timSaberCacheData_v5', JSON.stringify(d)); initApp(); }
+        if (d) { DB = Object.assign(DB, d); localStorage.setItem('timSaberCacheData_v6', JSON.stringify(d)); initApp(); }
         setTimeout(() => pullIndicator.style.transform = 'translateY(0)', 400);
       })
       .catch(() => {
@@ -1898,7 +1922,7 @@ function bukaDataSiswa() {
           Swal.close();
           const listSiswa = d.dataSiswa || DB.dataSiswa || [];
           DB.dataSiswa = listSiswa;
-          localStorage.setItem('timSaberCacheData_v5', JSON.stringify(DB));
+          localStorage.setItem('timSaberCacheData_v6', JSON.stringify(DB));
           tampilkanModalDataSiswa(listSiswa);
         })
         .catch(err => {
