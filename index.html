@@ -1062,6 +1062,7 @@ function showPage(id, pushHistory = true) {
   });
 })();
 
+// OPTIMASI LOAD DATA INSTAN DARI CACHE (PERFORMA SUPER FAST)
 function loadData() {
   const cachedData = localStorage.getItem('timSaberCacheData');
   if (cachedData) {
@@ -1078,9 +1079,12 @@ function loadData() {
     .then(res => res.json())
     .then(d => {
       if (d) {
-        DB = Object.assign(DB, d);
-        localStorage.setItem('timSaberCacheData', JSON.stringify(d));
-        initApp();
+        const newStr = JSON.stringify(d);
+        if (newStr !== cachedData) {
+          DB = Object.assign(DB, d);
+          localStorage.setItem('timSaberCacheData', newStr);
+          initApp();
+        }
       }
     })
     .catch(e => {
@@ -1636,7 +1640,6 @@ function previewPhoto(input, previewId, textBtnId) {
   const textBtn = document.getElementById(textBtnId);
 
   if (!file) { if (img) img.style.display = 'none'; return; }
-  if (file.size > 5 * 1024 * 1024) { alert('Ukuran foto maksimal 5 MB.'); input.value = ''; if (img) img.style.display = 'none'; return; }
 
   if (textBtn) textBtn.textContent = 'Foto berhasil dipilih (Ketuk untuk ganti)';
   const reader = new FileReader();
@@ -1646,17 +1649,53 @@ function previewPhoto(input, previewId, textBtnId) {
   reader.readAsDataURL(file);
 }
 
-function fileToBase64(inputId) {
-  return new Promise((resolve, reject) => {
-    const input = document.getElementById(inputId);
-    const file = input.files && input.files[0];
-    if (!file) { resolve(null); return; }
-    if (file.size > 5 * 1024 * 1024) { reject(new Error('Ukuran foto maksimal 5 MB.')); return; }
-    const r = new FileReader();
-    r.onload = () => resolve({ base64: r.result, name: file.name });
-    r.onerror = reject;
-    r.readAsDataURL(file);
+// FUNGSI SUPER NGEBUT: KOMPRESI FOTO OTOMATIS SEBELUM DIUNGGAH
+function resizeAndCompressImage(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 800;
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        resolve(dataUrl);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
   });
+}
+
+async function fileToBase64(inputId) {
+  const input = document.getElementById(inputId);
+  const file = input.files && input.files[0];
+  if (!file) return null;
+  if (file.size > 10 * 1024 * 1024) throw new Error('Ukuran foto maksimal 10 MB.');
+  
+  const compressedDataUrl = await resizeAndCompressImage(file);
+  return { base64: compressedDataUrl, name: file.name };
 }
 
 async function sendWithPhoto(actionName, data, fileId, buttonId, after) {
@@ -1803,11 +1842,17 @@ appContainer.addEventListener('touchend', e => {
 });
 
 // ==========================================
-// MODUL TAMBAHAN: DATA SISWA (FRONTEND)
+// MODUL TAMBAHAN: DATA SISWA (FAST LOADING)
 // ==========================================
 function bukaDataSiswa() {
   if (typeof Swal === 'undefined') {
     alert('Library modal sedang dimuat. Silakan coba sebentar lagi.');
+    return;
+  }
+
+  // Cek cache data siswa agar terbuka instan tanpa berputar
+  if (DB.dataSiswa && DB.dataSiswa.length > 0) {
+    tampilkanModalDataSiswa(DB.dataSiswa);
     return;
   }
 
@@ -1816,28 +1861,18 @@ function bukaDataSiswa() {
     allowOutsideClick: false,
     didOpen: () => {
       Swal.showLoading();
-      if (typeof google !== 'undefined' && google.script && google.script.run) {
-        google.script.run
-          .withSuccessHandler(function(data) {
-            Swal.close();
-            tampilkanModalDataSiswa(data);
-          })
-          .withFailureHandler(function(error) {
-            Swal.fire('Error', 'Gagal memuat data siswa: ' + error.message, 'error');
-          })
-          .getDataSiswa();
-      } else {
-        // Fallback untuk akses via GitHub Pages / External URL
-        fetch(SCRIPT_URL + "?action=getDashboardData")
-          .then(res => res.json())
-          .then(d => {
-            Swal.close();
-            tampilkanModalDataSiswa(d.dataSiswa || []);
-          })
-          .catch(err => {
-            Swal.fire('Error', 'Gagal memuat data siswa.', 'error');
-          });
-      }
+      fetch(SCRIPT_URL + "?action=getDashboardData")
+        .then(res => res.json())
+        .then(d => {
+          Swal.close();
+          const listSiswa = d.dataSiswa || DB.dataSiswa || [];
+          DB.dataSiswa = listSiswa;
+          localStorage.setItem('timSaberCacheData', JSON.stringify(DB));
+          tampilkanModalDataSiswa(listSiswa);
+        })
+        .catch(err => {
+          Swal.fire('Error', 'Gagal memuat data siswa.', 'error');
+        });
     }
   });
 }
@@ -1845,14 +1880,14 @@ function bukaDataSiswa() {
 function tampilkanModalDataSiswa(data) {
   let htmlTable = `
     <div style="max-height: 400px; overflow-y: auto; text-align: left;">
-      <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 12.5px;">
         <thead>
-          <tr style="background: #f1f1f1; position: sticky; top: 0; z-index: 1;">
-            <th style="padding: 8px; border: 1px solid #ddd;">Level</th>
-            <th style="padding: 8px; border: 1px solid #ddd;">Nama Kelas</th>
-            <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">L</th>
-            <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">P</th>
-            <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">Total</th>
+          <tr style="background: #f1f5f9; position: sticky; top: 0; z-index: 1;">
+            <th style="padding: 8px; border: 1px solid #e2e8f0;">Level</th>
+            <th style="padding: 8px; border: 1px solid #e2e8f0;">Nama Kelas</th>
+            <th style="padding: 8px; border: 1px solid #e2e8f0; text-align: center;">L</th>
+            <th style="padding: 8px; border: 1px solid #e2e8f0; text-align: center;">P</th>
+            <th style="padding: 8px; border: 1px solid #e2e8f0; text-align: center;">Total</th>
           </tr>
         </thead>
         <tbody>
@@ -1864,11 +1899,11 @@ function tampilkanModalDataSiswa(data) {
     data.forEach(row => {
       htmlTable += `
         <tr>
-          <td style="padding: 6px; border: 1px solid #ddd;"><b>${esc(row.level)}</b></td>
-          <td style="padding: 6px; border: 1px solid #ddd;">${esc(row.namaKelas)}</td>
-          <td style="padding: 6px; border: 1px solid #ddd; text-align: center;">${esc(row.lakiLaki)}</td>
-          <td style="padding: 6px; border: 1px solid #ddd; text-align: center;">${esc(row.perempuan)}</td>
-          <td style="padding: 6px; border: 1px solid #ddd; text-align: center;"><b>${esc(row.totalSiswa)}</b></td>
+          <td style="padding: 6px; border: 1px solid #e2e8f0;"><b>${esc(row.level)}</b></td>
+          <td style="padding: 6px; border: 1px solid #e2e8f0;">${esc(row.namaKelas)}</td>
+          <td style="padding: 6px; border: 1px solid #e2e8f0; text-align: center;">${esc(row.lakiLaki)}</td>
+          <td style="padding: 6px; border: 1px solid #e2e8f0; text-align: center;">${esc(row.perempuan)}</td>
+          <td style="padding: 6px; border: 1px solid #e2e8f0; text-align: center;"><b>${esc(row.totalSiswa)}</b></td>
         </tr>
       `;
     });
@@ -1886,7 +1921,7 @@ function tampilkanModalDataSiswa(data) {
 
 loadData();
 
-// Kode Service Worker diletakkan di sini:
+// Service Worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
