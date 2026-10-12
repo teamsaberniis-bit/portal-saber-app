@@ -747,9 +747,9 @@ html, body{
 <body>
 <div class="app">
 
-<!-- HIDDEN IFRAME & FORM UNTUK PENGIRIMAN TANPA CORS -->
+<!-- IFRAME & FORM TERSEMBUNYI UNTUK PENGIRIMAN TANPA CORS -->
 <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
-<form id="gasSubmitForm" action="https://script.google.com/macros/s/AKfycbwE5kZtIedZH944f6pRYkmDltwolW5HZuDgRy7TAY7O9Ztny7QgJrM30DbCgseMoa23cA/exec" method="POST" target="hidden_iframe" style="display:none;">
+<form id="gasSubmitForm" action="https://script.google.com/macros/s/AKfycbzOM5Ol0sHd-zB8fHTv1JkbI3VeDuC2Cv5XHwU4HyxLbb13cRXyNr4mW3EoB16VB3Hfrg/exec" method="POST" target="hidden_iframe" style="display:none;">
   <input type="hidden" name="postData" id="gasPostData">
 </form>
 
@@ -1003,8 +1003,8 @@ html, body{
 </div>
 
 <script>
-// URL SCRIPT TERBARU YANG SUDAH DI-DEPLOY
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwE5kZtIedZH944f6pRYkmDltwolW5HZuDgRy7TAY7O9Ztny7QgJrM30DbCgseMoa23cA/exec";
+// URL WEB APP APPS SCRIPT TERBARU
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzOM5Ol0sHd-zB8fHTv1JkbI3VeDuC2Cv5XHwU4HyxLbb13cRXyNr4mW3EoB16VB3Hfrg/exec";
 
 let DB = {
   anggota: [], lembur: [], informasi: [], pengaduan: [], pengajuan: [], jadwal: [], laporan: [], dataSiswa: []
@@ -1750,7 +1750,7 @@ async function fileToBase64(inputId) {
   return { base64: compressedDataUrl, name: file.name };
 }
 
-// METODE PENGIRIMAN DATA MENGGUNAKAN HIDDEN FORM SUBMIT (Bypasses CORS sepenuhnya)
+// METODE PENGIRIMAN DENGAN HIDDEN FORM (MELEWATI PERIKSAAN CORS BROWSER)
 function postViaHiddenForm(payload, buttonId, defaultBtnText, successCallback) {
   const btn = document.getElementById(buttonId);
   if (btn) { btn.disabled = true; btn.innerText = 'Mengirim...'; }
