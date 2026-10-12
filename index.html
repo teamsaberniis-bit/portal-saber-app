@@ -1744,22 +1744,25 @@ async function fileToBase64(inputId) {
   return { base64: compressedDataUrl, name: file.name };
 }
 
-// FUNGSI PENGIRIMAN DATA DENGAN AMAN
+// FUNGSI PENGIRIMAN DATA YANG DIPERBAIKI (MENDUKUNG RESPON JSON DARI APPS SCRIPT)
 function sendToServer(payload, buttonId, defaultBtnText, successCallback) {
   const btn = document.getElementById(buttonId);
   if (btn) { btn.disabled = true; btn.innerText = 'Mengirim...'; }
 
   fetch(SCRIPT_URL, {
     method: 'POST',
-    mode: 'no-cors',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify(payload)
   })
-  .then(() => {
+  .then(res => res.json())
+  .then(res => {
     if (btn) { btn.disabled = false; btn.innerText = defaultBtnText; }
-    showToast('BERHASIL DIKIRIM');
-    if (successCallback) successCallback();
-    loadData();
+    if (res && res.success) {
+      showToast('BERHASIL DIKIRIM');
+      if (successCallback) successCallback();
+      loadData();
+    } else {
+      alert('Gagal menyimpan: ' + (res.message || 'Unknown error'));
+    }
   })
   .catch(e => {
     if (btn) { btn.disabled = false; btn.innerText = defaultBtnText; }
@@ -1778,19 +1781,22 @@ async function sendWithPhoto(actionName, data, fileId, buttonId, defaultBtnText,
 
     fetch(SCRIPT_URL, {
       method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(data)
     })
-    .then(() => {
+    .then(res => res.json())
+    .then(res => {
       if (btn) { btn.disabled = false; btn.innerText = defaultBtnText; }
-      showToast('BERHASIL DIKIRIM');
-      if (after) after();
-      loadData();
+      if (res && res.success) {
+        showToast('BERHASIL DIKIRIM');
+        if (after) after();
+        loadData();
+      } else {
+        alert('Gagal menyimpan: ' + (res.message || 'Unknown error'));
+      }
     })
     .catch(e => {
       if (btn) { btn.disabled = false; btn.innerText = defaultBtnText; }
-      alert('Terjadi kesalahan: ' + (e.message || e));
+      alert('Terjadi kesalahan koneksi: ' + (e.message || e));
     });
   } catch (e) {
     if (btn) { btn.disabled = false; btn.innerText = defaultBtnText; }
