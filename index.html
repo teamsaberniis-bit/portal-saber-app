@@ -18,6 +18,8 @@
 
 <link rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<!-- SweetAlert2 untuk Popup Data Siswa -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <style>
 :root{
@@ -835,6 +837,10 @@ html, body{
       <div class="ico o"><i class="fa-solid fa-triangle-exclamation"></i></div>
       <span class="lbl">Pengaduan</span>
     </a>
+    <a class="mi" onclick="bukaDataSiswa()">
+      <div class="ico b"><i class="fa-solid fa-school"></i></div>
+      <span class="lbl">Data Siswa</span>
+    </a>
   </div>
 
   <div class="section-header">
@@ -994,7 +1000,7 @@ html, body{
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzVak_9Cl3xbgXC8-V7JcVWfgXwui9BACJGwiz1q38A4HRSarvDPgwLv9m6v_7d99X-/exec";
 
 let DB = {
-  anggota: [], lembur: [], informasi: [], pengaduan: [], pengajuan: [], jadwal: [], laporan: []
+  anggota: [], lembur: [], informasi: [], pengaduan: [], pengajuan: [], jadwal: [], laporan: [], dataSiswa: []
 };
 let activeMemberIndex = 0;
 let lemburIndex = 0;
@@ -1796,16 +1802,99 @@ appContainer.addEventListener('touchend', e => {
   } else { pullIndicator.style.transform = 'translateY(0)'; }
 });
 
-loadData();
-    // Kode Service Worker diletakkan di sini:
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-          .then(reg => console.log('SW Registered:', reg))
-          .catch(err => console.log('SW Registration Failed:', err));
-      });
+// ==========================================
+// MODUL TAMBAHAN: DATA SISWA (FRONTEND)
+// ==========================================
+function bukaDataSiswa() {
+  if (typeof Swal === 'undefined') {
+    alert('Library modal sedang dimuat. Silakan coba sebentar lagi.');
+    return;
+  }
+
+  Swal.fire({
+    title: 'Memuat Data Siswa...',
+    allowOutsideClick: false,
+    didOpen: () => {
+      Swal.showLoading();
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function(data) {
+            Swal.close();
+            tampilkanModalDataSiswa(data);
+          })
+          .withFailureHandler(function(error) {
+            Swal.fire('Error', 'Gagal memuat data siswa: ' + error.message, 'error');
+          })
+          .getDataSiswa();
+      } else {
+        // Fallback untuk akses via GitHub Pages / External URL
+        fetch(SCRIPT_URL + "?action=getDashboardData")
+          .then(res => res.json())
+          .then(d => {
+            Swal.close();
+            tampilkanModalDataSiswa(d.dataSiswa || []);
+          })
+          .catch(err => {
+            Swal.fire('Error', 'Gagal memuat data siswa.', 'error');
+          });
+      }
     }
-  </script>
+  });
+}
+
+function tampilkanModalDataSiswa(data) {
+  let htmlTable = `
+    <div style="max-height: 400px; overflow-y: auto; text-align: left;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+        <thead>
+          <tr style="background: #f1f1f1; position: sticky; top: 0; z-index: 1;">
+            <th style="padding: 8px; border: 1px solid #ddd;">Level</th>
+            <th style="padding: 8px; border: 1px solid #ddd;">Nama Kelas</th>
+            <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">L</th>
+            <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">P</th>
+            <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+
+  if (!data || data.length === 0) {
+    htmlTable += `<tr><td colspan="5" style="text-align: center; padding: 15px;">Belum ada data siswa.</td></tr>`;
+  } else {
+    data.forEach(row => {
+      htmlTable += `
+        <tr>
+          <td style="padding: 6px; border: 1px solid #ddd;"><b>${esc(row.level)}</b></td>
+          <td style="padding: 6px; border: 1px solid #ddd;">${esc(row.namaKelas)}</td>
+          <td style="padding: 6px; border: 1px solid #ddd; text-align: center;">${esc(row.lakiLaki)}</td>
+          <td style="padding: 6px; border: 1px solid #ddd; text-align: center;">${esc(row.perempuan)}</td>
+          <td style="padding: 6px; border: 1px solid #ddd; text-align: center;"><b>${esc(row.totalSiswa)}</b></td>
+        </tr>
+      `;
+    });
+  }
+
+  htmlTable += `</tbody></table></div>`;
+
+  Swal.fire({
+    title: 'Rekapitulasi Data Siswa',
+    html: htmlTable,
+    width: '600px',
+    confirmButtonText: 'Tutup'
+  });
+}
+
+loadData();
+
+// Kode Service Worker diletakkan di sini:
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('SW Registered:', reg))
+      .catch(err => console.log('SW Registration Failed:', err));
+  });
+}
+</script>
 
 </body>
 </html>
