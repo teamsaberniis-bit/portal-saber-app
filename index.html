@@ -749,7 +749,7 @@ html, body{
 
 <!-- IFRAME & FORM TERSEMBUNYI UNTUK PENGIRIMAN TANPA CORS -->
 <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
-<form id="gasSubmitForm" action="https://script.google.com/macros/s/AKfycbwynXMC-O61vOuXzY-Dy038oByMuzUTt-BIwChCpUxFndXB8tN_yZh6LDeFOsc7xlQBnQ/exec" method="POST" target="hidden_iframe" style="display:none;">
+<form id="gasSubmitForm" action="https://script.google.com/macros/s/AKfycbxC5RijYC5rlEt32YwhIatPEsFJIEU4-6k0XlI_GxMVlXUpsxTWg_o1uuhaRlekFd8gxg/exec" method="POST" target="hidden_iframe" style="display:none;">
   <input type="hidden" name="postData" id="gasPostData">
 </form>
 
@@ -1004,7 +1004,7 @@ html, body{
 
 <script>
 // URL WEB APP APPS SCRIPT TERBARU
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwynXMC-O61vOuXzY-Dy038oByMuzUTt-BIwChCpUxFndXB8tN_yZh6LDeFOsc7xlQBnQ/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxC5RijYC5rlEt32YwhIatPEsFJIEU4-6k0XlI_GxMVlXUpsxTWg_o1uuhaRlekFd8gxg/exec";
 
 let DB = {
   anggota: [], lembur: [], informasi: [], pengaduan: [], pengajuan: [], jadwal: [], laporan: [], dataSiswa: []
@@ -1773,8 +1773,7 @@ function kirimLaporan() {
     Nama: document.getElementById('laporNama').value.trim(),
     Area: document.getElementById('laporArea').value.trim(),
     Pekerjaan: document.getElementById('laporPekerjaan').value.trim(),
-    Catatan: document.getElementById('laporCatatan').value.trim(),
-    Tanggal: ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'][now.getDay()] + ', ' + now.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
+    Catatan: document.getElementById('laporCatatan').value.trim()
   };
   if (!d.Nama || !d.Area || !d.Pekerjaan) { alert('Nama, area, dan pekerjaan wajib diisi.'); return; }
 
@@ -1818,17 +1817,12 @@ function kirimPengajuan() {
 }
 
 function kirimPengaduan() {
-  const now = new Date();
-  const tglFormatted = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'][now.getDay()] + ', ' + now.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
   const d = {
     action: 'simpanPengaduan',
     Nama: document.getElementById('pengaduanNama').value.trim(),
     Area: document.getElementById('pengaduanArea').value.trim(),
     Kendala: document.getElementById('pengaduanTeks').value.trim(),
-    Status: 'Baru',
-    Tanggal: tglFormatted,
-    Timestamp: tglFormatted,
-    Waktu: tglFormatted
+    Status: 'Baru'
   };
   if (!d.Nama || !d.Area || !d.Kendala) { alert('Nama, area, dan pengaduan wajib diisi.'); return; }
 
