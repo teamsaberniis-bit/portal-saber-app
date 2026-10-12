@@ -1236,11 +1236,19 @@ function extractDisplayDate(item) {
 
   if (!val) return 'Terbaru';
 
+  // Konversi otomatis format UTC (Z) ke waktu WIB lokal
   if (typeof val === 'string' && val.includes('T')) {
     let d = new Date(val);
     if (!isNaN(d.getTime())) {
-      const days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
-      return days[d.getDay()] + ', ' + d.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+      return d.toLocaleString('id-ID', {
+        timeZone: 'Asia/Jakarta',
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
     }
   }
   return String(val);
@@ -1767,7 +1775,6 @@ function postViaHiddenForm(payload, buttonId, defaultBtnText, successCallback) {
 }
 
 function kirimLaporan() {
-  const now = new Date();
   const d = {
     action: 'simpanLaporan',
     Nama: document.getElementById('laporNama').value.trim(),
