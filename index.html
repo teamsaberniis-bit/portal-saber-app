@@ -749,7 +749,7 @@ html, body{
 
 <!-- IFRAME & FORM TERSEMBUNYI UNTUK PENGIRIMAN TANPA CORS -->
 <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
-<form id="gasSubmitForm" action="https://script.google.com/macros/s/AKfycby5rvMlQlh16KFr08RtcwTYlaNcNJvmH018L8drS78bIrDpR4s5qQa00RzvI4TI5N7IFQ/exec" method="POST" target="hidden_iframe" style="display:none;">
+<form id="gasSubmitForm" action="https://script.google.com/macros/s/AKfycbxajlEzDg2vu2733f-yL885e4Ara_hcM6y__u1_ADv2SOaU9LrwlWb36Rm7y7u-DgWBCA/exec" method="POST" target="hidden_iframe" style="display:none;">
   <input type="hidden" name="postData" id="gasPostData">
 </form>
 
@@ -1003,14 +1003,14 @@ html, body{
 </div>
 
 <script>
-// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 11)
-if (localStorage.getItem('timSaberCacheVersion') !== 'v11') {
+// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 12)
+if (localStorage.getItem('timSaberCacheVersion') !== 'v12') {
   localStorage.clear();
-  localStorage.setItem('timSaberCacheVersion', 'v11');
+  localStorage.setItem('timSaberCacheVersion', 'v12');
 }
 
-// URL WEB APP APPS SCRIPT TERBARU (SUDAH DIPERBAIKI)
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby5rvMlQlh16KFr08RtcwTYlaNcNJvmH018L8drS78bIrDpR4s5qQa00RzvI4TI5N7IFQ/exec";
+// URL WEB APP APPS SCRIPT TERBARU
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxajlEzDg2vu2733f-yL885e4Ara_hcM6y__u1_ADv2SOaU9LrwlWb36Rm7y7u-DgWBCA/exec";
 
 let DB = {
   anggota: [], lembur: [], informasi: [], pengaduan: [], pengajuan: [], jadwal: [], laporan: [], dataSiswa: []
@@ -1077,7 +1077,7 @@ function showPage(id, pushHistory = true) {
 
 // LOAD DATA
 function loadData() {
-  const cachedData = localStorage.getItem('timSaberCacheData_v11');
+  const cachedData = localStorage.getItem('timSaberCacheData_v12');
   if (cachedData) {
     try {
       DB = Object.assign(DB, JSON.parse(cachedData));
@@ -1094,7 +1094,7 @@ function loadData() {
       if (d) {
         const newStr = JSON.stringify(d);
         DB = Object.assign(DB, d);
-        localStorage.setItem('timSaberCacheData_v11', newStr);
+        localStorage.setItem('timSaberCacheData_v12', newStr);
         initApp();
       }
     })
@@ -1110,7 +1110,7 @@ function loadDataFallback() {
   window.handleDashboardResponse = function(d) {
     if (d) {
       DB = Object.assign(DB, d);
-      localStorage.setItem('timSaberCacheData_v11', JSON.stringify(d));
+      localStorage.setItem('timSaberCacheData_v12', JSON.stringify(d));
       initApp();
     }
   };
@@ -1696,7 +1696,7 @@ function renderJadwalByDay() {
 
     return `
       <div class="jitem" style="${bgStyle} margin-bottom: 8px; padding: 9px; border-radius: 8px;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div style="display: flex; justify- content: space-between; align-items: flex-start;">
           <div style="flex:1;">
             <b>${esc(x.tugas)}</b>
             <small style="display:block; color:#64748b; font-size:10px; margin-top:2px;">
@@ -1913,7 +1913,7 @@ appContainer.addEventListener('touchend', e => {
     fetch(SCRIPT_URL + "?action=getDashboardData&t=" + new Date().getTime())
       .then(res => res.json())
       .then(d => {
-        if (d) { DB = Object.assign(DB, d); localStorage.setItem('timSaberCacheData_v11', JSON.stringify(d)); initApp(); }
+        if (d) { DB = Object.assign(DB, d); localStorage.setItem('timSaberCacheData_v12', JSON.stringify(d)); initApp(); }
         setTimeout(() => pullIndicator.style.transform = 'translateY(0)', 400);
       })
       .catch(() => {
@@ -1946,7 +1946,7 @@ function bukaDataSiswa() {
           Swal.close();
           const listSiswa = d.dataSiswa || DB.dataSiswa || [];
           DB.dataSiswa = listSiswa;
-          localStorage.setItem('timSaberCacheData_v11', JSON.stringify(DB));
+          localStorage.setItem('timSaberCacheData_v12', JSON.stringify(DB));
           tampilkanModalDataSiswa(listSiswa);
         })
         .catch(err => {
