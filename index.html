@@ -749,7 +749,7 @@ html, body{
 
 <!-- IFRAME & FORM TERSEMBUNYI UNTUK PENGIRIMAN TANPA CORS -->
 <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
-<form id="gasSubmitForm" action="https://script.google.com/macros/s/AKfycbxC5RijYC5rlEt32YwhIatPEsFJIEU4-6k0XlI_GxMVlXUpsxTWg_o1uuhaRlekFd8gxg/exec" method="POST" target="hidden_iframe" style="display:none;">
+<form id="gasSubmitForm" action="https://script.google.com/macros/s/AKfycby5rvMlQlh16KFr08RtcwTYlaNcNJvmH018L8drS78bIrDpR4s5qQa00RzvI4TI5N7IFQ/exec" method="POST" target="hidden_iframe" style="display:none;">
   <input type="hidden" name="postData" id="gasPostData">
 </form>
 
@@ -1009,8 +1009,8 @@ if (localStorage.getItem('timSaberCacheVersion') !== 'v11') {
   localStorage.setItem('timSaberCacheVersion', 'v11');
 }
 
-// URL WEB APP APPS SCRIPT TERBARU
-const SCRIPT_URL = "const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby5rvMlQlh16KFr08RtcwTYlaNcNJvmH018L8drS78bIrDpR4s5qQa00RzvI4TI5N7IFQ/exec";";
+// URL WEB APP APPS SCRIPT TERBARU (SUDAH DIPERBAIKI)
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby5rvMlQlh16KFr08RtcwTYlaNcNJvmH018L8drS78bIrDpR4s5qQa00RzvI4TI5N7IFQ/exec";
 
 let DB = {
   anggota: [], lembur: [], informasi: [], pengaduan: [], pengajuan: [], jadwal: [], laporan: [], dataSiswa: []
@@ -1244,7 +1244,6 @@ function extractDisplayDate(item) {
 
   let strVal = String(val).trim();
 
-  // 1. Format ISO UTC berakhiran Z
   if (strVal.includes('T') && strVal.includes('Z')) {
     let d = new Date(strVal);
     if (!isNaN(d.getTime())) {
@@ -1260,7 +1259,6 @@ function extractDisplayDate(item) {
     }
   }
 
-  // 2. Format Teks Google Sheets
   if (strVal.match(/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}/)) {
     let parts = strVal.split(' ');
     let dateParts = parts[0].split('-');
@@ -1520,13 +1518,11 @@ function playNotifSound() {
   }
 }
 
-// FUNGSI SUARA BEEP SUKSES INTERNAL HP (JIKA FILE MP3 DIBLOKIR)
 function playBeepSound() {
   try {
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     if (!AudioContext) return;
     const ctx = new AudioContext();
-    
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     
@@ -1542,12 +1538,9 @@ function playBeepSound() {
     
     osc.start();
     osc.stop(ctx.currentTime + 0.35);
-  } catch (err) {
-    console.log("Audio API tidak didukung:", err);
-  }
+  } catch (err) {}
 }
 
-// RENDER PENGADUAN DINAMIS
 function renderPengaduanPage() {
   const list = [...(DB.pengaduan || [])].sort((a, b) => parseDateVal(b) - parseDateVal(a));
   const h = document.getElementById('homePengaduanBox');
@@ -1556,9 +1549,7 @@ function renderPengaduanPage() {
 
   const mapper = x => {
     const values = Object.values(x).map(v => String(v || '').trim());
-
     let fotoUrl = values.find(v => v.startsWith('http://') || v.startsWith('https://')) || '';
-    
     let tglPelaporan = extractDisplayDate(x);
 
     let statusText = String(x.Status || x.status || '').trim();
@@ -1587,8 +1578,7 @@ function renderPengaduanPage() {
 
     let kendalaTeks = values.find(v => {
       if (!v) return false;
-      if (v === namaUser || v === areaUser) return false;
-      if (v === fotoUrl) return false;
+      if (v === namaUser || v === areaUser || v === fotoUrl) return false;
       if (v.includes('T') && v.includes('Z')) return false;
       if (v.toLowerCase() === statusText.toLowerCase()) return false;
       if (v.startsWith('http')) return false;
@@ -1641,7 +1631,6 @@ function renderLaporanPage() {
   if (fullBox) {
     fullBox.innerHTML = list.length ? list.map(x => {
       let tglLaporan = extractDisplayDate(x);
-
       return `
       <div class="card">
         <div style="display:flex;justify-content:space-between">
@@ -1715,9 +1704,7 @@ function renderJadwalByDay() {
             </small>
           </div>
         </div>
-        <div style="margin-top: 6px;">
-          ${statusLabel}
-        </div>
+        <div style="margin-top: 6px;">${statusLabel}</div>
       </div>`;
   };
 
@@ -1791,24 +1778,16 @@ function resizeAndCompressImage(file) {
         const MAX_WIDTH = 800;
         const MAX_HEIGHT = 800;
         if (width > height) {
-          if (width > MAX_WIDTH) {
-            height *= MAX_WIDTH / width;
-            width = MAX_WIDTH;
-          }
+          if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
         } else {
-          if (height > MAX_HEIGHT) {
-            width *= MAX_HEIGHT / height;
-            height = MAX_HEIGHT;
-          }
+          if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
         }
         
         canvas.width = width;
         canvas.height = height;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
-        
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-        resolve(dataUrl);
+        resolve(canvas.toDataURL('image/jpeg', 0.7));
       };
       img.src = e.target.result;
     };
@@ -1821,17 +1800,14 @@ async function fileToBase64(inputId) {
   if (!input || !input.files || !input.files[0]) return null;
   const file = input.files[0];
   if (file.size > 10 * 1024 * 1024) throw new Error('Ukuran foto maksimal 10 MB.');
-  
   const compressedDataUrl = await resizeAndCompressImage(file);
   return { base64: compressedDataUrl, name: file.name };
 }
 
-// METODE PENGIRIMAN UTAMA (SUARA LANGSUNG DIBUNYIKAN DI SINI)
 function postViaHiddenForm(payload, buttonId, defaultBtnText, successCallback) {
   const btn = document.getElementById(buttonId);
   if (btn) { btn.disabled = true; btn.innerText = 'Mengirim...'; }
 
-  // MEMUTAR NADA NOTIFIKASI SECARA PUSAT SAAAT PROSES PENGIRIMAN DIMULAI
   playNotifSound(); 
 
   document.getElementById('gasPostData').value = JSON.stringify(payload);
@@ -1856,10 +1832,7 @@ function kirimLaporan() {
   if (!d.Nama || !d.Area || !d.Pekerjaan) { alert('Nama, area, dan pekerjaan wajib diisi.'); return; }
 
   fileToBase64('laporFoto').then(photo => {
-    if (photo) {
-      d.FotoBase64 = photo.base64;
-      d.FotoNama = photo.name;
-    }
+    if (photo) { d.FotoBase64 = photo.base64; d.FotoNama = photo.name; }
     postViaHiddenForm(d, 'btnLaporan', 'Kirim Laporan (Selesai)', () => {
       document.getElementById('laporPekerjaan').value = '';
       document.getElementById('laporCatatan').value = '';
@@ -1905,10 +1878,7 @@ function kirimPengaduan() {
   if (!d.Nama || !d.Area || !d.Kendala) { alert('Nama, area, dan pengaduan wajib diisi.'); return; }
 
   fileToBase64('pengaduanFoto').then(photo => {
-    if (photo) {
-      d.FotoBase64 = photo.base64;
-      d.FotoNama = photo.name;
-    }
+    if (photo) { d.FotoBase64 = photo.base64; d.FotoNama = photo.name; }
     postViaHiddenForm(d, 'btnPengaduan', 'Kirim Pengaduan', () => {
       document.getElementById('pengaduanTeks').value = '';
       document.getElementById('pengaduanPreview').style.display = 'none';
