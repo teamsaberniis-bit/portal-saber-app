@@ -18,7 +18,7 @@
 
 <link rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<!-- SweetAlert2 untuk Popup Data Siswa -->
+<!-- SweetAlert2 untuk Popup Data Siswa & Daily Activity -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <style>
@@ -1095,6 +1095,243 @@ if (localStorage.getItem('timSaberCacheVersion') !== 'v12') {
 // URL WEB APP APPS SCRIPT TERBARU
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxajlEzDg2vu2733f-yL885e4Ara_hcM6y__u1_ADv2SOaU9LrwlWb36Rm7y7u-DgWBCA/exec";
 
+// TEMPLATE DAILY ACTIVITY BERDASARKAN AREA
+const TEMPLATE_DAILY_BY_AREA = {
+  "SD": [
+    {
+      jam: "06.00 - 06.55",
+      label: "Persiapan Pagi",
+      tugas: [
+        "Membuka pintu & menghidupkan AC",
+        "Mengecek dan membersihkan ruangan, koridor, toilet dll",
+        "Membersihkan area tangga (area yang memiliki tangga)",
+        "Membersihkan kaca ruangan / kelas"
+      ]
+    },
+    { jam: "06.55 - 07.30", spesial: "TILAWAH BERSAMA" },
+    {
+      jam: "07.30 - 10.15",
+      label: "Rutinitas Pagi",
+      tugas: [
+        "Mendistribusikan snack siswa dan pegawai",
+        "Membersihkan lemari tempat makan dan mengecek kelengkapannya",
+        "Mengecek ketersediaan air minum / mengisi ulang galon",
+        "Mengecek & membersihkan toilet dll",
+        "Mengerjakan jobdes sesuai jadwal"
+      ]
+    },
+    {
+      jam: "10.15 - 11.55",
+      label: "Layanan Makan Siang",
+      tugas: [
+        "Mendistribusikan makan siang siswa dan pegawai",
+        "Mengumpulkan iner, piring bekas snack & membawa ke tempat cucian",
+        "Mengecek & membersihkan koridor, toilet dll",
+        "Mendistribusikan piring snack yang telah dicuci",
+        "Mengerjakan jobdes sesuai jadwal"
+      ]
+    },
+    { jam: "11.55 - 13.10", spesial: "ISTIRAHAT, SHOLAT, MAKAN" },
+    {
+      jam: "13.10 - 15.00",
+      label: "Pembersihan Siang",
+      tugas: [
+        "Mengecek & membersihkan koridor, toilet dll",
+        "Merapihkan perlengkapan makan yang kotor & membawa ke tempat cucian",
+        "Membersihkan lemari makan & mengecek ketersediaan air minum",
+        "Mendistribusikan piring snack & perlengkapan makan siswa",
+        "Mengerjakan jobdes sesuai jadwal"
+      ]
+    },
+    { jam: "15.00 - 15.30", spesial: "SHOLAT ASHAR & AL-MATSURAT BERSAMA" },
+    {
+      jam: "15.30 - 17.00",
+      label: "General Cleaning Sore",
+      orange: true,
+      tugas: [
+        "Merapihkan meja, kursi, barang-barang kelas & ruangan",
+        "Membersihkan kelas & ruangan yang menjadi tanggung jawab secara menyeluruh",
+        "Membersihkan toilet secara menyeluruh",
+        "Merapihkan perlengkapan makan yang belum didistribusikan",
+        "Membersihkan peralatan kebersihan dan menyimpannya kembali",
+        "Pastikan kembali AC, lampu ruangan dalam keadaan off & pintu terkunci",
+        "Membuang sampah dan menyimpan iner ke meshal"
+      ]
+    },
+    { jam: "17.05", spesial: "PERSIAPAN PULANG" }
+  ],
+  "TK MASJID": [
+    {
+      jam: "06.00 - 06.55",
+      label: "Persiapan Pagi & Masjid",
+      tugas: [
+        "Membuka pintu kelas TK A & menyalakan AC",
+        "Membersihkan masjid secara menyeluruh",
+        "Membersihkan toilet masjid"
+      ]
+    },
+    { jam: "06.55 - 07.30", spesial: "TILAWAH BERSAMA" },
+    {
+      jam: "07.30 - 10.15",
+      label: "Pelayanan Area TK",
+      tugas: [
+        "Mengecek ketersediaan air minum / mengisi ulang galon",
+        "Mendistribusikan snack siswa dan pegawai",
+        "Membersihkan toilet TK",
+        "Mengumpulkan piring, iner kotor dan membawa ke tempat cucian",
+        "Mengerjakan jobdes sesuai jadwal"
+      ]
+    },
+    {
+      jam: "10.15 - 11.55",
+      label: "Layanan Siang & Masjid",
+      tugas: [
+        "Mendistribusikan makan siang pegawai",
+        "Membersihkan masjid sebelum waktu sholat dzuhur",
+        "Merapikan peralatan makan/snack anak & membawa ke tempat cucian",
+        "Mendistribusikan piring/perlengkapan makan yang telah dicuci",
+        "Mengerjakan jobdes sesuai jadwal"
+      ]
+    },
+    { jam: "11.55 - 13.10", spesial: "ISTIRAHAT, SHOLAT, MAKAN" },
+    {
+      jam: "13.10 - 15.00",
+      label: "Pembersihan Siang & Display",
+      tugas: [
+        "Display kembali piring snack & cangkir ke kelas TK",
+        "Mengepel lantai kelas TK A & merapikan meja/kursi",
+        "Mengerjakan jobdes sesuai jadwal"
+      ]
+    },
+    { jam: "15.00 - 15.30", spesial: "SHOLAT ASHAR & AL-MATSURAT BERSAMA" },
+    {
+      jam: "15.30 - 17.00",
+      label: "General Cleaning Sore (Masjid & TK A)",
+      orange: true,
+      tugas: [
+        "Membersihkan masjid & toilet masjid secara menyeluruh sebelum sholat Ashar",
+        "Menyapu & mengepel area kelas TK A secara menyeluruh",
+        "Membuang seluruh sampah & memastikan ruangan terkunci aman"
+      ]
+    },
+    { jam: "17.05", spesial: "PERSIAPAN PULANG" }
+  ],
+  "TK KELAS": [
+    {
+      jam: "06.00 - 06.55",
+      label: "Persiapan Pagi Kelas",
+      tugas: [
+        "Membuka seluruh pintu kelas TK, area bermain, & menyalakan AC",
+        "Mengecek & membersihkan ruang kelas & area sekitar",
+        "Memastikan kebersihan karpet/matras bermain anak",
+        "Menyiapkan air galon minum untuk kelas"
+      ]
+    },
+    { jam: "06.55 - 07.30", spesial: "TILAWAH BERSAMA" },
+    {
+      jam: "07.30 - 10.15",
+      label: "Pelayanan Kelas Pagi",
+      tugas: [
+        "Mendistribusikan snack siswa dan pegawai",
+        "Standby kebersihan ruang kelas & merapikan tumpahan mainan/makanan",
+        "Mengumpulkan piring, iner kotor dan membawa ke tempat cucian",
+        "Mengerjakan jobdes sesuai jadwal"
+      ]
+    },
+    {
+      jam: "10.15 - 11.55",
+      label: "Layanan Siang & Makan",
+      tugas: [
+        "Mendistribusikan makan siang siswa dan pegawai",
+        "Merapikan peralatan makan/snack anak & membawa ke tempat cucian",
+        "Mendistribusikan piring/perlengkapan makan yang telah dicuci",
+        "Mengerjakan jobdes sesuai jadwal"
+      ]
+    },
+    { jam: "11.55 - 13.10", spesial: "ISTIRAHAT, SHOLAT, MAKAN" },
+    {
+      jam: "13.10 - 15.00",
+      label: "Pembersihan Siang & Display",
+      tugas: [
+        "Display kembali piring snack & cangkir ke kelas",
+        "Mengepel seluruh lantai kelas TK & merapikan meja/kursi kecil",
+        "Sterilisasi mainan anak & membersihkan karpet bermain",
+        "Mengerjakan jobdes sesuai jadwal"
+      ]
+    },
+    { jam: "15.00 - 15.30", spesial: "SHOLAT ASHAR & AL-MATSURAT BERSAMA" },
+    {
+      jam: "15.30 - 17.00",
+      label: "General Cleaning Sore Kelas",
+      orange: true,
+      tugas: [
+        "Menyapu & mengepel seluruh area kelas TK secara menyeluruh",
+        "Membersihkan toilet anak & guru area TK",
+        "Membuang seluruh sampah kelas ke penampungan",
+        "Memastikan seluruh AC, lampu OFF, jendela & pintu kelas terkunci rapat"
+      ]
+    },
+    { jam: "17.05", spesial: "PERSIAPAN PULANG" }
+  ],
+  "OFFICE": [
+    {
+      jam: "06.00 - 06.55",
+      label: "Persiapan Pagi Office",
+      tugas: [
+        "Membuka pintu kantor & menyalakan AC",
+        "Mengecek & membersihkan ruang kantor, koridor, toilet office dll",
+        "Membersihkan area tangga"
+      ]
+    },
+    { jam: "06.55 - 07.30", spesial: "TILAWAH BERSAMA" },
+    {
+      jam: "07.30 - 10.15",
+      label: "Rutinitas Pagi Office",
+      tugas: [
+        "Membersihkan kaca bagian luar dan belakang",
+        "Mendistribusikan snack pegawai",
+        "Mengecek ketersediaan air minum / mengisi ulang galon kantor",
+        "Mengecek & membersihkan toilet office",
+        "Mengerjakan jobdes sesuai jadwal"
+      ]
+    },
+    {
+      jam: "10.15 - 11.55",
+      label: "Layanan Siang Office",
+      tugas: [
+        "Menyiapkan makan siang pegawai",
+        "Mengecek & membersihkan koridor serta toilet office",
+        "Mengerjakan jobdes sesuai jadwal"
+      ]
+    },
+    { jam: "11.55 - 13.10", spesial: "ISTIRAHAT, SHOLAT, MAKAN" },
+    {
+      jam: "13.10 - 15.00",
+      label: "Pembersihan Siang Office",
+      tugas: [
+        "Mengecek & membersihkan area kantor dan toilet",
+        "Merapikan perlengkapan makan kotor ke tempat cucian",
+        "Membersihkan lemari makan & mengecek ketersediaan air minum",
+        "Mengerjakan jobdes sesuai jadwal"
+      ]
+    },
+    { jam: "15.00 - 15.30", spesial: "SHOLAT ASHAR & AL-MATSURAT BERSAMA" },
+    {
+      jam: "15.30 - 17.00",
+      label: "General Cleaning Sore Office",
+      orange: true,
+      tugas: [
+        "Merapihkan meja, kursi, & barang-barang di area kantor",
+        "Membersihkan seluruh ruangan kantor secara menyeluruh (sapu & pel)",
+        "Membersihkan toilet office secara menyeluruh",
+        "Membuang sampah kantor",
+        "Pastikan kembali AC, lampu dalam keadaan off & pintu kantor terkunci"
+      ]
+    },
+    { jam: "17.05", spesial: "PERSIAPAN PULANG" }
+  ]
+};
+
 let DB = {
   anggota: [], lembur: [], informasi: [], pengaduan: [], pengajuan: [], jadwal: [], laporan: [], dataSiswa: []
 };
@@ -1285,6 +1522,34 @@ function openAnggotaDetail(i) {
   const w = String(m.WA || '').replace(/[^0-9]/g, '');
   const wa = w ? (w.startsWith('0') ? '62' + w.slice(1) : w) : '';
 
+  let dailyImg = m.DailyActivity || m['Daily Activity'] || m.Daily || m.FotoDaily || m.daily || '';
+
+  let dailyActivityHTML = '';
+  if (dailyImg) {
+    dailyActivityHTML = `
+      <div style="margin-top:10px; border-top:1px dashed var(--b); padding-top:10px;">
+        <div style="font-size:11px; font-weight:800; color:var(--t); margin-bottom:6px; display:flex; align-items:center; gap:5px;">
+          <i class="fa-solid fa-calendar-check" style="color:var(--g)"></i> Daily Activity (Rutinitas Harian)
+        </div>
+        <button type="button" onclick="openPhotoModal(['${esc(dailyImg)}'], 0)" style="width:100%; font-size:12px; color:var(--g); font-weight:800; background:var(--gl); padding:10px; border-radius:9px; border:1px solid #bbf7d0; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
+          <i class="fa-solid fa-file-invoice"></i> Lihat Daily Activity (${esc(m.Nama)})
+        </button>
+      </div>
+    `;
+  } else {
+    // Tombol untuk membuka template teks Daily Activity interaktif berdasarkan area
+    dailyActivityHTML = `
+      <div style="margin-top:10px; border-top:1px dashed var(--b); padding-top:10px;">
+        <div style="font-size:11px; font-weight:800; color:var(--t); margin-bottom:6px; display:flex; align-items:center; gap:5px;">
+          <i class="fa-solid fa-calendar-check" style="color:var(--g)"></i> Daily Activity Harian
+        </div>
+        <button type="button" onclick="bukaDailyActivityModal('${esc(m.Area || 'SD')}', '${esc(m.Nama)}')" style="width:100%; font-size:12px; color:var(--g); font-weight:800; background:var(--gl); padding:10px; border-radius:9px; border:1px solid #bbf7d0; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
+          <i class="fa-solid fa-list-check"></i> Lihat Jadwal Tugas (${esc(m.Area || 'SD')})
+        </button>
+      </div>
+    `;
+  }
+
   box.innerHTML = `
     <div class="anggota-detail-head">
       <div class="detail-pic">
@@ -1299,8 +1564,9 @@ function openAnggotaDetail(i) {
     <div class="detail-info">
       <div class="detail-info-item"><i class="fa-solid fa-location-dot" style="color:var(--g)"></i><span>Area: <b>${esc(m.Area || '-')}</b></span></div>
       <div class="detail-info-item"><i class="fa-solid fa-phone" style="color:var(--g)"></i><span>WA: <b>${esc(m.WA || '-')}</b></span></div>
+      ${dailyActivityHTML}
     </div>
-    ${wa ? `<a href="https://wa.me/${wa}" target="_blank" class="btn-wa"><i class="fa-brands fa-whatsapp"></i> Hubungi via WhatsApp</a>` : ''}
+    ${wa ? `<a href="https://wa.me/${wa}" target="_blank" class="btn-wa" style="margin-top:8px;"><i class="fa-brands fa-whatsapp"></i> Hubungi via WhatsApp</a>` : ''}
   `;
   box.classList.add('active');
   setTimeout(() => box.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
@@ -1309,6 +1575,62 @@ function openAnggotaDetail(i) {
 function closeAnggotaDetail() {
   const box = document.getElementById('anggotaDetail');
   if (box) { box.classList.remove('active'); box.innerHTML = ''; }
+}
+
+function bukaDailyActivityModal(areaStr, namaPetugas) {
+  if (typeof Swal === 'undefined') return;
+
+  let key = 'SD';
+  let areaUpper = String(areaStr || '').toUpperCase();
+
+  if (areaUpper.includes('TK')) {
+    if (areaUpper.includes('MASJID') || areaUpper.includes('TK 1') || areaUpper.includes('A')) {
+      key = 'TK MASJID';
+    } else {
+      key = 'TK KELAS';
+    }
+  } else if (areaUpper.includes('OFFICE') || areaUpper.includes('KANTOR')) {
+    key = 'OFFICE';
+  } else {
+    key = 'SD';
+  }
+
+  let templateList = TEMPLATE_DAILY_BY_AREA[key] || TEMPLATE_DAILY_BY_AREA['SD'];
+
+  let html = `<div style="max-height: 400px; overflow-y: auto; text-align: left; padding: 4px;">`;
+  
+  templateList.forEach(item => {
+    if (item.spesial) {
+      html += `
+        <div style="background: #f8fafc; border: 1px dashed var(--b); border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; text-align: center;">
+          <span style="font-size: 11px; font-weight: 800; color: var(--o);">${esc(item.jam)} - ${esc(item.spesial)}</span>
+        </div>`;
+    } else {
+      let tugasListHtml = '';
+      if (item.tugas && item.tugas.length > 0) {
+        tugasListHtml = item.tugas.map(t => `<li style="font-size: 11px; margin-bottom: 3px; color: #334155;">${esc(t)}</li>`).join('');
+      }
+      html += `
+        <div style="background: ${item.orange ? '#fff7ed' : '#fff'}; border: 1px solid ${item.orange ? '#fed7aa' : '#e2e8f0'}; border-radius: 9px; padding: 10px; margin-bottom: 8px;">
+          <div style="font-size: 11.5px; font-weight: 800; color: ${item.orange ? 'var(--o)' : 'var(--g)'}; margin-bottom: 4px;">
+            <i class="fa-regular fa-clock"></i> ${esc(item.jam)} — ${esc(item.label || '')}
+          </div>
+          <ul style="padding-left: 16px; margin: 0;">
+            ${tugasListHtml}
+          </ul>
+        </div>`;
+    }
+  });
+
+  html += `</div>`;
+
+  Swal.fire({
+    title: `Daily Activity: ${esc(namaPetugas)} (${esc(key)})`,
+    html: html,
+    width: '450px',
+    confirmButtonText: 'Tutup',
+    confirmButtonColor: 'var(--g)'
+  });
 }
 
 function extractDisplayDate(item) {
@@ -1772,7 +2094,7 @@ function closePhotoModal() {
   }
 }
 
-// EVENT SWIPE LAYAR PADA MODAL FOTO
+// SWIPE FOTO PREVIEW
 (function setupPhotoSwipe() {
   let touchStartX = 0;
   let touchEndX = 0;
@@ -1811,7 +2133,6 @@ function renderLaporanPage() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // 1. Filter laporan yang HANYA dibuat hari ini
   const laporanHariIni = list.filter(x => {
     const tglLaporan = parseSmartDate(extractDisplayDate(x));
     return tglLaporan && tglLaporan.getTime() === today.getTime();
@@ -1824,13 +2145,11 @@ function renderLaporanPage() {
     return;
   }
 
-  // 2. Kelompokkan laporan berdasarkan Nama Anggota
   const groupedByNama = {};
 
   laporanHariIni.forEach(x => {
     const nama = (x.Nama || 'Petugas').trim();
     
-    // Cari URL foto dari properti objek laporan
     let fotoUrl = x.Foto || x.foto || x.FotoUrl || x.urlFoto || '';
     if (!fotoUrl) {
       const values = Object.values(x).map(v => String(v || '').trim());
@@ -1871,7 +2190,6 @@ function renderLaporanPage() {
       catatanHTML = `<p style="margin-top:6px; font-size:11px; color:var(--s);"><b>Catatan:</b> ${esc(catatanText)}</p>`;
     }
 
-    // Tombol Lihat Foto yang membuka Galeri Foto
     let fotoButtonHTML = '';
     if (item.fotoList.length > 0) {
       const jsonFotoArray = JSON.stringify(item.fotoList).replace(/"/g, '&quot;');
@@ -2185,9 +2503,7 @@ appContainer.addEventListener('touchend', e => {
   } else { pullIndicator.style.transform = 'translateY(0)'; }
 });
 
-// ==========================================
-// MODUL DATA SISWA (Accordion Urut Unit: DC, TKIT 1, TKIT 3, SDIT 1, SDIT 2, SDIT 3, SMPIT, SMAIT)
-// ==========================================
+// DATA SISWA MODUL
 function bukaDataSiswa() {
   if (typeof Swal === 'undefined') {
     alert('Library modal sedang dimuat. Silakan coba sebentar lagi.');
@@ -2338,7 +2654,6 @@ function toggleUnitDataSiswa(unitId) {
     if (icon) icon.style.transform = 'rotate(0deg)';
   }
 }
-// ==========================================
 
 loadData();
 
