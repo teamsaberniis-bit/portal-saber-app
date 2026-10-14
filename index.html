@@ -742,7 +742,7 @@ html, body{
 }
 .home-pengaduan-card{ background:#fffbeb; border-color:#fef3c7; }
 
-/* CSS MODAL PREVIEW FOTO */
+/* CSS MODAL PREVIEW FOTO SLIDER / GALERI */
 .image-modal {
   display: none;
   position: fixed;
@@ -751,25 +751,67 @@ html, body{
   top: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0,0,0,0.85);
+  background: rgba(0,0,0,0.92);
   justify-content: center;
   align-items: center;
-  padding: 20px;
+  flex-direction: column;
+}
+.image-modal-content {
+  position: relative;
+  width: 100%;
+  max-width: 414px;
+  height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }
 .image-modal img {
-  max-width: 100%;
-  max-height: 85vh;
-  border-radius: 8px;
+  max-width: 90%;
+  max-height: 80vh;
+  border-radius: 10px;
   object-fit: contain;
+  transition: opacity 0.2s ease;
 }
 .image-modal-close {
   position: absolute;
-  top: 20px;
-  right: 25px;
+  top: 15px;
+  right: 20px;
   color: #fff;
   font-size: 32px;
   font-weight: bold;
   cursor: pointer;
+  z-index: 10001;
+}
+.gallery-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+  border: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  backdrop-filter: blur(4px);
+}
+.gallery-nav-btn:active { background: rgba(255, 255, 255, 0.5); }
+.gallery-prev { left: 12px; }
+.gallery-next { right: 12px; }
+.gallery-counter {
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  margin-top: 10px;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 4px 12px;
+  border-radius: 12px;
 }
 </style>
 </head>
@@ -777,10 +819,15 @@ html, body{
 <body>
 <div class="app">
 
-<!-- MODAL PREVIEW FOTO -->
-<div id="photoModal" class="image-modal" onclick="closePhotoModal()">
-  <span class="image-modal-close">&times;</span>
-  <img id="modalPhotoImg" src="" alt="Preview Foto">
+<!-- MODAL PREVIEW FOTO SLIDER / GALERI -->
+<div id="photoModal" class="image-modal">
+  <span class="image-modal-close" onclick="closePhotoModal()">&times;</span>
+  <div class="image-modal-content" id="photoModalContent">
+    <button class="gallery-nav-btn gallery-prev" id="galleryPrevBtn" onclick="prevGalleryPhoto()">‹</button>
+    <img id="modalPhotoImg" src="" alt="Preview Foto">
+    <button class="gallery-nav-btn gallery-next" id="galleryNextBtn" onclick="nextGalleryPhoto()">›</button>
+  </div>
+  <div class="gallery-counter" id="galleryCounter">1 / 1</div>
 </div>
 
 <!-- IFRAME & FORM TERSEMBUNYI UNTUK PENGIRIMAN TANPA CORS -->
@@ -1644,7 +1691,7 @@ function renderPengaduanPage() {
           </span>
 
           ${fotoUrl ? `
-            <button type="button" onclick="openPhotoModal('${esc(fotoUrl)}')" style="font-size:10.5px; color:var(--blue); font-weight:800; text-decoration:none; display:inline-flex; align-items:center; gap:4px; background:#eff6ff; padding:5px 10px; border-radius:6px; border:1px solid #bfdbfe; cursor:pointer;">
+            <button type="button" onclick="openPhotoModal(['${esc(fotoUrl)}'], 0)" style="font-size:10.5px; color:var(--blue); font-weight:800; text-decoration:none; display:inline-flex; align-items:center; gap:4px; background:#eff6ff; padding:5px 10px; border-radius:6px; border:1px solid #bfdbfe; cursor:pointer;">
               <i class="fa-solid fa-image"></i> Lihat Foto
             </button>
           ` : ''}
@@ -1659,23 +1706,63 @@ function renderPengaduanPage() {
   if (f) f.innerHTML = list.length ? list.map(mapper).join('') : empty;
 }
 
-// FUNGSI MODAL PREVIEW FOTO
-function openPhotoModal(url) {
-  if (!url) return;
-  
-  let directUrl = url;
-  
-  let fileIdMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
+// ==========================================
+// FUNGSI MODAL PREVIEW FOTO GALERI / SLIDER
+// ==========================================
+let currentGalleryList = [];
+let currentGalleryIndex = 0;
+
+function openPhotoModal(urls, index = 0) {
+  if (!urls) return;
+  if (typeof urls === 'string') {
+    currentGalleryList = [urls];
+  } else if (Array.isArray(urls)) {
+    currentGalleryList = urls;
+  } else {
+    return;
+  }
+
+  if (currentGalleryList.length === 0) return;
+  currentGalleryIndex = Math.max(0, Math.min(index, currentGalleryList.length - 1));
+
+  const modal = document.getElementById('photoModal');
+  if (modal) {
+    modal.style.display = 'flex';
+    updateGalleryPhoto();
+  }
+}
+
+function updateGalleryPhoto() {
+  const modalImg = document.getElementById('modalPhotoImg');
+  const counter = document.getElementById('galleryCounter');
+  const prevBtn = document.getElementById('galleryPrevBtn');
+  const nextBtn = document.getElementById('galleryNextBtn');
+
+  let rawUrl = currentGalleryList[currentGalleryIndex] || '';
+  let directUrl = rawUrl;
+
+  let fileIdMatch = rawUrl.match(/\/d\/([a-zA-Z0-9_-]+)/) || rawUrl.match(/id=([a-zA-Z0-9_-]+)/);
   if (fileIdMatch && fileIdMatch[1]) {
     directUrl = 'https://lh3.googleusercontent.com/d/' + fileIdMatch[1];
   }
-  
-  const modal = document.getElementById('photoModal');
-  const modalImg = document.getElementById('modalPhotoImg');
-  if (modal && modalImg) {
-    modalImg.src = directUrl;
-    modal.style.display = 'flex';
-  }
+
+  if (modalImg) modalImg.src = directUrl;
+  if (counter) counter.textContent = `${currentGalleryIndex + 1} / ${currentGalleryList.length}`;
+
+  if (prevBtn) prevBtn.style.display = currentGalleryList.length > 1 ? 'flex' : 'none';
+  if (nextBtn) nextBtn.style.display = currentGalleryList.length > 1 ? 'flex' : 'none';
+}
+
+function prevGalleryPhoto() {
+  if (currentGalleryList.length <= 1) return;
+  currentGalleryIndex = (currentGalleryIndex - 1 + currentGalleryList.length) % currentGalleryList.length;
+  updateGalleryPhoto();
+}
+
+function nextGalleryPhoto() {
+  if (currentGalleryList.length <= 1) return;
+  currentGalleryIndex = (currentGalleryIndex + 1) % currentGalleryList.length;
+  updateGalleryPhoto();
 }
 
 function closePhotoModal() {
@@ -1684,6 +1771,37 @@ function closePhotoModal() {
     modal.style.display = 'none';
   }
 }
+
+// EVENT SWIPE LAYAR PADA MODAL FOTO
+(function setupPhotoSwipe() {
+  let touchStartX = 0;
+  let touchEndX = 0;
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const modalContent = document.getElementById('photoModalContent');
+    if (!modalContent) return;
+
+    modalContent.addEventListener('touchstart', e => {
+      touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+
+    modalContent.addEventListener('touchend', e => {
+      touchEndX = e.changedTouches[0].screenX;
+      handleSwipe();
+    }, { passive: true });
+
+    function handleSwipe() {
+      const diffX = touchEndX - touchStartX;
+      if (Math.abs(diffX) > 40) {
+        if (diffX < 0) {
+          nextGalleryPhoto();
+        } else {
+          prevGalleryPhoto();
+        }
+      }
+    }
+  });
+})();
 
 function renderLaporanPage() {
   const list = [...(DB.laporan || [])].sort((a, b) => parseDateVal(a) - parseDateVal(b));
@@ -1711,18 +1829,28 @@ function renderLaporanPage() {
 
   laporanHariIni.forEach(x => {
     const nama = (x.Nama || 'Petugas').trim();
+    
+    // Cari URL foto dari properti objek laporan
+    let fotoUrl = x.Foto || x.foto || x.FotoUrl || x.urlFoto || '';
+    if (!fotoUrl) {
+      const values = Object.values(x).map(v => String(v || '').trim());
+      fotoUrl = values.find(v => v.startsWith('http://') || v.startsWith('https://')) || '';
+    }
+
     if (!groupedByNama[nama]) {
       groupedByNama[nama] = {
         Nama: nama,
         Area: x.Area || '-',
         pekerjaanList: [],
         catatanList: [],
+        fotoList: [],
         lastWaktu: extractDisplayDate(x)
       };
     }
 
     if (x.Pekerjaan) groupedByNama[nama].pekerjaanList.push(x.Pekerjaan.trim());
     if (x.Catatan) groupedByNama[nama].catatanList.push(x.Catatan.trim());
+    if (fotoUrl) groupedByNama[nama].fotoList.push(fotoUrl);
     if (x.Area) groupedByNama[nama].Area = x.Area.trim();
     groupedByNama[nama].lastWaktu = extractDisplayDate(x);
   });
@@ -1743,6 +1871,17 @@ function renderLaporanPage() {
       catatanHTML = `<p style="margin-top:6px; font-size:11px; color:var(--s);"><b>Catatan:</b> ${esc(catatanText)}</p>`;
     }
 
+    // Tombol Lihat Foto yang membuka Galeri Foto
+    let fotoButtonHTML = '';
+    if (item.fotoList.length > 0) {
+      const jsonFotoArray = JSON.stringify(item.fotoList).replace(/"/g, '&quot;');
+      fotoButtonHTML = `
+        <button type="button" onclick="openPhotoModal(${jsonFotoArray}, 0)" style="font-size:10.5px; color:var(--blue); font-weight:800; text-decoration:none; display:inline-flex; align-items:center; gap:4px; background:#eff6ff; padding:5px 10px; border-radius:6px; border:1px solid #bfdbfe; cursor:pointer;">
+          <i class="fa-solid fa-image"></i> Lihat Foto (${item.fotoList.length})
+        </button>
+      `;
+    }
+
     return `
       <div class="card" style="margin-bottom:10px;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start;">
@@ -1756,10 +1895,12 @@ function renderLaporanPage() {
           <span class="badge-status selesai">Selesai</span>
         </div>
         ${catatanHTML}
-        <div style="margin-top:8px;">
-          <span class="status">
-            <i class="fa-regular fa-calendar-days"></i> Laporan Terakhir: ${esc(item.lastWaktu)}
+        
+        <div style="margin-top:8px; border-top:1px dashed #e2e8f0; padding-top:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+          <span class="status" style="background:#f8fafc; color:#64748b; border:1px solid #e2e8f0; font-weight:700; margin:0;">
+            <i class="fa-regular fa-calendar-days" style="color:var(--g); margin-right:4px;"></i> ${esc(item.lastWaktu)}
           </span>
+          <div>${fotoButtonHTML}</div>
         </div>
       </div>`;
   }).join('');
