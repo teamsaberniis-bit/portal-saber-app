@@ -1986,7 +1986,7 @@ appContainer.addEventListener('touchend', e => {
 });
 
 // ==========================================
-// MODUL DATA SISWA (Accordion Urut Unit: DC, TK, SD 1, SD 2, SMP, SMA)
+// MODUL DATA SISWA (Accordion Urut Unit: DC, TKIT 1, TKIT 3, SDIT 1, SDIT 2, SDIT 3, SMPIT, SMAIT)
 // ==========================================
 function bukaDataSiswa() {
   if (typeof Swal === 'undefined') {
@@ -2026,8 +2026,8 @@ function tampilkanModalDataSiswa(data) {
     return;
   }
 
-  // Daftar urutan unit utama yang diinginkan
-  const urutanUnit = ['DC', 'TK', 'SD 1', 'SD 2', 'SMP', 'SMA'];
+  // Daftar urutan unit utama yang diinginkan sesuai permintaan
+  const urutanUnit = ['DC', 'TKIT 1', 'TKIT 3', 'SDIT 1', 'SDIT 2', 'SDIT 3', 'SMPIT', 'SMAIT'];
 
   // Mengelompokkan data siswa berdasarkan unitnya
   let grouped = {};
@@ -2037,16 +2037,22 @@ function tampilkanModalDataSiswa(data) {
 
     if (rawLvl.includes('DC') || rawLvl.includes('DAYCARE') || rawLvl.includes('BABY') || rawLvl.includes('TODDLER') || rawLvl.includes('PG')) {
       unitKey = 'DC';
-    } else if (rawLvl.includes('TK')) {
-      unitKey = 'TK';
-    } else if (rawLvl.includes('SD 1') || rawLvl.includes('SD1')) {
-      unitKey = 'SD 1';
-    } else if (rawLvl.includes('SD 2') || rawLvl.includes('SD2')) {
-      unitKey = 'SD 2';
-    } else if (rawLvl.includes('SMP')) {
-      unitKey = 'SMP';
-    } else if (rawLvl.includes('SMA')) {
-      unitKey = 'SMA';
+    } else if (rawLvl.includes('TKIT 1') || rawLvl.includes('TKIT1')) {
+      unitKey = 'TKIT 1';
+    } else if (rawLvl.includes('TKIT 3') || rawLvl.includes('TKIT3')) {
+      unitKey = 'TKIT 3';
+    } else if (rawLvl.includes('TK') || rawLvl.includes('TKIT')) {
+      unitKey = 'TKIT 1'; // Fallback jika hanya tertulis TK / TKIT umum
+    } else if (rawLvl.includes('SDIT 1') || rawLvl.includes('SDIT1') || rawLvl.includes('SD 1')) {
+      unitKey = 'SDIT 1';
+    } else if (rawLvl.includes('SDIT 2') || rawLvl.includes('SDIT2') || rawLvl.includes('SD 2')) {
+      unitKey = 'SDIT 2';
+    } else if (rawLvl.includes('SDIT 3') || rawLvl.includes('SDIT3') || rawLvl.includes('SD 3')) {
+      unitKey = 'SDIT 3';
+    } else if (rawLvl.includes('SMPIT') || rawLvl.includes('SMP')) {
+      unitKey = 'SMPIT';
+    } else if (rawLvl.includes('SMAIT') || rawLvl.includes('SMA')) {
+      unitKey = 'SMAIT';
     } else {
       unitKey = String(row.level || 'Lainnya').trim();
     }
