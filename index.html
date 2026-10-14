@@ -1528,7 +1528,6 @@ function openAnggotaDetail(i) {
 
   let dailyActivityHTML = '';
 
-  // Hanya tampilkan Daily Activity jika BUKAN PJ / Koordinator
   if (!isPJ) {
     let dailyImg = m.DailyActivity || m['Daily Activity'] || m.Daily || m.FotoDaily || m.daily || '';
 
@@ -1988,15 +1987,39 @@ function renderPengaduanPage() {
     let namaUser = String(x.Nama || x.nama || values[0] || 'Pengguna').trim();
     let areaUser = String(x.Area || x.area || values[1] || '-').trim();
 
-    let kendalaTeks = values.find(v => {
-      if (!v) return false;
-      if (v === namaUser || v === areaUser || v === fotoUrl) return false;
-      if (v.includes('T') && v.includes('Z')) return false;
-      if (v.toLowerCase() === statusText.toLowerCase()) return false;
-      if (v.startsWith('http')) return false;
-      if (v.includes('202') && v.length < 25) return false;
-      return v.length > 2;
-    }) || '-';
+    // MENAMPILKAN KENDALA UTAMA DAN KETERANGAN PENANGANAN / TINDAK LANJUT
+    let rawKendala = String(x.Kendala || x.kendala || x.Deskripsi || x.deskripsi || '').trim();
+    if (!rawKendala) {
+      rawKendala = values.find(v => {
+        if (!v) return false;
+        if (v === namaUser || v === areaUser || v === fotoUrl) return false;
+        if (v.includes('T') && v.includes('Z')) return false;
+        if (v.toLowerCase() === statusText.toLowerCase()) return false;
+        if (v.startsWith('http')) return false;
+        if (v.includes('202') && v.length < 25) return false;
+        return v.length > 2;
+      }) || '-';
+    }
+
+    let kendalaTeks = rawKendala;
+    let keteranganLanjutan = String(x.Keterangan || x.keterangan || x.TindakLanjut || x.Penanganan || '').trim();
+
+    // Jika keterangan dipisah tanda '|' di kolom Kendala
+    if (rawKendala.includes('|')) {
+      let parts = rawKendala.split('|');
+      kendalaTeks = parts[0].trim();
+      keteranganLanjutan = parts.slice(1).join('|').trim();
+    }
+
+    let htmlKeterangan = '';
+    if (keteranganLanjutan) {
+      htmlKeterangan = `
+        <div style="font-size:11px; color:#1e293b; font-weight:600; line-height:1.4; word-break:break-word; margin-top:6px; background:#f0fdf4; border:1px solid #bbf7d0; padding:8px 10px; border-radius:8px;">
+          <b style="color:var(--g); display:block; margin-bottom:2px;"><i class="fa-solid fa-square-check"></i> Keterangan / Penanganan:</b>
+          ${esc(keteranganLanjutan)}
+        </div>
+      `;
+    }
 
     return `
       <div class="card" style="position:relative; overflow:hidden; padding:12px; margin-bottom:10px;">
@@ -2010,9 +2033,12 @@ function renderPengaduanPage() {
           </span>
         </div>
         
-        <div style="font-size:11.5px; color:#c2410c; font-weight:700; line-height:1.4; word-break:break-word; margin:6px 0; background:#fff7ed; border:1px solid #ffedd5; padding:10px 12px; border-radius:99px;">
+        <div style="font-size:11.5px; color:#c2410c; font-weight:700; line-height:1.4; word-break:break-word; margin:6px 0; background:#fff7ed; border:1px solid #ffedd5; padding:10px 12px; border-radius:9px;">
+          <b style="display:block; margin-bottom:2px; font-size:10px; color:#ea580c; text-transform:uppercase;">Kendala:</b>
           ${esc(kendalaTeks)}
         </div>
+
+        ${htmlKeterangan}
 
         <div style="margin-top:8px; border-top:1px dashed #e2e8f0; padding-top:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
           <span class="status" style="background:#f8fafc; color:#64748b; border:1px solid #e2e8f0; font-weight:700; margin:0;">
