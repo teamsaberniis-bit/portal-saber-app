@@ -1095,7 +1095,7 @@ if (localStorage.getItem('timSaberCacheVersion') !== 'v12') {
 // URL WEB APP APPS SCRIPT TERBARU
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxajlEzDg2vu2733f-yL885e4Ara_hcM6y__u1_ADv2SOaU9LrwlWb36Rm7y7u-DgWBCA/exec";
 
-// TEMPLATE DAILY ACTIVITY BERDASARKAN AREA (TERHUBUNG LENGKAP)
+// TEMPLATE DAILY ACTIVITY BERDASARKAN AREA
 const TEMPLATE_DAILY_BY_AREA = {
   "SD": [
     {
@@ -1523,32 +1523,38 @@ function openAnggotaDetail(i) {
   const w = String(m.WA || '').replace(/[^0-9]/g, '');
   const wa = w ? (w.startsWith('0') ? '62' + w.slice(1) : w) : '';
 
-  let dailyImg = m.DailyActivity || m['Daily Activity'] || m.Daily || m.FotoDaily || m.daily || '';
+  let jabatanUpper = String(m.Jabatan || '').toUpperCase();
+  let isPJ = jabatanUpper.includes('PJ') || jabatanUpper.includes('KOORDINATOR') || jabatanUpper.includes('KORDIR');
 
   let dailyActivityHTML = '';
-  if (dailyImg) {
-    dailyActivityHTML = `
-      <div style="margin-top:10px; border-top:1px dashed var(--b); padding-top:10px;">
-        <div style="font-size:11px; font-weight:800; color:var(--t); margin-bottom:6px; display:flex; align-items:center; gap:5px;">
-          <i class="fa-solid fa-calendar-check" style="color:var(--g)"></i> Daily Activity (Rutinitas Harian)
+
+  // Hanya tampilkan Daily Activity jika BUKAN PJ / Koordinator
+  if (!isPJ) {
+    let dailyImg = m.DailyActivity || m['Daily Activity'] || m.Daily || m.FotoDaily || m.daily || '';
+
+    if (dailyImg) {
+      dailyActivityHTML = `
+        <div style="margin-top:10px; border-top:1px dashed var(--b); padding-top:10px;">
+          <div style="font-size:11px; font-weight:800; color:var(--t); margin-bottom:6px; display:flex; align-items:center; gap:5px;">
+            <i class="fa-solid fa-calendar-check" style="color:var(--g)"></i> Daily Activity (Rutinitas Harian)
+          </div>
+          <button type="button" onclick="openPhotoModal(['${esc(dailyImg)}'], 0)" style="width:100%; font-size:12px; color:var(--g); font-weight:800; background:var(--gl); padding:10px; border-radius:9px; border:1px solid #bbf7d0; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
+            <i class="fa-solid fa-file-invoice"></i> Lihat Daily Activity (${esc(m.Nama)})
+          </button>
         </div>
-        <button type="button" onclick="openPhotoModal(['${esc(dailyImg)}'], 0)" style="width:100%; font-size:12px; color:var(--g); font-weight:800; background:var(--gl); padding:10px; border-radius:9px; border:1px solid #bbf7d0; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
-          <i class="fa-solid fa-file-invoice"></i> Lihat Daily Activity (${esc(m.Nama)})
-        </button>
-      </div>
-    `;
-  } else {
-    // Tombol interaktif yang memuat rincian tugas berdasarkan area
-    dailyActivityHTML = `
-      <div style="margin-top:10px; border-top:1px dashed var(--b); padding-top:10px;">
-        <div style="font-size:11px; font-weight:800; color:var(--t); margin-bottom:6px; display:flex; align-items:center; gap:5px;">
-          <i class="fa-solid fa-calendar-check" style="color:var(--g)"></i> Daily Activity Harian
+      `;
+    } else {
+      dailyActivityHTML = `
+        <div style="margin-top:10px; border-top:1px dashed var(--b); padding-top:10px;">
+          <div style="font-size:11px; font-weight:800; color:var(--t); margin-bottom:6px; display:flex; align-items:center; gap:5px;">
+            <i class="fa-solid fa-calendar-check" style="color:var(--g)"></i> Daily Activity Harian
+          </div>
+          <button type="button" onclick="bukaDailyActivityModal('${esc(m.Area || 'SD')}', '${esc(m.Nama)}')" style="width:100%; font-size:12px; color:var(--g); font-weight:800; background:var(--gl); padding:10px; border-radius:9px; border:1px solid #bbf7d0; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
+            <i class="fa-solid fa-list-check"></i> Lihat Jadwal Tugas (${esc(m.Area || 'SD')})
+          </button>
         </div>
-        <button type="button" onclick="bukaDailyActivityModal('${esc(m.Area || 'SD')}', '${esc(m.Nama)}')" style="width:100%; font-size:12px; color:var(--g); font-weight:800; background:var(--gl); padding:10px; border-radius:9px; border:1px solid #bbf7d0; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
-          <i class="fa-solid fa-list-check"></i> Lihat Jadwal Tugas (${esc(m.Area || 'SD')})
-        </button>
-      </div>
-    `;
+      `;
+    }
   }
 
   box.innerHTML = `
