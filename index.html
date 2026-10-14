@@ -18,7 +18,7 @@
 
 <link rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<!-- SweetAlert2 untuk Popup -->
+<!-- SweetAlert2 untuk Popup Data Siswa -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <style>
@@ -783,7 +783,7 @@ html, body{
   <img id="modalPhotoImg" src="" alt="Preview Foto">
 </div>
 
-<!-- IFRAME & FORM TERSEMBUNYI -->
+<!-- IFRAME & FORM TERSEMBUNYI UNTUK PENGIRIMAN TANPA CORS -->
 <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
 <form id="gasSubmitForm" action="https://script.google.com/macros/s/AKfycbxajlEzDg2vu2733f-yL885e4Ara_hcM6y__u1_ADv2SOaU9LrwlWb36Rm7y7u-DgWBCA/exec" method="POST" target="hidden_iframe" style="display:none;">
   <input type="hidden" name="postData" id="gasPostData">
@@ -1039,11 +1039,13 @@ html, body{
 </div>
 
 <script>
-if (localStorage.getItem('timSaberCacheVersion') !== 'v14') {
+// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 12)
+if (localStorage.getItem('timSaberCacheVersion') !== 'v12') {
   localStorage.clear();
-  localStorage.setItem('timSaberCacheVersion', 'v14');
+  localStorage.setItem('timSaberCacheVersion', 'v12');
 }
 
+// URL WEB APP APPS SCRIPT TERBARU
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxajlEzDg2vu2733f-yL885e4Ara_hcM6y__u1_ADv2SOaU9LrwlWb36Rm7y7u-DgWBCA/exec";
 
 let DB = {
@@ -1109,8 +1111,9 @@ function showPage(id, pushHistory = true) {
   });
 })();
 
+// LOAD DATA
 function loadData() {
-  const cachedData = localStorage.getItem('timSaberCacheData_v14');
+  const cachedData = localStorage.getItem('timSaberCacheData_v12');
   if (cachedData) {
     try {
       DB = Object.assign(DB, JSON.parse(cachedData));
@@ -1127,7 +1130,7 @@ function loadData() {
       if (d) {
         const newStr = JSON.stringify(d);
         DB = Object.assign(DB, d);
-        localStorage.setItem('timSaberCacheData_v14', newStr);
+        localStorage.setItem('timSaberCacheData_v12', newStr);
         initApp();
       }
     })
@@ -1143,7 +1146,7 @@ function loadDataFallback() {
   window.handleDashboardResponse = function(d) {
     if (d) {
       DB = Object.assign(DB, d);
-      localStorage.setItem('timSaberCacheData_v14', JSON.stringify(d));
+      localStorage.setItem('timSaberCacheData_v12', JSON.stringify(d));
       initApp();
     }
   };
@@ -1264,6 +1267,7 @@ function closeAnggotaDetail() {
 function extractDisplayDate(item) {
   if (!item) return '-';
   let val = item.Tanggal || item['Waktu System'] || item['Hari/tgl'] || item['Hari/Tanggal'] || item.Timestamp || item.timestamp || item.Waktu || item.waktu || item.Date || item.date || item.CreatedAt || item.created_at || '';
+  
   if (!val) {
     for (let k in item) {
       if (k.toLowerCase().includes('tgl') || k.toLowerCase().includes('date') || k.toLowerCase().includes('time') || k.toLowerCase().includes('waktu')) {
@@ -1271,26 +1275,92 @@ function extractDisplayDate(item) {
       }
     }
   }
+
   if (!val) return 'Terbaru';
+
   let strVal = String(val).trim();
+
   if (strVal.includes('T') && strVal.includes('Z')) {
     let d = new Date(strVal);
     if (!isNaN(d.getTime())) {
-      return d.toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      return d.toLocaleString('id-ID', {
+        timeZone: 'Asia/Jakarta',
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
     }
   }
+
+  if (strVal.match(/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}/)) {
+    let parts = strVal.split(' ');
+    let dateParts = parts[0].split('-');
+    let timePart = parts[1] || '';
+    
+    const namaBulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    let tgl = dateParts[2];
+    let bln = namaBulan[parseInt(dateParts[1], 10) - 1] || dateParts[1];
+    let thn = dateParts[0];
+
+    return `${tgl} ${bln} ${thn} ${timePart}`;
+  }
+
   return strVal;
 }
 
 function parseSmartDate(dateStr) {
   if (!dateStr) return null;
   let rawStr = String(dateStr).trim();
-  let timestamp = Date.parse(rawStr);
+  if (rawStr.includes('T')) {
+    let dIso = new Date(rawStr);
+    if (!isNaN(dIso.getTime())) {
+      dIso.setHours(0, 0, 0, 0);
+      return dIso;
+    }
+  }
+
+  let cleanStr = rawStr.replace(/^(Senin|Selasa|Rabu|Kamis|Jum'at|Jumat|Sabtu|Minggu),?\s*/i, '').trim();
+  const months = {
+    'januari': 'January', 'februari': 'February', 'maret': 'March', 'april': 'April',
+    'mei': 'May', 'juni': 'June', 'juli': 'July', 'agustus': 'August',
+    'september': 'September', 'oktober': 'October', 'november': 'November', 'desember': 'December',
+    'jan': 'Jan', 'feb': 'Feb', 'mar': 'Mar', 'apr': 'Apr', 'mei': 'May', 'jun': 'Jun',
+    'jul': 'Jul', 'agu': 'Aug', 'sep': 'Sep', 'okt': 'Oct', 'nov': 'Nov', 'des': 'Dec'
+  };
+
+  for (let idName in months) {
+    cleanStr = cleanStr.replace(new RegExp('\\b' + idName + '\\b', 'gi'), months[idName]);
+  }
+
+  let timestamp = Date.parse(cleanStr);
+  if (isNaN(timestamp)) {
+    let parts = cleanStr.match(/(\d{1,2})[\/\-\s]+(\d{1,2}|[a-zA-Z]+)[\/\-\s]+(\d{2,4})/);
+    if (parts) {
+      let day = parseInt(parts[1], 10);
+      let month = parts[2];
+      let year = parseInt(parts[3], 10);
+      if (year < 100) year += 2000;
+      
+      if (!isNaN(parseInt(month, 10))) {
+        month = parseInt(month, 10) - 1;
+      } else {
+        month = new Date(Date.parse(month + " 1, 2000")).getMonth();
+      }
+      let d = new Date(year, month, day);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    }
+  }
+
   if (!isNaN(timestamp)) {
     let d = new Date(timestamp);
     d.setHours(0, 0, 0, 0);
     return d;
   }
+
   return null;
 }
 
@@ -1387,78 +1457,219 @@ function lemburNext() { goLembur(lemburIndex + 1); }
 function getInformasiData() {
   return DB.informasi || DB.berita || DB.info || [];
 }
+function parseDateVal(x) {
+  let dStr = extractDisplayDate(x);
+  if (!dStr) return 0;
+  let d = parseSmartDate(dStr);
+  if (d) return d.getTime();
+  let t = Date.parse(dStr);
+  return !isNaN(t) ? t : 0;
+}
 
 function renderInformasiPage() {
-  const list = getInformasiData();
+  const list = [...getInformasiData()].sort((a, b) => parseDateVal(b) - parseDateVal(a));
   const b = document.getElementById('infoList');
   const h = document.getElementById('homeInfoBox');
   const empty = '<div class="card"><p class="muted">Belum ada informasi.</p></div>';
 
+  if (list.length > 0) {
+    const infoTerbaru = (list[0].Judul || list[0].Title || '') + '|' + (list[0].Informasi || list[0].Isi || '');
+    const lastSeenInfo = localStorage.getItem('lastSeenInfo');
+
+    if (lastSeenInfo && lastSeenInfo !== infoTerbaru) {
+      playNotifSound();
+      showToast('ADA INFORMASI TERBARU!');
+    }
+    localStorage.setItem('lastSeenInfo', infoTerbaru);
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   const mapper = x => {
     const rawTgl = extractDisplayDate(x);
+    const tglInfo = parseSmartDate(rawTgl);
+    const isToday = tglInfo && tglInfo.getTime() === today.getTime();
+
+    const badgeKegiatanHariIni = isToday ? `
+      <span style="background:var(--g); color:#fff; font-size:10px; font-weight:800; padding:3px 8px; border-radius:12px; display:inline-block; margin-left:8px; text-transform:uppercase; vertical-align:middle;">
+        KEGIATAN HARI INI
+      </span>` : '';
+
+    const cardStyle = isToday ? 'border: 2px solid var(--g); background: #f0fdf4;' : 'border: 1px solid var(--b); background: #fff;';
+
     return `
-      <div class="home-info-card" style="border: 1px solid var(--b); background: #fff; border-radius: 14px; padding: 12px 14px; margin-bottom: 9px;">
-        <div style="font-size:13px; font-weight:800; color:var(--t); margin-bottom:4px;">${esc(x.Judul || x.Title || 'Informasi')}</div>
+      <div class="home-info-card" style="${cardStyle} border-radius: 14px; padding: 12px 14px; margin-bottom: 9px;">
+        <div style="display:flex; align-items:center; flex-wrap:wrap; gap:4px; margin-bottom:4px;">
+          <span style="font-size:13px; font-weight:800; color:var(--t);">${esc(x.Judul || x.Title || 'Informasi')}</span>
+          ${badgeKegiatanHariIni}
+        </div>
         <div style="font-size:11px; color:var(--s); line-height:1.4; margin-bottom:6px;">${esc(x.Informasi || x.Keterangan || x.Isi || '-')}</div>
         <div style="font-size:9.5px; color:var(--s); font-weight:600;"><i class="fa-regular fa-calendar-days" style="margin-right:4px;"></i>${esc(rawTgl)}</div>
       </div>`;
   };
 
   if (b) b.innerHTML = list.length ? list.map(mapper).join('') : empty;
-  if (h) h.innerHTML = list.length ? list.slice(0, 2).map(mapper).join('') : empty;
+  
+  if (h) {
+    if (list.length === 0) {
+      h.innerHTML = empty;
+    } else {
+      const sortedForHome = [...list].sort((a, b) => {
+        const dA = parseSmartDate(extractDisplayDate(a));
+        const dB = parseSmartDate(extractDisplayDate(b));
+        const isTodayA = dA && dA.getTime() === today.getTime();
+        const isTodayB = dB && dB.getTime() === today.getTime();
+        
+        if (isTodayA && !isTodayB) return -1;
+        if (!isTodayA && isTodayB) return 1;
+
+        const diffA = dA ? Math.abs(dA.getTime() - today.getTime()) : Infinity;
+        const diffB = dB ? Math.abs(dB.getTime() - today.getTime()) : Infinity;
+        return diffA - diffB;
+      });
+
+      h.innerHTML = sortedForHome.slice(0, 2).map(mapper).join('');
+    }
+  }
 }
 
+// SUARA NOTIFIKASI
 function playNotifSound() {
   try {
     const audio = document.getElementById('notifSound');
-    if (audio) { audio.currentTime = 0; audio.play().catch(() => {}); }
-  } catch (e) {}
+    if (audio) {
+      audio.currentTime = 0;
+      let playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          playBeepSound();
+        });
+      }
+    } else {
+      playBeepSound();
+    }
+  } catch (e) {
+    playBeepSound();
+  }
+}
+
+function playBeepSound() {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1);
+    
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.35);
+    
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    osc.start();
+    osc.stop(ctx.currentTime + 0.35);
+  } catch (err) {}
 }
 
 function renderPengaduanPage() {
-  const list = DB.pengaduan || [];
+  const list = [...(DB.pengaduan || [])].sort((a, b) => parseDateVal(b) - parseDateVal(a));
   const h = document.getElementById('homePengaduanBox');
   const f = document.getElementById('pengaduanListFull');
   const empty = '<div class="card"><p class="muted">Belum ada pengaduan.</p></div>';
 
   const mapper = x => {
-    let fotoUrl = x.Foto || x.foto || '';
+    const values = Object.values(x).map(v => String(v || '').trim());
+    let fotoUrl = values.find(v => v.startsWith('http://') || v.startsWith('https://')) || '';
     let tglPelaporan = extractDisplayDate(x);
-    let statusText = String(x.Status || x.status || 'Baru').toUpperCase();
-    let badgeStyle = statusText.includes('SELESAI') ? 'background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0;' : 'background:#fff7ed; color:#ea580c; border:1px solid #fed7aa;';
+
+    let statusText = String(x.Status || x.status || '').trim();
+    if (!statusText) {
+      let rawStatus = values.find(v => {
+        let vLow = v.toLowerCase();
+        return (vLow === 'baru' || vLow.includes('progres') || vLow.includes('proses') || vLow.includes('cek') || vLow.includes('selesai')) && !v.startsWith('http');
+      });
+      statusText = rawStatus ? rawStatus : 'BARU';
+    }
+    statusText = statusText.toUpperCase();
+
+    let badgeStyle = 'background:#fef2f2; color:#dc2626; border:1px solid #fecaca;';
+    let stLow = statusText.toLowerCase();
+
+    if (stLow.includes('selesai')) {
+      badgeStyle = 'background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0;';
+    } else if (stLow.includes('progres') || stLow.includes('proses') || stLow.includes('cek')) {
+      badgeStyle = 'background:#fff7ed; color:#ea580c; border:1px solid #fed7aa;';
+    } else {
+      badgeStyle = 'background:#fff7ed; color:#ea580c; border:1px solid #fed7aa;';
+    }
+
+    let namaUser = String(x.Nama || x.nama || values[0] || 'Pengguna').trim();
+    let areaUser = String(x.Area || x.area || values[1] || '-').trim();
+
+    let kendalaTeks = values.find(v => {
+      if (!v) return false;
+      if (v === namaUser || v === areaUser || v === fotoUrl) return false;
+      if (v.includes('T') && v.includes('Z')) return false;
+      if (v.toLowerCase() === statusText.toLowerCase()) return false;
+      if (v.startsWith('http')) return false;
+      if (v.includes('202') && v.length < 25) return false;
+      return v.length > 2;
+    }) || '-';
 
     return `
       <div class="card" style="position:relative; overflow:hidden; padding:12px; margin-bottom:10px;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:8px;">
           <div style="flex:1; min-width:0;">
-            <h4 style="font-size:13px; font-weight:800; color:var(--t);">${esc(x.Nama || 'Pengguna')}</h4>
-            <p style="font-size:10.5px; color:var(--s); margin-top:2px;"><b>Area:</b> ${esc(x.Area || '-')}</p>
+            <h4 style="font-size:13px; font-weight:800; color:var(--t); text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${esc(namaUser)}</h4>
+            <p style="font-size:10.5px; color:var(--s); margin-top:2px;"><b>Area:</b> ${esc(areaUser)}</p>
           </div>
-          <span style="font-size:9.5px; font-weight:800; padding:4px 10px; border-radius:6px; ${badgeStyle}">${esc(statusText)}</span>
+          <span style="flex:none; font-size:9.5px; font-weight:800; padding:4px 10px; border-radius:6px; text-transform:uppercase; ${badgeStyle}">
+            ${esc(statusText)}
+          </span>
         </div>
-        <div style="font-size:11.5px; color:#c2410c; font-weight:700; line-height:1.4; background:#fff7ed; border:1px solid #ffedd5; padding:10px 12px; border-radius:9px; margin:6px 0;">
-          ${esc(x.Kendala || x.Deskripsi || '-')}
+        
+        <div style="font-size:11.5px; color:#c2410c; font-weight:700; line-height:1.4; word-break:break-word; margin:6px 0; background:#fff7ed; border:1px solid #ffedd5; padding:10px 12px; border-radius:9px;">
+          ${esc(kendalaTeks)}
         </div>
-        <div style="margin-top:8px; border-top:1px dashed #e2e8f0; padding-top:8px; display:flex; justify-content:space-between; align-items:center;">
+
+        <div style="margin-top:8px; border-top:1px dashed #e2e8f0; padding-top:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
           <span class="status" style="background:#f8fafc; color:#64748b; border:1px solid #e2e8f0; font-weight:700; margin:0;">
             <i class="fa-regular fa-calendar-days" style="color:var(--g); margin-right:4px;"></i> ${esc(tglPelaporan)}
           </span>
-          ${fotoUrl ? `<button type="button" onclick="openPhotoModal('${esc(fotoUrl)}')" style="font-size:10.5px; color:var(--blue); font-weight:800; background:#eff6ff; padding:5px 10px; border-radius:6px; border:1px solid #bfdbfe; cursor:pointer;"><i class="fa-solid fa-image"></i> Lihat Foto</button>` : ''}
+
+          ${fotoUrl ? `
+            <button type="button" onclick="openPhotoModal('${esc(fotoUrl)}')" style="font-size:10.5px; color:var(--blue); font-weight:800; text-decoration:none; display:inline-flex; align-items:center; gap:4px; background:#eff6ff; padding:5px 10px; border-radius:6px; border:1px solid #bfdbfe; cursor:pointer;">
+              <i class="fa-solid fa-image"></i> Lihat Foto
+            </button>
+          ` : ''}
         </div>
       </div>`;
   };
 
-  if (h) h.innerHTML = list.length ? list.slice(0, 2).map(mapper).join('') : empty;
+  if (h) {
+    const active = list.filter(x => String(x.Status || x.status || '').trim().toLowerCase() !== 'selesai');
+    h.innerHTML = active.length ? active.slice(0, 2).map(mapper).join('') : (list.length ? list.slice(0, 2).map(mapper).join('') : '<p class="muted">Tidak ada pengaduan.</p>');
+  }
   if (f) f.innerHTML = list.length ? list.map(mapper).join('') : empty;
 }
 
+// FUNGSI MODAL PREVIEW FOTO
 function openPhotoModal(url) {
   if (!url) return;
+  
   let directUrl = url;
+  
   let fileIdMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
   if (fileIdMatch && fileIdMatch[1]) {
     directUrl = 'https://lh3.googleusercontent.com/d/' + fileIdMatch[1];
   }
+  
   const modal = document.getElementById('photoModal');
   const modalImg = document.getElementById('modalPhotoImg');
   if (modal && modalImg) {
@@ -1469,30 +1680,35 @@ function openPhotoModal(url) {
 
 function closePhotoModal() {
   const modal = document.getElementById('photoModal');
-  if (modal) modal.style.display = 'none';
+  if (modal) {
+    modal.style.display = 'none';
+  }
 }
 
 function renderLaporanPage() {
-  const list = DB.laporan || [];
+  const list = [...(DB.laporan || [])].sort((a, b) => parseDateVal(b) - parseDateVal(a));
   const fullBox = document.getElementById('laporanListFull');
   const empty = '<div class="card"><p class="muted">Belum ada laporan kerja selesai.</p></div>';
 
   if (fullBox) {
-    fullBox.innerHTML = list.length ? list.map(x => `
+    fullBox.innerHTML = list.length ? list.map(x => {
+      let tglLaporan = extractDisplayDate(x);
+      return `
       <div class="card">
         <div style="display:flex;justify-content:space-between">
           <div><h4>${esc(x.Nama || 'Petugas')} (${esc(x.Area || '-')})</h4><p><b>Pekerjaan:</b> ${esc(x.Pekerjaan || '-')}</p></div>
           <span class="badge-status selesai">Selesai</span>
         </div>
         ${x.Catatan ? `<p style="margin-top:5px"><b>Catatan:</b> ${esc(x.Catatan)}</p>` : ''}
-        <div style="margin-top:6px"><span class="status"><i class="fa-regular fa-calendar-days"></i> ${esc(extractDisplayDate(x))}</span></div>
-      </div>`).join('') : empty;
+        <div style="margin-top:6px"><span class="status"><i class="fa-regular fa-calendar-days"></i> ${esc(tglLaporan)}</span></div>
+      </div>`;
+    }).join('') : empty;
   }
 }
 
 function renderJadwalByDay() {
   const now = new Date();
-  const day = now.getDay();
+  const day = now.getDay(); 
   const hariNama = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
   const tanggalStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
   const isWeekend = (day === 0 || day === 6);
@@ -1503,48 +1719,74 @@ function renderJadwalByDay() {
 
   if (hariEl) hariEl.textContent = 'Jadwal Kerja Hari Ini: ' + hariNama[day] + ', ' + tanggalStr;
   if (tanggalEl) {
-    tanggalEl.textContent = isWeekend ? 'Hari Libur: Tidak ada jadwal pekerjaan rutin.' : 'Pekerjaan bertanda hijau wajib diselesaikan hari ini.';
+    tanggalEl.textContent = isWeekend 
+      ? 'Hari Libur: Tidak ada jadwal pekerjaan rutin pada hari Sabtu & Minggu.' 
+      : 'Pekerjaan dengan tanda hijau (✓ KERJAKAN HARI INI) wajib diselesaikan hari ini.';
   }
 
   const masterTugas = [
     { tugas: 'Glass cleaning kelas / ruangan', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
     { tugas: 'Cleaning masjid', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
     { tugas: 'Cleaning kelas / ruangan secara menyeluruh', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
+    { tugas: 'Cleaning list kaca & lemari prasman siswa', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
     { tugas: 'Toilet cleaning', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
     { tugas: 'Membuang sampah', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
     { tugas: 'Cleaning karpet toilet & keset', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5], kategori: 'Mingguan' },
+    { tugas: 'General cleaning toilet', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5], kategori: 'Mingguan' },
+    { tugas: 'Cleaning tempat sampah', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5], kategori: 'Mingguan' },
+    { tugas: 'Penggantian sprei', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5], kategori: 'Mingguan' },
     { tugas: 'Vaccum karpet Masjid', frekuensi: '2x Seminggu', pelaksanaan: "Rabu & Jum'at", days: [3,5], kategori: 'Mingguan' },
     { tugas: 'Vaccum karpet', frekuensi: '2x Seminggu', pelaksanaan: 'Selasa & Kamis', days: [2,4], kategori: 'Mingguan' },
-    { tugas: 'Cleaning balkon dan kaca', frekuensi: '2x Sebulan', pelaksanaan: 'Minggu ke 1 & 3', days: [1,2,3,4,5], kategori: 'Bulanan' },
-    { tugas: 'Cleaning dispenser', frekuensi: '2x Sebulan', pelaksanaan: 'Minggu ke 2 & 4', days: [1,2,3,4,5], kategori: 'Bulanan' }
+    { tugas: 'Cleaning sawang-sawang', frekuensi: '2x Seminggu', pelaksanaan: 'Selasa & Kamis', days: [2,4], kategori: 'Mingguan' },
+    { tugas: 'Cleaning dinding kelas', frekuensi: '2x Seminggu', pelaksanaan: 'Senin & Rabu', days: [1,3], kategori: 'Mingguan' },
+    { tugas: 'Cleaning balkon dan kaca', frekuensi: '2x Sebulan', pelaksanaan: 'Minggu ke 1 & Minggu ke 3', days: [1,2,3,4,5], kategori: 'Bulanan' },
+    { tugas: 'Cleaning dispenser', frekuensi: '2x Sebulan', pelaksanaan: 'Minggu ke 2 & Minggu ke 4', days: [1,2,3,4,5], kategori: 'Bulanan' },
+    { tugas: 'General cleaning Masjid', frekuensi: '1x Sebulan', pelaksanaan: 'Minggu ke 4', days: [5], kategori: 'Bulanan' },
+    { tugas: 'Brusing lantai koridor', frekuensi: '1x Sebulan', pelaksanaan: 'Minggu ke 3', days: [5], kategori: 'Bulanan' },
+    { tugas: 'Penyemprotan disinfektan', frekuensi: '1x Sebulan', pelaksanaan: 'Minggu ke 2', days: [5], kategori: 'Bulanan' },
+    { tugas: 'Fogging', frekuensi: '1x 3 bulan', pelaksanaan: 'Minggu ke 1', days: [5], kategori: 'Bulanan' }
   ];
 
   const renderItemHTML = (x) => {
     const wajibHariIni = !isWeekend && x.days.includes(day);
     const bgStyle = wajibHariIni ? 'background:#f0fdf4; border:2px solid #16a34a;' : 'background:#fff; border:1px solid #e2e8f0;';
-    const statusLabel = isWeekend ? '<span class="status" style="background:#f1f5f9; color:#64748b;">LIBUR</span>' : (wajibHariIni ? '<span class="status" style="background:#16a34a; color:#fff;"><i class="fa-solid fa-check"></i> KERJAKAN HARI INI</span>' : '<span class="status" style="background:#f8fafc; color:#94a3b8;">Terjadwal</span>');
+    const statusLabel = isWeekend 
+      ? '<span class="status" style="background:#f1f5f9; color:#64748b;">LIBUR</span>'
+      : (wajibHariIni 
+          ? '<span class="status" style="background:#16a34a; color:#fff; font-weight:800;"><i class="fa-solid fa-check"></i> KERJAKAN HARI INI</span>' 
+          : '<span class="status" style="background:#f8fafc; color:#94a3b8;">Terjadwal</span>');
 
     return `
       <div class="jitem" style="${bgStyle} margin-bottom: 8px; padding: 9px; border-radius: 8px;">
-        <b>${esc(x.tugas)}</b>
-        <small style="color:#64748b; font-size:10px; margin-top:2px;">${esc(x.frekuensi)} (${esc(x.pelaksanaan)})</small>
+        <div style="display: flex; justify- content: space-between; align-items: flex-start;">
+          <div style="flex:1;">
+            <b>${esc(x.tugas)}</b>
+            <small style="display:block; color:#64748b; font-size:10px; margin-top:2px;">
+              <i class="fa-regular fa-clock me-1"></i>${esc(x.frekuensi)} (${esc(x.pelaksanaan)})
+            </small>
+          </div>
+        </div>
         <div style="margin-top: 6px;">${statusLabel}</div>
       </div>`;
   };
 
+  const harianList = masterTugas.filter(x => x.kategori === 'Harian');
+  const mingguanList = masterTugas.filter(x => x.kategori === 'Mingguan');
+  const bulananList = masterTugas.filter(x => x.kategori === 'Bulanan');
+
   if (box) {
     box.innerHTML = `
       <div class="jcol">
-        <div class="jhead"><i class="fa-solid fa-sun"></i> Pekerjaan Harian</div>
-        <div style="padding:7px">${masterTugas.filter(x => x.kategori === 'Harian').map(renderItemHTML).join('')}</div>
+        <div class="jhead"><i class="fa-solid fa-sun"></i> Pekerjaan Harian (Senin - Jumat)</div>
+        <div style="padding:7px">${harianList.map(renderItemHTML).join('')}</div>
       </div>
       <div class="jcol" style="margin-top:4px;">
         <div class="jhead" style="background:var(--blue);"><i class="fa-solid fa-calendar-week"></i> Pekerjaan Mingguan</div>
-        <div style="padding:7px">${masterTugas.filter(x => x.kategori === 'Mingguan').map(renderItemHTML).join('')}</div>
+        <div style="padding:7px">${mingguanList.map(renderItemHTML).join('')}</div>
       </div>
       <div class="jcol" style="margin-top:4px;">
-        <div class="jhead" style="background:var(--o);"><i class="fa-solid fa-calendar-alt"></i> Pekerjaan Bulanan</div>
-        <div style="padding:7px">${masterTugas.filter(x => x.kategori === 'Bulanan').map(renderItemHTML).join('')}</div>
+        <div class="jhead" style="background:var(--o);"><i class="fa-solid fa-calendar-alt"></i> Pekerjaan Bulanan / Berkala</div>
+        <div style="padding:7px">${bulananList.map(renderItemHTML).join('')}</div>
       </div>`;
   }
 }
@@ -1553,6 +1795,7 @@ function openCameraBox(inputId) {
   const containerId = inputId === 'laporFoto' ? 'laporInputContainer' : 'pengaduanInputContainer';
   const container = document.getElementById(containerId);
   if (!container) return;
+
   container.innerHTML = '';
   const newInput = document.createElement('input');
   newInput.type = 'file';
@@ -1560,9 +1803,11 @@ function openCameraBox(inputId) {
   newInput.className = 'camera-file-input';
   newInput.accept = 'image/*';
   newInput.setAttribute('capture', 'environment');
+  
   newInput.onchange = function() {
     previewPhoto(this, inputId === 'laporFoto' ? 'laporPreview' : 'pengaduanPreview', inputId === 'laporFoto' ? 'laporTextBtn' : 'pengaduanTextBtn');
   };
+  
   container.appendChild(newInput);
   newInput.click();
 }
@@ -1571,10 +1816,14 @@ function previewPhoto(input, previewId, textBtnId) {
   const file = input.files && input.files[0];
   const img = document.getElementById(previewId);
   const textBtn = document.getElementById(textBtnId);
+
   if (!file) { if (img) img.style.display = 'none'; return; }
+
   if (textBtn) textBtn.textContent = 'Foto berhasil dipilih (Ketuk untuk ganti)';
   const reader = new FileReader();
-  reader.onload = e => { if (img) { img.src = e.target.result; img.style.display = 'block'; } };
+  reader.onload = e => {
+    if (img) { img.src = e.target.result; img.style.display = 'block'; }
+  };
   reader.readAsDataURL(file);
 }
 
@@ -1585,11 +1834,19 @@ function resizeAndCompressImage(file) {
       const img = new Image();
       img.onload = function() {
         const canvas = document.createElement('canvas');
-        let width = img.width, height = img.height;
-        const MAX = 800;
-        if (width > height) { if (width > MAX) { height *= MAX / width; width = MAX; } }
-        else { if (height > MAX) { width *= MAX / height; height = MAX; } }
-        canvas.width = width; canvas.height = height;
+        let width = img.width;
+        let height = img.height;
+        
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 800;
+        if (width > height) {
+          if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+        } else {
+          if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
         resolve(canvas.toDataURL('image/jpeg', 0.7));
@@ -1604,6 +1861,7 @@ async function fileToBase64(inputId) {
   const input = document.getElementById(inputId);
   if (!input || !input.files || !input.files[0]) return null;
   const file = input.files[0];
+  if (file.size > 10 * 1024 * 1024) throw new Error('Ukuran foto maksimal 10 MB.');
   const compressedDataUrl = await resizeAndCompressImage(file);
   return { base64: compressedDataUrl, name: file.name };
 }
@@ -1611,9 +1869,12 @@ async function fileToBase64(inputId) {
 function postViaHiddenForm(payload, buttonId, defaultBtnText, successCallback) {
   const btn = document.getElementById(buttonId);
   if (btn) { btn.disabled = true; btn.innerText = 'Mengirim...'; }
-  playNotifSound();
+
+  playNotifSound(); 
+
   document.getElementById('gasPostData').value = JSON.stringify(payload);
   document.getElementById('gasSubmitForm').submit();
+
   setTimeout(() => {
     if (btn) { btn.disabled = false; btn.innerText = defaultBtnText; }
     showToast('BERHASIL DIKIRIM');
@@ -1631,6 +1892,7 @@ function kirimLaporan() {
     Catatan: document.getElementById('laporCatatan').value.trim()
   };
   if (!d.Nama || !d.Area || !d.Pekerjaan) { alert('Nama, area, dan pekerjaan wajib diisi.'); return; }
+
   fileToBase64('laporFoto').then(photo => {
     if (photo) { d.FotoBase64 = photo.base64; d.FotoNama = photo.name; }
     postViaHiddenForm(d, 'btnLaporan', 'Kirim Laporan (Selesai)', () => {
@@ -1638,9 +1900,10 @@ function kirimLaporan() {
       document.getElementById('laporCatatan').value = '';
       document.getElementById('laporPreview').style.display = 'none';
       document.getElementById('laporTextBtn').textContent = 'Buka Kamera / Pilih Foto';
+      document.getElementById('laporInputContainer').innerHTML = '<input type="file" id="laporFoto" class="camera-file-input" accept="image/*" capture="environment" onchange="previewPhoto(this,\'laporPreview\',\'laporTextBtn\')">';
       showPage('jadwal');
     });
-  });
+  }).catch(e => alert(e.message || e));
 }
 
 function kirimPengajuan() {
@@ -1650,7 +1913,16 @@ function kirimPengajuan() {
     Area: document.getElementById('pengajuanArea').value.trim(),
     Prioritas: (document.querySelector('input[name="prioritas"]:checked') || {}).value || 'Normal'
   };
-  for (let i = 1; i <= 6; i++) { d['Kebutuhan' + i] = document.getElementById('kebutuhan' + i).value.trim(); }
+  
+  for (let i = 1; i <= 6; i++) { 
+    d['Kebutuhan' + i] = document.getElementById('kebutuhan' + i).value.trim(); 
+  }
+
+  const adaIsi = [d.Kebutuhan1, d.Kebutuhan2, d.Kebutuhan3, d.Kebutuhan4, d.Kebutuhan5, d.Kebutuhan6].some(Boolean);
+  if (!d.Nama || !d.Area || !adaIsi) {
+    alert('Nama, area, dan minimal isi satu kebutuhan alat/bahan.'); return;
+  }
+
   postViaHiddenForm(d, 'btnPengajuan', 'Kirim Pengajuan', () => {
     for (let i = 1; i <= 6; i++) { document.getElementById('kebutuhan' + i).value = ''; }
     showPage('home');
@@ -1666,21 +1938,59 @@ function kirimPengaduan() {
     Status: 'Baru'
   };
   if (!d.Nama || !d.Area || !d.Kendala) { alert('Nama, area, dan pengaduan wajib diisi.'); return; }
+
   fileToBase64('pengaduanFoto').then(photo => {
     if (photo) { d.FotoBase64 = photo.base64; d.FotoNama = photo.name; }
     postViaHiddenForm(d, 'btnPengaduan', 'Kirim Pengaduan', () => {
       document.getElementById('pengaduanTeks').value = '';
       document.getElementById('pengaduanPreview').style.display = 'none';
       document.getElementById('pengaduanTextBtn').textContent = 'Buka Kamera / Pilih Foto';
+      document.getElementById('pengaduanInputContainer').innerHTML = '<input type="file" id="pengaduanFoto" class="camera-file-input" accept="image/*" capture="environment" onchange="previewPhoto(this,\'pengaduanPreview\',\'pengaduanTextBtn\')">';
       showPage('pengaduan');
     });
-  });
+  }).catch(e => alert(e.message || e));
 }
 
-// MODUL DATA SISWA OPTIMIZED (Urutan: DC, TK, SD 1, SD 2, SMP, SMA)
+// Pull to refresh
+let touchStartY = 0, isPulling = false;
+const appContainer = document.querySelector('.app');
+const pullIndicator = document.getElementById('pullIndicator');
+
+appContainer.addEventListener('touchstart', e => {
+  const c = document.querySelector('.content');
+  if (c && c.scrollTop === 0) { touchStartY = e.touches[0].clientY; isPulling = true; }
+}, { passive: true });
+
+appContainer.addEventListener('touchmove', e => {
+  if (!isPulling) return;
+  const diff = e.touches[0].clientY - touchStartY;
+  if (diff > 75 && diff < 160) pullIndicator.style.transform = `translateY(${Math.min(diff - 75, 52)}px)`;
+}, { passive: true });
+
+appContainer.addEventListener('touchend', e => {
+  if (!isPulling) return;
+  isPulling = false;
+  if (e.changedTouches[0].clientY - touchStartY > 90 && document.querySelector('.content').scrollTop === 0) {
+    pullIndicator.style.transform = 'translateY(52px)';
+    fetch(SCRIPT_URL + "?action=getDashboardData&t=" + new Date().getTime())
+      .then(res => res.json())
+      .then(d => {
+        if (d) { DB = Object.assign(DB, d); localStorage.setItem('timSaberCacheData_v12', JSON.stringify(d)); initApp(); }
+        setTimeout(() => pullIndicator.style.transform = 'translateY(0)', 400);
+      })
+      .catch(() => {
+        loadDataFallback();
+        setTimeout(() => pullIndicator.style.transform = 'translateY(0)', 400);
+      });
+  } else { pullIndicator.style.transform = 'translateY(0)'; }
+});
+
+// ==========================================
+// MODUL DATA SISWA (Accordion Urut Unit: DC, TK, SD 1, SD 2, SMP, SMA)
+// ==========================================
 function bukaDataSiswa() {
   if (typeof Swal === 'undefined') {
-    alert('Library modal sedang dimuat...');
+    alert('Library modal sedang dimuat. Silakan coba sebentar lagi.');
     return;
   }
 
@@ -1698,11 +2008,12 @@ function bukaDataSiswa() {
         .then(res => res.json())
         .then(d => {
           Swal.close();
-          DB.dataSiswa = d.dataSiswa || [];
-          localStorage.setItem('timSaberCacheData_v14', JSON.stringify(DB));
-          tampilkanModalDataSiswa(DB.dataSiswa);
+          const listSiswa = d.dataSiswa || DB.dataSiswa || [];
+          DB.dataSiswa = listSiswa;
+          localStorage.setItem('timSaberCacheData_v12', JSON.stringify(DB));
+          tampilkanModalDataSiswa(listSiswa);
         })
-        .catch(() => {
+        .catch(err => {
           Swal.fire('Error', 'Gagal memuat data siswa.', 'error');
         });
     }
@@ -1718,13 +2029,12 @@ function tampilkanModalDataSiswa(data) {
   // Daftar urutan unit utama yang diinginkan
   const urutanUnit = ['DC', 'TK', 'SD 1', 'SD 2', 'SMP', 'SMA'];
 
-  // Mengelompokkan data berdasarkan level/unit yang cocok dengan urutan
+  // Mengelompokkan data siswa berdasarkan unitnya
   let grouped = {};
   data.forEach(row => {
-    let rawLvl = String(row.level || 'Lainnya').trim().toUpperCase();
+    let rawLvl = String(row.level || '').trim().toUpperCase();
     let unitKey = 'Lainnya';
 
-    // Pemetaan fleksibel ke kategori unit utama
     if (rawLvl.includes('DC') || rawLvl.includes('DAYCARE') || rawLvl.includes('BABY') || rawLvl.includes('TODDLER') || rawLvl.includes('PG')) {
       unitKey = 'DC';
     } else if (rawLvl.includes('TK')) {
@@ -1745,9 +2055,8 @@ function tampilkanModalDataSiswa(data) {
     grouped[unitKey].push(row);
   });
 
-  let htmlContent = `<div style="max-height: 420px; overflow-y: auto; text-align: left; padding: 2px;" class="space-y-3">`;
+  let htmlContent = `<div style="max-height: 420px; overflow-y: auto; text-align: left; padding: 2px;">`;
 
-  // Urutkan berdasarkan array urutanUnit yang ditentukan, lalu masukkan sisa unit jika ada
   let keysToRender = [...urutanUnit];
   Object.keys(grouped).forEach(k => {
     if (!keysToRender.includes(k)) keysToRender.push(k);
@@ -1758,7 +2067,7 @@ function tampilkanModalDataSiswa(data) {
     let kelasList = grouped[unit];
     if (!kelasList || kelasList.length === 0) return;
 
-    let totalUnit = kelasList.reduce((sum, item) => sum + (parseInt(item.totalSiswa, 10) || 0), 0);
+    let totalUnit = kelasList.reduce((sum, item) => sum + (parseInt(item.totalSiswa || item.total, 10) || 0), 0);
     let unitId = 'unit_s_' + index;
 
     htmlContent += `
@@ -1773,21 +2082,25 @@ function tampilkanModalDataSiswa(data) {
           <i id="icon-${unitId}" class="fa-solid fa-chevron-down" style="color: #94a3b8; transition: transform 0.2s;"></i>
         </button>
 
-        <div id="${unitId}" style="display: none; background: #f8fafc; padding: 10px; border-top: 1px solid #e2e8f0;" class="space-y-2">
+        <div id="${unitId}" style="display: none; background: #f8fafc; padding: 10px; border-top: 1px solid #e2e8f0;">
     `;
 
     kelasList.forEach(cls => {
+      let lVal = cls.lakiLaki ?? cls['L'] ?? cls.l ?? 0;
+      let pVal = cls.perempuan ?? cls['P'] ?? cls.p ?? 0;
+      let totVal = cls.totalSiswa ?? cls['Total'] ?? cls.total ?? 0;
+
       htmlContent += `
         <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
           <div>
-            <p style="font-weight: 700; font-size: 12.5px; color: #0f172a;">${esc(cls.namaKelas)}</p>
+            <p style="font-weight: 700; font-size: 12.5px; color: #0f172a;">${esc(cls.namaKelas || cls.kelas || '-')}</p>
             <div style="font-size: 10.5px; color: #64748b; margin-top: 2px;">
-              L: <strong style="color: var(--blue);">${esc(cls.lakiLaki)}</strong> • P: <strong style="color: #db2777;">${esc(cls.perempuan)}</strong>
+              L: <strong style="color: var(--blue);">${esc(lVal)}</strong> • P: <strong style="color: #db2777;">${esc(pVal)}</strong>
             </div>
           </div>
           <div style="text-align: right;">
             <span style="font-size: 9.5px; color: #94a3b8; display: block;">Total</span>
-            <span style="font-size: 13px; font-weight: 800; color: var(--g);">${esc(cls.totalSiswa)}</span>
+            <span style="font-size: 13px; font-weight: 800; color: var(--g);">${esc(totVal)}</span>
           </div>
         </div>
       `;
@@ -1821,8 +2134,15 @@ function toggleUnitDataSiswa(unitId) {
     if (icon) icon.style.transform = 'rotate(0deg)';
   }
 }
+// ==========================================
 
 loadData();
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    for (let reg of regs) reg.unregister();
+  });
+}
 </script>
 
 </body>
