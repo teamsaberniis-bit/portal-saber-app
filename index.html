@@ -1095,7 +1095,7 @@ if (localStorage.getItem('timSaberCacheVersion') !== 'v12') {
 // URL WEB APP APPS SCRIPT TERBARU
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxajlEzDg2vu2733f-yL885e4Ara_hcM6y__u1_ADv2SOaU9LrwlWb36Rm7y7u-DgWBCA/exec";
 
-// TEMPLATE DAILY ACTIVITY BERDASARKAN AREA
+// TEMPLATE DAILY ACTIVITY BERDASARKAN AREA (TERHUBUNG LENGKAP)
 const TEMPLATE_DAILY_BY_AREA = {
   "SD": [
     {
@@ -1151,6 +1151,7 @@ const TEMPLATE_DAILY_BY_AREA = {
       tugas: [
         "Merapihkan meja, kursi, barang-barang kelas & ruangan",
         "Membersihkan kelas & ruangan yang menjadi tanggung jawab secara menyeluruh",
+        "Membersihkan koridor & area tangga (area yang memiliki tangga)",
         "Membersihkan toilet secara menyeluruh",
         "Merapihkan perlengkapan makan yang belum didistribusikan",
         "Membersihkan peralatan kebersihan dan menyimpannya kembali",
@@ -1537,7 +1538,7 @@ function openAnggotaDetail(i) {
       </div>
     `;
   } else {
-    // Tombol untuk membuka template teks Daily Activity interaktif berdasarkan area
+    // Tombol interaktif yang memuat rincian tugas berdasarkan area
     dailyActivityHTML = `
       <div style="margin-top:10px; border-top:1px dashed var(--b); padding-top:10px;">
         <div style="font-size:11px; font-weight:800; color:var(--t); margin-bottom:6px; display:flex; align-items:center; gap:5px;">
