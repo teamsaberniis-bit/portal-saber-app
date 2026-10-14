@@ -1661,18 +1661,12 @@ function renderPengaduanPage() {
 
 // FUNGSI MODAL PREVIEW FOTO
 function openPhotoModal(url) {
-  let directUrl = url;
-  if (url.includes('drive.google.com')) {
-    let fileIdMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
-    if (fileIdMatch && fileIdMatch[1]) {
-      directUrl = 'https://lh3.googleusercontent.com/d/' + fileIdMatch[1];
-    }
-  }
+  if (!url) return;
   
   const modal = document.getElementById('photoModal');
   const modalImg = document.getElementById('modalPhotoImg');
   if (modal && modalImg) {
-    modalImg.src = directUrl;
+    modalImg.src = url;
     modal.style.display = 'flex';
   }
 }
