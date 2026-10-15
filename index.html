@@ -1890,21 +1890,33 @@ function renderInformasiPage() {
     if (list.length === 0) {
       h.innerHTML = empty;
     } else {
-      const sortedForHome = [...list].sort((a, b) => {
-        const dA = parseSmartDate(extractDisplayDate(a));
-        const dB = parseSmartDate(extractDisplayDate(b));
-        const isTodayA = dA && dA.getTime() === today.getTime();
-        const isTodayB = dB && dB.getTime() === today.getTime();
-        
-        if (isTodayA && !isTodayB) return -1;
-        if (!isTodayA && isTodayB) return 1;
-
-        const diffA = dA ? Math.abs(dA.getTime() - today.getTime()) : Infinity;
-        const diffB = dB ? Math.abs(dB.getTime() - today.getTime()) : Infinity;
-        return diffA - diffB;
+      // 1. FILTER: Hanya ambil informasi hari ini dan tanggal mendatang (>= today)
+      const futureAndTodayList = list.filter(x => {
+        const d = parseSmartDate(extractDisplayDate(x));
+        return !d || d.getTime() >= today.getTime();
       });
 
-      h.innerHTML = sortedForHome.slice(0, 2).map(mapper).join('');
+      if (futureAndTodayList.length === 0) {
+        h.innerHTML = '<div class="card"><p class="muted">Tidak ada informasi/kegiatan mendatang.</p></div>';
+      } else {
+        // 2. SORT: Urutkan tanggal terdekat dari hari ini ke depan
+        futureAndTodayList.sort((a, b) => {
+          const dA = parseSmartDate(extractDisplayDate(a));
+          const dB = parseSmartDate(extractDisplayDate(b));
+          const timeA = dA ? dA.getTime() : Infinity;
+          const timeB = dB ? dB.getTime() : Infinity;
+          return timeA - timeB;
+        });
+
+        // 3. Tampilkan minimal 2, atau seluruhnya jika pada hari tersebut terdapat lebih dari 2 kegiatan
+        const todayItemsCount = futureAndTodayList.filter(x => {
+          const d = parseSmartDate(extractDisplayDate(x));
+          return d && d.getTime() === today.getTime();
+        }).length;
+
+        const limit = Math.max(2, todayItemsCount);
+        h.innerHTML = futureAndTodayList.slice(0, limit).map(mapper).join('');
+      }
     }
   }
 }
