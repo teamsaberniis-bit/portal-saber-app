@@ -274,6 +274,7 @@ html, body{
   padding:12px;
   margin-bottom:12px;
   box-shadow:0 5px 12px #16a34a20;
+  transition: border 0.3s ease;
 }
 
 #lemburSlider{ width:100%; overflow:hidden; }
@@ -874,8 +875,8 @@ html, body{
     <div style="font-size:10.5px;font-weight:800;margin-top:4px">NURUL IMAM ISLAMIC SCHOOL</div>
   </div>
 
-  <!-- LEMBUR SLIDER -->
-  <div class="lembur-container">
+  <!-- LEMBUR SLIDER BERANDA -->
+  <div class="lembur-container" id="lemburMainContainer">
     <div id="lemburSlider">
       <div class="lembur-track" id="lemburTrack">
         <div class="lembur-slide">
@@ -1086,10 +1087,10 @@ html, body{
 </div>
 
 <script>
-// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 14)
-if (localStorage.getItem('timSaberCacheVersion') !== 'v14') {
+// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 16)
+if (localStorage.getItem('timSaberCacheVersion') !== 'v16') {
   localStorage.clear();
-  localStorage.setItem('timSaberCacheVersion', 'v14');
+  localStorage.setItem('timSaberCacheVersion', 'v16');
 }
 
 // URL WEB APP APPS SCRIPT TERBARU
@@ -1398,7 +1399,7 @@ function showPage(id, pushHistory = true) {
 
 // LOAD DATA
 function loadData() {
-  const cachedData = localStorage.getItem('timSaberCacheData_v14');
+  const cachedData = localStorage.getItem('timSaberCacheData_v16');
   if (cachedData) {
     try {
       DB = Object.assign(DB, JSON.parse(cachedData));
@@ -1415,7 +1416,7 @@ function loadData() {
       if (d) {
         const newStr = JSON.stringify(d);
         DB = Object.assign(DB, d);
-        localStorage.setItem('timSaberCacheData_v14', newStr);
+        localStorage.setItem('timSaberCacheData_v16', newStr);
         initApp();
       }
     })
@@ -1431,7 +1432,7 @@ function loadDataFallback() {
   window.handleDashboardResponse = function(d) {
     if (d) {
       DB = Object.assign(DB, d);
-      localStorage.setItem('timSaberCacheData_v14', JSON.stringify(d));
+      localStorage.setItem('timSaberCacheData_v16', JSON.stringify(d));
       initApp();
     }
   };
@@ -1780,6 +1781,7 @@ function renderLemburCard() {
     return;
   }
 
+  // 1. RENDER SLIDER BERANDA
   if (s) {
     s.innerHTML = data.map(x => {
       const petugas = x.Petugas || x.PIC || x['Petugas/PIC'] || x.Nama || '-';
@@ -1787,28 +1789,21 @@ function renderLemburCard() {
       const tglLembur = parseSmartDate(rawTgl);
       
       const isToday = tglLembur && tglLembur.getTime() === today.getTime();
-      const isTomorrow = tglLembur && tglLembur.getTime() === tomorrow.getTime();
 
       let badgeText = x.Keterangan || 'Lembur';
-      let badgeColor = 'background:var(--o); color:#fff;';
-      let slideStyle = '';
+      let badgeStyle = 'background:var(--o); color:#fff;';
 
       if (isToday) {
         badgeText = 'LEMBUR HARI INI';
-        badgeColor = 'background:#22c55e; color:#fff; font-weight:800;';
-        slideStyle = 'background: linear-gradient(135deg, #15803d, #166534); border: 2px solid #4ade80; border-radius: 14px; padding: 10px;';
-      } else if (isTomorrow) {
-        badgeText = 'LEMBUR BESOK (H-1)';
-        badgeColor = 'background:#f97316; color:#fff; font-weight:800;';
-        slideStyle = 'background: linear-gradient(135deg, #c2410c, #9a3412); border: 2px solid #fdba74; border-radius: 14px; padding: 10px;';
+        badgeStyle = 'background:#22c55e; color:#fff; font-weight:800;';
       }
 
       return `
         <div class="lembur-slide">
-          <div style="${slideStyle}">
+          <div>
             <div class="lh">
               <div class="lt"><i class="fa-solid fa-user-clock"></i> Jadwal Lembur</div>
-              <span class="badge" style="${badgeColor}">${esc(badgeText)}</span>
+              <span class="badge" style="${badgeStyle}">${esc(badgeText)}</span>
             </div>
             <div class="ld"><i class="fa-regular fa-calendar"></i> ${esc(rawTgl)}</div>
             <div class="grid2">
@@ -1822,6 +1817,7 @@ function renderLemburCard() {
     }).join('');
   }
 
+  // 2. RENDER HALAMAN KHUSUS LEMBUR (MENGGUNAKAN BINGKAI ORANGE UNTUK H-1 DAN HIJAU UNTUK PAS TGL KEGIATAN)
   if (p) {
     p.innerHTML = data.map(x => {
       const rawTgl = extractDisplayDate(x);
@@ -1840,10 +1836,6 @@ function renderLemburCard() {
           </span>`;
       } else if (isTomorrow) {
         cardStyle = 'border: 2px solid var(--o); background: #fff7ed;';
-        badgeTag = `
-          <span style="background:var(--o); color:#fff; font-size:10px; font-weight:800; padding:3px 8px; border-radius:12px; display:inline-block; margin-left:8px; text-transform:uppercase; vertical-align:middle;">
-            LEMBUR BESOK (H-1)
-          </span>`;
       }
 
       return `
@@ -2594,7 +2586,7 @@ appContainer.addEventListener('touchend', e => {
     fetch(SCRIPT_URL + "?action=getDashboardData&t=" + new Date().getTime())
       .then(res => res.json())
       .then(d => {
-        if (d) { DB = Object.assign(DB, d); localStorage.setItem('timSaberCacheData_v14', JSON.stringify(d)); initApp(); }
+        if (d) { DB = Object.assign(DB, d); localStorage.setItem('timSaberCacheData_v16', JSON.stringify(d)); initApp(); }
         setTimeout(() => pullIndicator.style.transform = 'translateY(0)', 400);
       })
       .catch(() => {
@@ -2627,7 +2619,7 @@ function bukaDataSiswa() {
           Swal.close();
           const listSiswa = d.dataSiswa || DB.dataSiswa || [];
           DB.dataSiswa = listSiswa;
-          localStorage.setItem('timSaberCacheData_v14', JSON.stringify(DB));
+          localStorage.setItem('timSaberCacheData_v16', JSON.stringify(DB));
           tampilkanModalDataSiswa(listSiswa);
         })
         .catch(err => {
