@@ -1556,6 +1556,10 @@ function openAnggotaDetail(i) {
     }
   }
 
+  // Pengambilan data ID Karyawan dan Divisi
+  const idKaryawan = m.IdKaryawan || m.id_karyawan || m.IDKaryawan || '-';
+  const divisi = m.Divisi || m.divisi || '-';
+
   box.innerHTML = `
     <div class="anggota-detail-head">
       <div class="detail-pic">
@@ -1570,6 +1574,8 @@ function openAnggotaDetail(i) {
     <div class="detail-info">
       <div class="detail-info-item"><i class="fa-solid fa-location-dot" style="color:var(--g)"></i><span>Area: <b>${esc(m.Area || '-')}</b></span></div>
       <div class="detail-info-item"><i class="fa-solid fa-phone" style="color:var(--g)"></i><span>WA: <b>${esc(m.WA || '-')}</b></span></div>
+      <div class="detail-info-item"><i class="fa-solid fa-id-card" style="color:var(--g)"></i><span>ID Karyawan: <b>${esc(idKaryawan)}</b></span></div>
+      <div class="detail-info-item"><i class="fa-solid fa-building" style="color:var(--g)"></i><span>Divisi: <b>${esc(divisi)}</b></span></div>
       ${dailyActivityHTML}
     </div>
     ${wa ? `<a href="https://wa.me/${wa}" target="_blank" class="btn-wa" style="margin-top:8px;"><i class="fa-brands fa-whatsapp"></i> Hubungi via WhatsApp</a>` : ''}
@@ -1890,7 +1896,6 @@ function renderInformasiPage() {
     if (list.length === 0) {
       h.innerHTML = empty;
     } else {
-      // 1. FILTER: Hanya ambil informasi hari ini dan tanggal mendatang (>= today)
       const futureAndTodayList = list.filter(x => {
         const d = parseSmartDate(extractDisplayDate(x));
         return !d || d.getTime() >= today.getTime();
@@ -1899,7 +1904,6 @@ function renderInformasiPage() {
       if (futureAndTodayList.length === 0) {
         h.innerHTML = '<div class="card"><p class="muted">Tidak ada informasi/kegiatan mendatang.</p></div>';
       } else {
-        // 2. SORT: Urutkan tanggal terdekat dari hari ini ke depan
         futureAndTodayList.sort((a, b) => {
           const dA = parseSmartDate(extractDisplayDate(a));
           const dB = parseSmartDate(extractDisplayDate(b));
@@ -1908,7 +1912,6 @@ function renderInformasiPage() {
           return timeA - timeB;
         });
 
-        // 3. Tampilkan minimal 2, atau seluruhnya jika pada hari tersebut terdapat lebih dari 2 kegiatan
         const todayItemsCount = futureAndTodayList.filter(x => {
           const d = parseSmartDate(extractDisplayDate(x));
           return d && d.getTime() === today.getTime();
@@ -1999,7 +2002,6 @@ function renderPengaduanPage() {
     let namaUser = String(x.Nama || x.nama || values[0] || 'Pengguna').trim();
     let areaUser = String(x.Area || x.area || values[1] || '-').trim();
 
-    // MENAMPILKAN KENDALA UTAMA DAN KETERANGAN PENANGANAN / TINDAK LANJUT
     let rawKendala = String(x.Kendala || x.kendala || x.Deskripsi || x.deskripsi || '').trim();
     if (!rawKendala) {
       rawKendala = values.find(v => {
@@ -2016,7 +2018,6 @@ function renderPengaduanPage() {
     let kendalaTeks = rawKendala;
     let keteranganLanjutan = String(x.Keterangan || x.keterangan || x.TindakLanjut || x.Penanganan || '').trim();
 
-    // Jika keterangan dipisah tanda '|' di kolom Kendala
     if (rawKendala.includes('|')) {
       let parts = rawKendala.split('|');
       kendalaTeks = parts[0].trim();
@@ -2321,7 +2322,7 @@ function renderJadwalByDay() {
 
     return `
       <div class="jitem" style="${bgStyle} margin-bottom: 8px; padding: 9px; border-radius: 8px;">
-        <div style="display: flex; justify- content: space-between; align-items: flex-start;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
           <div style="flex:1;">
             <b>${esc(x.tugas)}</b>
             <small style="display:block; color:#64748b; font-size:10px; margin-top:2px;">
