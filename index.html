@@ -833,7 +833,7 @@ html, body{
 
 <!-- IFRAME & FORM TERSEMBUNYI UNTUK PENGIRIMAN TANPA CORS -->
 <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
-<form id="gasSubmitForm" action="https://script.google.com/macros/s/AKfycbxajlEzDg2vu2733f-yL885e4Ara_hcM6y__u1_ADv2SOaU9LrwlWb36Rm7y7u-DgWBCA/exec" method="POST" target="hidden_iframe" style="display:none;">
+<form id="gasSubmitForm" action="https://script.google.com/macros/s/AKfycbxWCJP6Y8I-EJF9s61MjMm7ceDKTlzQRxN__jq9p5LFVKUgMjEbuWTPh_sJW7NLYVOGcg/exec" method="POST" target="hidden_iframe" style="display:none;">
   <input type="hidden" name="postData" id="gasPostData">
 </form>
 
@@ -1087,14 +1087,14 @@ html, body{
 </div>
 
 <script>
-// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 16)
-if (localStorage.getItem('timSaberCacheVersion') !== 'v16') {
+// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 17)
+if (localStorage.getItem('timSaberCacheVersion') !== 'v17') {
   localStorage.clear();
-  localStorage.setItem('timSaberCacheVersion', 'v16');
+  localStorage.setItem('timSaberCacheVersion', 'v17');
 }
 
 // URL WEB APP APPS SCRIPT TERBARU
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxajlEzDg2vu2733f-yL885e4Ara_hcM6y__u1_ADv2SOaU9LrwlWb36Rm7y7u-DgWBCA/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxWCJP6Y8I-EJF9s61MjMm7ceDKTlzQRxN__jq9p5LFVKUgMjEbuWTPh_sJW7NLYVOGcg/exec";
 
 // TEMPLATE DAILY ACTIVITY BERDASARKAN AREA
 const TEMPLATE_DAILY_BY_AREA = {
@@ -1399,7 +1399,7 @@ function showPage(id, pushHistory = true) {
 
 // LOAD DATA
 function loadData() {
-  const cachedData = localStorage.getItem('timSaberCacheData_v16');
+  const cachedData = localStorage.getItem('timSaberCacheData_v17');
   if (cachedData) {
     try {
       DB = Object.assign(DB, JSON.parse(cachedData));
@@ -1416,7 +1416,7 @@ function loadData() {
       if (d) {
         const newStr = JSON.stringify(d);
         DB = Object.assign(DB, d);
-        localStorage.setItem('timSaberCacheData_v16', newStr);
+        localStorage.setItem('timSaberCacheData_v17', newStr);
         initApp();
       }
     })
@@ -1432,7 +1432,7 @@ function loadDataFallback() {
   window.handleDashboardResponse = function(d) {
     if (d) {
       DB = Object.assign(DB, d);
-      localStorage.setItem('timSaberCacheData_v16', JSON.stringify(d));
+      localStorage.setItem('timSaberCacheData_v17', JSON.stringify(d));
       initApp();
     }
   };
@@ -1817,7 +1817,7 @@ function renderLemburCard() {
     }).join('');
   }
 
-  // 2. RENDER HALAMAN KHUSUS LEMBUR (MENGGUNAKAN BINGKAI ORANGE UNTUK H-1 DAN HIJAU UNTUK PAS TGL KEGIATAN)
+  // 2. RENDER HALAMAN KHUSUS LEMBUR (BINGKAI ORANGE UNTUK H-1 DAN HIJAU UNTUK PAS TGL KEGIATAN)
   if (p) {
     p.innerHTML = data.map(x => {
       const rawTgl = extractDisplayDate(x);
@@ -2586,7 +2586,7 @@ appContainer.addEventListener('touchend', e => {
     fetch(SCRIPT_URL + "?action=getDashboardData&t=" + new Date().getTime())
       .then(res => res.json())
       .then(d => {
-        if (d) { DB = Object.assign(DB, d); localStorage.setItem('timSaberCacheData_v16', JSON.stringify(d)); initApp(); }
+        if (d) { DB = Object.assign(DB, d); localStorage.setItem('timSaberCacheData_v17', JSON.stringify(d)); initApp(); }
         setTimeout(() => pullIndicator.style.transform = 'translateY(0)', 400);
       })
       .catch(() => {
@@ -2619,7 +2619,7 @@ function bukaDataSiswa() {
           Swal.close();
           const listSiswa = d.dataSiswa || DB.dataSiswa || [];
           DB.dataSiswa = listSiswa;
-          localStorage.setItem('timSaberCacheData_v16', JSON.stringify(DB));
+          localStorage.setItem('timSaberCacheData_v17', JSON.stringify(DB));
           tampilkanModalDataSiswa(listSiswa);
         })
         .catch(err => {
