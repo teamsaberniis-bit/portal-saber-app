@@ -1086,10 +1086,10 @@ html, body{
 </div>
 
 <script>
-// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 12)
-if (localStorage.getItem('timSaberCacheVersion') !== 'v12') {
+// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 14)
+if (localStorage.getItem('timSaberCacheVersion') !== 'v14') {
   localStorage.clear();
-  localStorage.setItem('timSaberCacheVersion', 'v12');
+  localStorage.setItem('timSaberCacheVersion', 'v14');
 }
 
 // URL WEB APP APPS SCRIPT TERBARU
@@ -1398,7 +1398,7 @@ function showPage(id, pushHistory = true) {
 
 // LOAD DATA
 function loadData() {
-  const cachedData = localStorage.getItem('timSaberCacheData_v12');
+  const cachedData = localStorage.getItem('timSaberCacheData_v14');
   if (cachedData) {
     try {
       DB = Object.assign(DB, JSON.parse(cachedData));
@@ -1415,7 +1415,7 @@ function loadData() {
       if (d) {
         const newStr = JSON.stringify(d);
         DB = Object.assign(DB, d);
-        localStorage.setItem('timSaberCacheData_v12', newStr);
+        localStorage.setItem('timSaberCacheData_v14', newStr);
         initApp();
       }
     })
@@ -1431,7 +1431,7 @@ function loadDataFallback() {
   window.handleDashboardResponse = function(d) {
     if (d) {
       DB = Object.assign(DB, d);
-      localStorage.setItem('timSaberCacheData_v12', JSON.stringify(d));
+      localStorage.setItem('timSaberCacheData_v14', JSON.stringify(d));
       initApp();
     }
   };
@@ -1764,6 +1764,12 @@ function renderLemburCard() {
   const count = document.getElementById('lemburCount');
   const data = getFutureLemburData();
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
   if (!data.length) {
     if (s) s.innerHTML = `<div class="lembur-slide"><div class="lh"><div class="lt"><i class="fa-solid fa-user-clock"></i> Jadwal Lembur</div><span class="badge">Lembur</span></div><div class="ld">Tidak ada jadwal lembur aktif mendatang.</div></div>`;
     if (dots) dots.innerHTML = '';
@@ -1777,32 +1783,81 @@ function renderLemburCard() {
   if (s) {
     s.innerHTML = data.map(x => {
       const petugas = x.Petugas || x.PIC || x['Petugas/PIC'] || x.Nama || '-';
+      const rawTgl = extractDisplayDate(x);
+      const tglLembur = parseSmartDate(rawTgl);
+      
+      const isToday = tglLembur && tglLembur.getTime() === today.getTime();
+      const isTomorrow = tglLembur && tglLembur.getTime() === tomorrow.getTime();
+
+      let badgeText = x.Keterangan || 'Lembur';
+      let badgeColor = 'background:var(--o); color:#fff;';
+      let slideStyle = '';
+
+      if (isToday) {
+        badgeText = 'LEMBUR HARI INI';
+        badgeColor = 'background:#22c55e; color:#fff; font-weight:800;';
+        slideStyle = 'background: linear-gradient(135deg, #15803d, #166534); border: 2px solid #4ade80; border-radius: 14px; padding: 10px;';
+      } else if (isTomorrow) {
+        badgeText = 'LEMBUR BESOK (H-1)';
+        badgeColor = 'background:#f97316; color:#fff; font-weight:800;';
+        slideStyle = 'background: linear-gradient(135deg, #c2410c, #9a3412); border: 2px solid #fdba74; border-radius: 14px; padding: 10px;';
+      }
+
       return `
         <div class="lembur-slide">
-          <div class="lh">
-            <div class="lt"><i class="fa-solid fa-user-clock"></i> Jadwal Lembur</div>
-            <span class="badge">${esc(x.Keterangan || 'Lembur')}</span>
-          </div>
-          <div class="ld"><i class="fa-regular fa-calendar"></i> ${esc(extractDisplayDate(x))}</div>
-          <div class="grid2">
-            <div class="cell"><span>Petugas</span><b>${esc(petugas)}</b></div>
-            <div class="cell"><span>Kegiatan</span><b>${esc(x.Kegiatan || '-')}</b></div>
-            <div class="cell"><span>In</span><b>${esc(x.In || '-')}</b></div>
-            <div class="cell"><span>Out</span><b>${esc(x.Out || '-')}</b></div>
+          <div style="${slideStyle}">
+            <div class="lh">
+              <div class="lt"><i class="fa-solid fa-user-clock"></i> Jadwal Lembur</div>
+              <span class="badge" style="${badgeColor}">${esc(badgeText)}</span>
+            </div>
+            <div class="ld"><i class="fa-regular fa-calendar"></i> ${esc(rawTgl)}</div>
+            <div class="grid2">
+              <div class="cell"><span>Petugas</span><b>${esc(petugas)}</b></div>
+              <div class="cell"><span>Kegiatan</span><b>${esc(x.Kegiatan || '-')}</b></div>
+              <div class="cell"><span>In</span><b>${esc(x.In || '-')}</b></div>
+              <div class="cell"><span>Out</span><b>${esc(x.Out || '-')}</b></div>
+            </div>
           </div>
         </div>`;
     }).join('');
   }
 
   if (p) {
-    p.innerHTML = data.map(x => `
-      <div class="card">
-        <h4>${esc(x.Kegiatan || '-')}</h4>
-        <p><b>Petugas:</b> ${esc(x.Petugas || x.PIC || '-')}</p>
-        <p><b>Hari/Tanggal:</b> ${esc(extractDisplayDate(x))}</p>
-        <p><b>Jam:</b> ${esc(x.In || '-')} - ${esc(x.Out || '-')}</p>
-        <p><b>Keterangan:</b> ${esc(x.Keterangan || '-')}</p>
-      </div>`).join('');
+    p.innerHTML = data.map(x => {
+      const rawTgl = extractDisplayDate(x);
+      const tglLembur = parseSmartDate(rawTgl);
+      const isToday = tglLembur && tglLembur.getTime() === today.getTime();
+      const isTomorrow = tglLembur && tglLembur.getTime() === tomorrow.getTime();
+
+      let cardStyle = 'border: 1px solid var(--b); background: #fff;';
+      let badgeTag = '';
+
+      if (isToday) {
+        cardStyle = 'border: 2px solid var(--g); background: #f0fdf4;';
+        badgeTag = `
+          <span style="background:var(--g); color:#fff; font-size:10px; font-weight:800; padding:3px 8px; border-radius:12px; display:inline-block; margin-left:8px; text-transform:uppercase; vertical-align:middle;">
+            LEMBUR HARI INI
+          </span>`;
+      } else if (isTomorrow) {
+        cardStyle = 'border: 2px solid var(--o); background: #fff7ed;';
+        badgeTag = `
+          <span style="background:var(--o); color:#fff; font-size:10px; font-weight:800; padding:3px 8px; border-radius:12px; display:inline-block; margin-left:8px; text-transform:uppercase; vertical-align:middle;">
+            LEMBUR BESOK (H-1)
+          </span>`;
+      }
+
+      return `
+        <div class="card" style="${cardStyle} margin-bottom:9px;">
+          <div style="display:flex; align-items:center; flex-wrap:wrap; margin-bottom:4px;">
+            <h4 style="margin:0; font-size:13px; font-weight:800;">${esc(x.Kegiatan || '-')}</h4>
+            ${badgeTag}
+          </div>
+          <p><b>Petugas:</b> ${esc(x.Petugas || x.PIC || '-')}</p>
+          <p><b>Hari/Tanggal:</b> ${esc(rawTgl)}</p>
+          <p><b>Jam:</b> ${esc(x.In || '-')} - ${esc(x.Out || '-')}</p>
+          <p><b>Keterangan:</b> ${esc(x.Keterangan || '-')}</p>
+        </div>`;
+    }).join('');
   }
 
   lemburIndex = 0;
@@ -2539,7 +2594,7 @@ appContainer.addEventListener('touchend', e => {
     fetch(SCRIPT_URL + "?action=getDashboardData&t=" + new Date().getTime())
       .then(res => res.json())
       .then(d => {
-        if (d) { DB = Object.assign(DB, d); localStorage.setItem('timSaberCacheData_v12', JSON.stringify(d)); initApp(); }
+        if (d) { DB = Object.assign(DB, d); localStorage.setItem('timSaberCacheData_v14', JSON.stringify(d)); initApp(); }
         setTimeout(() => pullIndicator.style.transform = 'translateY(0)', 400);
       })
       .catch(() => {
@@ -2572,7 +2627,7 @@ function bukaDataSiswa() {
           Swal.close();
           const listSiswa = d.dataSiswa || DB.dataSiswa || [];
           DB.dataSiswa = listSiswa;
-          localStorage.setItem('timSaberCacheData_v12', JSON.stringify(DB));
+          localStorage.setItem('timSaberCacheData_v14', JSON.stringify(DB));
           tampilkanModalDataSiswa(listSiswa);
         })
         .catch(err => {
