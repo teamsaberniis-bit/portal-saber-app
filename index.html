@@ -18,7 +18,7 @@
 
 <link rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<!-- SweetAlert2 untuk Popup Data Siswa & Daily Activity -->
+<!-- SweetAlert2 untuk Popup & Dialog Download Periode -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <style>
@@ -180,12 +180,12 @@ html, body{
 }
 
 .page{
-  display:none;
+  display: none !important;
   width:100%;
 }
 
 .page.active{
-  display:block;
+  display: block !important;
 }
 
 .hero{
@@ -525,6 +525,7 @@ html, body{
   font-weight:800;
   overflow:hidden;
   flex:none;
+  position:relative;
 }
 
 .pic img{ width:100%; height:100%; object-fit:cover; }
@@ -986,7 +987,7 @@ html, body{
       </div>
       <div class="camera-trigger-btn" onclick="openCameraBox('laporFoto')">
         <i class="fa-solid fa-camera" style="font-size:15px"></i>
-        <span id="laporTextBtn">Buka Kamera / Pilih Foto</span>
+        <span id="laporTextBtn">Ambil Foto Kamera</span>
       </div>
       <img id="laporPreview" class="photo-preview">
     </div>
@@ -1025,6 +1026,8 @@ html, body{
     <input class="form-input" id="kebutuhan6" placeholder="6. Kebutuhan keenam" style="margin-top:5px">
     <button class="btn" id="btnPengajuan" onclick="kirimPengajuan()">Kirim Pengajuan</button>
   </div>
+  <div class="section" style="margin-top:14px">Riwayat Pengajuan</div>
+  <div id="pengajuanListFull"></div>
 </section>
 
 <!-- ANGGOTA -->
@@ -1053,7 +1056,7 @@ html, body{
       </div>
       <div class="camera-trigger-btn orange-mode" onclick="openCameraBox('pengaduanFoto')">
         <i class="fa-solid fa-camera" style="font-size:15px"></i>
-        <span id="pengaduanTextBtn">Buka Kamera / Pilih Foto</span>
+        <span id="pengaduanTextBtn">Ambil Foto Kamera</span>
       </div>
       <img id="pengaduanPreview" class="photo-preview">
     </div>
@@ -1087,10 +1090,10 @@ html, body{
 </div>
 
 <script>
-// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 17)
-if (localStorage.getItem('timSaberCacheVersion') !== 'v17') {
+// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 24)
+if (localStorage.getItem('timSaberCacheVersion') !== 'v24') {
   localStorage.clear();
-  localStorage.setItem('timSaberCacheVersion', 'v17');
+  localStorage.setItem('timSaberCacheVersion', 'v24');
 }
 
 // URL WEB APP APPS SCRIPT TERBARU
@@ -1340,6 +1343,10 @@ let DB = {
 let activeMemberIndex = 0;
 let lemburIndex = 0;
 
+let currentFilterPengaduan = 'ALL';
+let currentFilterPengajuan = 'ALL';
+let currentFilterLaporan = 'ALL';
+
 function showToast(text = "BERHASIL DIKIRIM") {
   const t = document.getElementById('toastNotification');
   const span = document.getElementById('toastText');
@@ -1397,9 +1404,28 @@ function showPage(id, pushHistory = true) {
   });
 })();
 
+// FUNGSI PING STATUS ONLINE ANGGOTA
+function pingOnlineStatus() {
+  const m = DB.anggota[activeMemberIndex];
+  if (!m || !m.Nama) return;
+
+  const payload = {
+    action: 'updateOnlineStatus',
+    Nama: m.Nama,
+    Waktu: new Date().toISOString()
+  };
+
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  }).catch(() => {});
+}
+
 // LOAD DATA
 function loadData() {
-  const cachedData = localStorage.getItem('timSaberCacheData_v17');
+  const cachedData = localStorage.getItem('timSaberCacheData_v24');
   if (cachedData) {
     try {
       DB = Object.assign(DB, JSON.parse(cachedData));
@@ -1416,7 +1442,7 @@ function loadData() {
       if (d) {
         const newStr = JSON.stringify(d);
         DB = Object.assign(DB, d);
-        localStorage.setItem('timSaberCacheData_v17', newStr);
+        localStorage.setItem('timSaberCacheData_v24', newStr);
         initApp();
       }
     })
@@ -1432,7 +1458,7 @@ function loadDataFallback() {
   window.handleDashboardResponse = function(d) {
     if (d) {
       DB = Object.assign(DB, d);
-      localStorage.setItem('timSaberCacheData_v17', JSON.stringify(d));
+      localStorage.setItem('timSaberCacheData_v24', JSON.stringify(d));
       initApp();
     }
   };
@@ -1464,14 +1490,19 @@ function initApp() {
   renderLemburCard();
   renderInformasiPage();
   renderPengaduanPage();
+  renderPengajuanPage();
   renderLaporanPage();
   renderJadwalByDay();
+
+  // Jalankan ping status online saat dibuka & interval 5 menit
+  pingOnlineStatus();
 }
 
 function changeActiveMember(i) {
   activeMemberIndex = parseInt(i, 10) || 0;
   localStorage.setItem('timSaberActiveMemberIndex', activeMemberIndex);
   updateActiveMemberForms();
+  pingOnlineStatus();
 }
 
 function updateActiveMemberForms() {
@@ -1501,18 +1532,38 @@ function renderAnggotaList() {
   const b = document.getElementById('anggotaList');
   if (!b) return;
 
-  b.innerHTML = (DB.anggota || []).map((m, i) => `
-    <div class="row" onclick="openAnggotaDetail(${i})">
-      <div class="pic">
-        ${m.Foto ? `<img src="${esc(m.Foto)}">` : esc((m.Nama || 'D').charAt(0).toUpperCase())}
+  const sekarang = new Date().getTime();
+
+  b.innerHTML = (DB.anggota || []).map((m, i) => {
+    let rawAktif = m.TerakhirAktif || m.WaktuAktif || m.LastOnline || '';
+    let tglAktif = parseSmartDate(rawAktif);
+    let isOnline = false;
+
+    if (tglAktif) {
+      let selisihMenit = Math.floor((sekarang - tglAktif.getTime()) / (1000 * 60));
+      if (selisihMenit <= 10) {
+        isOnline = true;
+      }
+    }
+
+    const dotStyle = isOnline 
+      ? 'background:#22c55e; box-shadow: 0 0 6px #22c55e;' 
+      : 'background:#94a3b8;';
+
+    return `
+      <div class="row" onclick="openAnggotaDetail(${i})">
+        <div class="pic">
+          ${m.Foto ? `<img src="${esc(m.Foto)}">` : esc((m.Nama || 'D').charAt(0).toUpperCase())}
+          <span style="position:absolute; bottom:2px; right:2px; width:10px; height:10px; border-radius:50%; border:2px solid #fff; ${dotStyle}"></span>
+        </div>
+        <div class="rowmain">
+          <b>${esc(m.Nama || '-')}</b>
+          <small>${esc(m.Jabatan || 'Anggota')} • ${esc(m.Area || 'Umum')}</small>
+        </div>
+        <i class="fa-solid fa-chevron-right arrow"></i>
       </div>
-      <div class="rowmain">
-        <b>${esc(m.Nama || '-')}</b>
-        <small>${esc(m.Jabatan || 'Anggota')} • ${esc(m.Area || 'Umum')}</small>
-      </div>
-      <i class="fa-solid fa-chevron-right arrow"></i>
-    </div>
-  `).join('') || '<div class="card"><p class="muted">Belum ada anggota.</p></div>';
+    `;
+  }).join('') || '<div class="card"><p class="muted">Belum ada anggota.</p></div>';
 }
 
 function openAnggotaDetail(i) {
@@ -1524,12 +1575,16 @@ function openAnggotaDetail(i) {
   const w = String(m.WA || '').replace(/[^0-9]/g, '');
   const wa = w ? (w.startsWith('0') ? '62' + w.slice(1) : w) : '';
 
-  let jabatanUpper = String(m.Jabatan || '').toUpperCase();
-  let isPJ = jabatanUpper.includes('PJ') || jabatanUpper.includes('KOORDINATOR') || jabatanUpper.includes('KORDIR');
+  let jabatanUpperTarget = String(m.Jabatan || '').toUpperCase();
+  let isTargetPJ = jabatanUpperTarget.includes('PJ') || jabatanUpperTarget.includes('KOORDINATOR') || jabatanUpperTarget.includes('KORDIR');
+
+  const currentActiveUser = DB.anggota[activeMemberIndex] || {};
+  let jabatanUpperActiveUser = String(currentActiveUser.Jabatan || '').toUpperCase();
+  let isUserActivePJ = jabatanUpperActiveUser.includes('PJ') || jabatanUpperActiveUser.includes('KOORDINATOR') || jabatanUpperActiveUser.includes('KORDIR');
 
   let dailyActivityHTML = '';
 
-  if (!isPJ) {
+  if (!isTargetPJ) {
     let dailyImg = m.DailyActivity || m['Daily Activity'] || m.Daily || m.FotoDaily || m.daily || '';
 
     if (dailyImg) {
@@ -1557,7 +1612,31 @@ function openAnggotaDetail(i) {
     }
   }
 
-  // Pengambilan data ID Karyawan dan Divisi
+  let panelDownloadPJ = '';
+  if (isTargetPJ && isUserActivePJ) {
+    panelDownloadPJ = `
+      <div style="margin-top:10px; border-top:1.5px dashed var(--blue); padding-top:10px;">
+        <div style="font-size:11px; font-weight:800; color:var(--blue); margin-bottom:6px; display:flex; align-items:center; gap:5px;">
+          <i class="fa-solid fa-download"></i> Panel Download Rekap Data
+        </div>
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <button type="button" onclick="downloadDataCSV('pengaduan')" class="btn" style="margin:0; font-size:11px; background:var(--blue); min-height:36px;">
+            <i class="fa-solid fa-file-arrow-down"></i> Download Rekap Pengaduan (Bulanan)
+          </button>
+          <button type="button" onclick="downloadDataCSV('pengajuan')" class="btn" style="margin:0; font-size:11px; background:var(--blue); min-height:36px;">
+            <i class="fa-solid fa-file-arrow-down"></i> Download Rekap Pengajuan (Bulanan)
+          </button>
+          <button type="button" onclick="downloadDataCSV('laporan')" class="btn" style="margin:0; font-size:11px; background:var(--blue); min-height:36px;">
+            <i class="fa-solid fa-file-arrow-down"></i> Download Rekap Laporan Kerja (Bulanan)
+          </button>
+          <button type="button" onclick="downloadDataCSV('lembur')" class="btn" style="margin:0; font-size:11px; background:var(--o); min-height:36px;">
+            <i class="fa-solid fa-file-arrow-down"></i> Download Rekap Lembur (Bulanan)
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
   const idKaryawan = m.IdKaryawan || m.id_karyawan || m.IDKaryawan || '-';
   const divisi = m.Divisi || m.divisi || '-';
 
@@ -1578,6 +1657,7 @@ function openAnggotaDetail(i) {
       <div class="detail-info-item"><i class="fa-solid fa-id-card" style="color:var(--g)"></i><span>ID Karyawan: <b>${esc(idKaryawan)}</b></span></div>
       <div class="detail-info-item"><i class="fa-solid fa-building" style="color:var(--g)"></i><span>Divisi: <b>${esc(divisi)}</b></span></div>
       ${dailyActivityHTML}
+      ${panelDownloadPJ}
     </div>
     ${wa ? `<a href="https://wa.me/${wa}" target="_blank" class="btn-wa" style="margin-top:8px;"><i class="fa-brands fa-whatsapp"></i> Hubungi via WhatsApp</a>` : ''}
   `;
@@ -1699,7 +1779,6 @@ function parseSmartDate(dateStr) {
   if (rawStr.includes('T')) {
     let dIso = new Date(rawStr);
     if (!isNaN(dIso.getTime())) {
-      dIso.setHours(0, 0, 0, 0);
       return dIso;
     }
   }
@@ -1732,14 +1811,12 @@ function parseSmartDate(dateStr) {
         month = new Date(Date.parse(month + " 1, 2000")).getMonth();
       }
       let d = new Date(year, month, day);
-      d.setHours(0, 0, 0, 0);
       return d;
     }
   }
 
   if (!isNaN(timestamp)) {
     let d = new Date(timestamp);
-    d.setHours(0, 0, 0, 0);
     return d;
   }
 
@@ -1772,7 +1849,7 @@ function renderLemburCard() {
   tomorrow.setDate(tomorrow.getDate() + 1);
 
   if (!data.length) {
-    if (s) s.innerHTML = `<div class="lembur-slide"><div class="lh"><div class="lt"><i class="fa-solid fa-user-clock"></i> Jadwal Lembur</div><span class="badge">Lembur</span></div><div class="ld">Tidak ada jadwal lembur aktif mendatang.</div></div>`;
+    if (s) s.innerHTML = `<div class="lembur-slide"><div class="lh"><div class="lt"><i class="fa-solid fa-user-clock"></i> Jadwal Lembur</div><span class="badge">Keterangan</span></div><div class="ld">Tidak ada jadwal lembur aktif mendatang.</div></div>`;
     if (dots) dots.innerHTML = '';
     if (prev) prev.style.display = 'none';
     if (next) next.style.display = 'none';
@@ -1781,7 +1858,6 @@ function renderLemburCard() {
     return;
   }
 
-  // 1. RENDER SLIDER BERANDA
   if (s) {
     s.innerHTML = data.map(x => {
       const petugas = x.Petugas || x.PIC || x['Petugas/PIC'] || x.Nama || '-';
@@ -1817,7 +1893,6 @@ function renderLemburCard() {
     }).join('');
   }
 
-  // 2. RENDER HALAMAN KHUSUS LEMBUR (BINGKAI ORANGE UNTUK H-1 DAN HIJAU UNTUK PAS TGL KEGIATAN)
   if (p) {
     p.innerHTML = data.map(x => {
       const rawTgl = extractDisplayDate(x);
@@ -2014,12 +2089,80 @@ function playBeepSound() {
   } catch (err) {}
 }
 
+function setFilterPengaduan(filter) {
+  currentFilterPengaduan = currentFilterPengaduan === filter ? 'ALL' : filter;
+  renderPengaduanPage();
+}
+
+function setFilterPengajuan(filter) {
+  currentFilterPengajuan = currentFilterPengajuan === filter ? 'ALL' : filter;
+  renderPengajuanPage();
+}
+
+function setFilterLaporan(filter) {
+  currentFilterLaporan = currentFilterLaporan === filter ? 'ALL' : filter;
+  renderLaporanPage();
+}
+
+// FUNGSI PENGADUAN DENGAN LOGIKA URUTAN TERBARU & TAMPILAN RAPI
 function renderPengaduanPage() {
-  const list = [...(DB.pengaduan || [])].sort((a, b) => parseDateVal(b) - parseDateVal(a));
+  const allList = [...(DB.pengaduan || [])].sort((a, b) => parseDateVal(b) - parseDateVal(a));
   const h = document.getElementById('homePengaduanBox');
   const f = document.getElementById('pengaduanListFull');
   const empty = '<div class="card"><p class="muted">Belum ada pengaduan.</p></div>';
 
+  let countBaru = 0, countProgres = 0, countSelesai = 0;
+  allList.forEach(x => {
+    let st = String(x.Status || x.status || 'BARU').toLowerCase();
+    if (st.includes('selesai')) countSelesai++;
+    else if (st.includes('progres') || st.includes('proses') || st.includes('cek')) countProgres++;
+    else countBaru++;
+  });
+
+  let list = allList;
+  if (currentFilterPengaduan === 'BARU') {
+    list = allList.filter(x => {
+      let st = String(x.Status || x.status || 'BARU').toLowerCase();
+      return !st.includes('selesai') && !st.includes('progres') && !st.includes('proses') && !st.includes('cek');
+    });
+  } else if (currentFilterPengaduan === 'PROSES') {
+    list = allList.filter(x => {
+      let st = String(x.Status || x.status || '').toLowerCase();
+      return st.includes('progres') || st.includes('proses') || st.includes('cek');
+    });
+  } else if (currentFilterPengaduan === 'SELESAI') {
+    list = allList.filter(x => {
+      let st = String(x.Status || x.status || '').toLowerCase();
+      return st.includes('selesai');
+    });
+  }
+
+  const styleBox = (cat, defaultBg, defaultBorder, defaultColor, activeBg, activeColor) => {
+    if (currentFilterPengaduan === cat) {
+      return `background:${activeBg}; border:1px solid ${activeBg}; color:#fff; box-shadow:0 4px 10px rgba(0,0,0,0.12); transform:scale(0.98);`;
+    }
+    return `background:${defaultBg}; border:1px solid ${defaultBorder}; color:${defaultColor};`;
+  };
+
+  const rekapHTML = `
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-bottom:8px;">
+      <div onclick="setFilterPengaduan('BARU')" style="cursor:pointer; padding:9px; border-radius:10px; text-align:center; transition:all 0.2s; ${styleBox('BARU', '#fef2f2', '#fecaca', '#dc2626', '#dc2626', '#fff')}">
+        <span style="font-size:9.5px; font-weight:800; display:block; ${currentFilterPengaduan === 'BARU' ? 'color:#fff;' : 'color:#dc2626;'}">BARU</span>
+        <b style="font-size:16px; ${currentFilterPengaduan === 'BARU' ? 'color:#fff;' : 'color:#b91c1c;'}">${countBaru}</b>
+      </div>
+      <div onclick="setFilterPengaduan('PROSES')" style="cursor:pointer; padding:9px; border-radius:10px; text-align:center; transition:all 0.2s; ${styleBox('PROSES', '#fff7ed', '#fed7aa', '#ea580c', '#ea580c', '#fff')}">
+        <span style="font-size:9.5px; font-weight:800; display:block; ${currentFilterPengaduan === 'PROSES' ? 'color:#fff;' : 'color:#ea580c;'}">PROSES</span>
+        <b style="font-size:16px; ${currentFilterPengaduan === 'PROSES' ? 'color:#fff;' : 'color:#c2410c;'}">${countProgres}</b>
+      </div>
+      <div onclick="setFilterPengaduan('SELESAI')" style="cursor:pointer; padding:9px; border-radius:10px; text-align:center; transition:all 0.2s; ${styleBox('SELESAI', '#f0fdf4', '#bbf7d0', '#16a34a', '#16a34a', '#fff')}">
+        <span style="font-size:9.5px; font-weight:800; display:block; ${currentFilterPengaduan === 'SELESAI' ? 'color:#fff;' : 'color:#16a34a;'}">SELESAI</span>
+        <b style="font-size:16px; ${currentFilterPengaduan === 'SELESAI' ? 'color:#fff;' : 'color:#15803d;'}">${countSelesai}</b>
+      </div>
+    </div>
+    ${currentFilterPengaduan !== 'ALL' ? `<div style="display:flex; margin-bottom:10px;"><button onclick="setFilterPengaduan('ALL')" class="back" style="font-size:11px; margin:0; flex:1;">↺ Reset Filter</button></div>` : ''}
+  `;
+
+  // MAPPER DESAIN KARTU PENGADUAN KOMPAK & RAPI
   const mapper = x => {
     const values = Object.values(x).map(v => String(v || '').trim());
     let fotoUrl = values.find(v => v.startsWith('http://') || v.startsWith('https://')) || '';
@@ -2074,39 +2217,39 @@ function renderPengaduanPage() {
     let htmlKeterangan = '';
     if (keteranganLanjutan) {
       htmlKeterangan = `
-        <div style="font-size:11px; color:#1e293b; font-weight:600; line-height:1.4; word-break:break-word; margin-top:6px; background:#f0fdf4; border:1px solid #bbf7d0; padding:8px 10px; border-radius:8px;">
-          <b style="color:var(--g); display:block; margin-bottom:2px;"><i class="fa-solid fa-square-check"></i> Keterangan / Penanganan:</b>
-          ${esc(keteranganLanjutan)}
+        <div style="font-size:11px; color:#1e293b; line-height:1.45; word-break:break-word; margin-top:6px; background:#f0fdf4; border:1px solid #bbf7d0; padding:8px 10px; border-radius:10px;">
+          <b style="color:var(--g); display:block; margin-bottom:2px; font-size:10px; text-transform:uppercase;"><i class="fa-solid fa-square-check"></i> Keterangan / Penanganan:</b>
+          <span style="font-weight:600;">${esc(keteranganLanjutan)}</span>
         </div>
       `;
     }
 
     return `
-      <div class="card" style="position:relative; overflow:hidden; padding:12px; margin-bottom:10px;">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:8px;">
+      <div class="card" style="position:relative; border-radius:14px; padding:12px; margin-bottom:9px; background:#fff; border:1px solid var(--b);">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:6px;">
           <div style="flex:1; min-width:0;">
-            <h4 style="font-size:13px; font-weight:800; color:var(--t); text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${esc(namaUser)}</h4>
-            <p style="font-size:10.5px; color:var(--s); margin-top:2px;"><b>Area:</b> ${esc(areaUser)}</p>
+            <h4 style="font-size:13px; font-weight:800; color:var(--t); text-overflow:ellipsis; overflow:hidden; white-space:nowrap; margin:0;">${esc(namaUser)}</h4>
+            <div style="font-size:10px; color:var(--s); margin-top:1px; font-weight:600;"><i class="fa-solid fa-location-dot" style="color:var(--g); margin-right:3px;"></i>${esc(areaUser)}</div>
           </div>
-          <span style="flex:none; font-size:9.5px; font-weight:800; padding:4px 10px; border-radius:6px; text-transform:uppercase; ${badgeStyle}">
+          <span style="flex:none; font-size:9.5px; font-weight:800; padding:3px 8px; border-radius:6px; text-transform:uppercase; ${badgeStyle}">
             ${esc(statusText)}
           </span>
         </div>
         
-        <div style="font-size:11.5px; color:#c2410c; font-weight:700; line-height:1.4; word-break:break-word; margin:6px 0; background:#fff7ed; border:1px solid #ffedd5; padding:10px 12px; border-radius:9px;">
-          <b style="display:block; margin-bottom:2px; font-size:10px; color:#ea580c; text-transform:uppercase;">Kendala:</b>
-          ${esc(kendalaTeks)}
+        <div style="font-size:11.5px; color:#c2410c; line-height:1.4; word-break:break-word; margin:6px 0; background:#fff7ed; border:1px solid #fed7aa; padding:8px 10px; border-radius:10px;">
+          <b style="display:block; margin-bottom:2px; font-size:10px; color:#ea580c; text-transform:uppercase;"><i class="fa-solid fa-triangle-exclamation" style="margin-right:3px;"></i> Kendala:</b>
+          <span style="font-weight:700;">${esc(kendalaTeks)}</span>
         </div>
 
         ${htmlKeterangan}
 
-        <div style="margin-top:8px; border-top:1px dashed #e2e8f0; padding-top:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
-          <span class="status" style="background:#f8fafc; color:#64748b; border:1px solid #e2e8f0; font-weight:700; margin:0;">
+        <div style="margin-top:8px; border-top:1px dashed #e2e8f0; padding-top:6px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+          <span style="background:transparent; color:#64748b; font-size:9.5px; font-weight:600; display:inline-flex; align-items:center;">
             <i class="fa-regular fa-calendar-days" style="color:var(--g); margin-right:4px;"></i> ${esc(tglPelaporan)}
           </span>
 
           ${fotoUrl ? `
-            <button type="button" onclick="openPhotoModal(['${esc(fotoUrl)}'], 0)" style="font-size:10.5px; color:var(--blue); font-weight:800; text-decoration:none; display:inline-flex; align-items:center; gap:4px; background:#eff6ff; padding:5px 10px; border-radius:6px; border:1px solid #bfdbfe; cursor:pointer;">
+            <button type="button" onclick="openPhotoModal(['${esc(fotoUrl)}'], 0)" style="font-size:10px; color:var(--blue); font-weight:800; display:inline-flex; align-items:center; gap:4px; background:#eff6ff; padding:4px 9px; border-radius:6px; border:1px solid #bfdbfe; cursor:pointer;">
               <i class="fa-solid fa-image"></i> Lihat Foto
             </button>
           ` : ''}
@@ -2115,15 +2258,129 @@ function renderPengaduanPage() {
   };
 
   if (h) {
-    const active = list.filter(x => String(x.Status || x.status || '').trim().toLowerCase() !== 'selesai');
-    h.innerHTML = active.length ? active.slice(0, 2).map(mapper).join('') : (list.length ? list.slice(0, 2).map(mapper).join('') : '<p class="muted">Tidak ada pengaduan.</p>');
+    const active = allList.filter(x => String(x.Status || x.status || '').trim().toLowerCase() !== 'selesai');
+    h.innerHTML = active.length ? active.slice(0, 2).map(mapper).join('') : (allList.length ? allList.slice(0, 2).map(mapper).join('') : '<p class="muted">Tidak ada pengaduan.</p>');
   }
-  if (f) f.innerHTML = list.length ? list.map(mapper).join('') : empty;
+  if (f) {
+    f.innerHTML = rekapHTML + (list.length ? list.map(mapper).join('') : empty);
+  }
 }
 
-// ==========================================
-// FUNGSI MODAL PREVIEW FOTO GALERI / SLIDER
-// ==========================================
+function renderPengajuanPage() {
+  const allList = [...(DB.pengajuan || [])].sort((a, b) => parseDateVal(b) - parseDateVal(a));
+  const f = document.getElementById('pengajuanListFull');
+  const empty = '<div class="card"><p class="muted">Belum ada riwayat pengajuan.</p></div>';
+
+  if (!f) return;
+
+  let countMenunggu = 0, countDisetujui = 0, countMendesak = 0;
+  allList.forEach(x => {
+    let st = String(x.Status || x.status || 'MENUNGGU').toUpperCase();
+    let pr = String(x.Prioritas || x.prioritas || '').toUpperCase();
+    if (st.includes('SELESAI') || st.includes('DISETUJUI')) countDisetujui++;
+    else countMenunggu++;
+    if (pr.includes('MENDESAK')) countMendesak++;
+  });
+
+  let list = allList;
+  if (currentFilterPengajuan === 'MENUNGGU') {
+    list = allList.filter(x => {
+      let st = String(x.Status || x.status || 'MENUNGGU').toUpperCase();
+      return !st.includes('SELESAI') && !st.includes('DISETUJUI');
+    });
+  } else if (currentFilterPengajuan === 'DISETUJUI') {
+    list = allList.filter(x => {
+      let st = String(x.Status || x.status || '').toUpperCase();
+      return st.includes('SELESAI') || st.includes('DISETUJUI');
+    });
+  } else if (currentFilterPengajuan === 'MENDESAK') {
+    list = allList.filter(x => {
+      let pr = String(x.Prioritas || x.prioritas || '').toUpperCase();
+      return pr.includes('MENDESAK');
+    });
+  }
+
+  const styleBox = (cat, defaultBg, defaultBorder, defaultColor, activeBg, activeColor) => {
+    if (currentFilterPengajuan === cat) {
+      return `background:${activeBg}; border:1px solid ${activeBg}; color:#fff; box-shadow:0 4px 10px rgba(0,0,0,0.12); transform:scale(0.98);`;
+    }
+    return `background:${defaultBg}; border:1px solid ${defaultBorder}; color:${defaultColor};`;
+  };
+
+  const rekapHTML = `
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-bottom:8px;">
+      <div onclick="setFilterPengajuan('MENUNGGU')" style="cursor:pointer; padding:9px; border-radius:10px; text-align:center; transition:all 0.2s; ${styleBox('MENUNGGU', '#fff7ed', '#fed7aa', '#ea580c', '#ea580c', '#fff')}">
+        <span style="font-size:9.5px; font-weight:800; display:block; ${currentFilterPengajuan === 'MENUNGGU' ? 'color:#fff;' : 'color:#ea580c;'}">MENUNGGU</span>
+        <b style="font-size:16px; ${currentFilterPengajuan === 'MENUNGGU' ? 'color:#fff;' : 'color:#c2410c;'}">${countMenunggu}</b>
+      </div>
+      <div onclick="setFilterPengajuan('DISETUJUI')" style="cursor:pointer; padding:9px; border-radius:10px; text-align:center; transition:all 0.2s; ${styleBox('DISETUJUI', '#f0fdf4', '#bbf7d0', '#16a34a', '#16a34a', '#fff')}">
+        <span style="font-size:9.5px; font-weight:800; display:block; ${currentFilterPengajuan === 'DISETUJUI' ? 'color:#fff;' : 'color:#16a34a;'}">DISETUJUI</span>
+        <b style="font-size:16px; ${currentFilterPengajuan === 'DISETUJUI' ? 'color:#fff;' : 'color:#15803d;'}">${countDisetujui}</b>
+      </div>
+      <div onclick="setFilterPengajuan('MENDESAK')" style="cursor:pointer; padding:9px; border-radius:10px; text-align:center; transition:all 0.2s; ${styleBox('MENDESAK', '#fef2f2', '#fecaca', '#dc2626', '#dc2626', '#fff')}">
+        <span style="font-size:9.5px; font-weight:800; display:block; ${currentFilterPengajuan === 'MENDESAK' ? 'color:#fff;' : 'color:#dc2626;'}">MENDESAK</span>
+        <b style="font-size:16px; ${currentFilterPengajuan === 'MENDESAK' ? 'color:#fff;' : 'color:#b91c1c;'}">${countMendesak}</b>
+      </div>
+    </div>
+    ${currentFilterPengajuan !== 'ALL' ? `<div style="display:flex; margin-bottom:10px;"><button onclick="setFilterPengajuan('ALL')" class="back" style="font-size:11px; margin:0; flex:1;">↺ Reset Filter</button></div>` : ''}
+  `;
+
+  const mapper = x => {
+    let tgl = extractDisplayDate(x);
+    let nama = x.Nama || x.nama || '-';
+    let area = x.Area || x.area || '-';
+    let prioritas = x.Prioritas || x.prioritas || 'Normal';
+    let status = (x.Status || x.status || 'MENUNGGU').toUpperCase();
+
+    let badgeStyle = 'background:#fff7ed; color:#ea580c; border:1px solid #fed7aa;';
+    if (status.includes('SELESAI') || status.includes('DISETUJUI')) {
+      badgeStyle = 'background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0;';
+    } else if (status.includes('DITOLAK')) {
+      badgeStyle = 'background:#fef2f2; color:#dc2626; border:1px solid #fecaca;';
+    }
+
+    let prioritasColor = 'var(--g)';
+    if (prioritas.toLowerCase() === 'penting') prioritasColor = 'var(--o)';
+    if (prioritas.toLowerCase() === 'mendesak') prioritasColor = '#dc2626';
+
+    let listKebutuhanHTML = '';
+    for (let i = 1; i <= 6; i++) {
+      let itemVal = x['Kebutuhan' + i] || x['kebutuhan' + i] || '';
+      if (itemVal) {
+        listKebutuhanHTML += `<li>${esc(itemVal)}</li>`;
+      }
+    }
+    if (!listKebutuhanHTML) {
+      listKebutuhanHTML = `<li>${esc(x.Keterangan || x.keterangan || '-')}</li>`;
+    }
+
+    return `
+      <div class="card" style="margin-bottom:10px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">
+          <div>
+            <h4 style="font-size:13px; font-weight:800; color:var(--t);">${esc(nama)} (${esc(area)})</h4>
+            <span style="font-size:9.5px; color:var(--s);"><i class="fa-regular fa-calendar-days" style="color:var(--g)"></i> ${esc(tgl)}</span>
+          </div>
+          <span class="badge-status" style="${badgeStyle}">${esc(status)}</span>
+        </div>
+
+        <div style="font-size:11px; background:#f8fafc; padding:8px 10px; border-radius:8px; border:1px solid var(--b);">
+          <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+            <span style="color:var(--s);">Prioritas:</span>
+            <b style="color:${prioritasColor};"><i class="fa-solid fa-triangle-exclamation"></i> ${esc(prioritas.toUpperCase())}</b>
+          </div>
+          <div style="color:var(--t); font-weight:700; margin-top:4px;">Detail Kebutuhan:</div>
+          <ul style="padding-left:16px; margin-top:2px; color:var(--s);">
+            ${listKebutuhanHTML}
+          </ul>
+        </div>
+      </div>
+    `;
+  };
+
+  f.innerHTML = rekapHTML + (list.length ? list.map(mapper).join('') : empty);
+}
+
 let currentGalleryList = [];
 let currentGalleryIndex = 0;
 
@@ -2187,7 +2444,6 @@ function closePhotoModal() {
   }
 }
 
-// SWIPE FOTO PREVIEW
 (function setupPhotoSwipe() {
   let touchStartX = 0;
   let touchEndX = 0;
@@ -2233,16 +2489,9 @@ function renderLaporanPage() {
 
   if (!fullBox) return;
 
-  if (!laporanHariIni.length) {
-    fullBox.innerHTML = empty;
-    return;
-  }
-
   const groupedByNama = {};
-
   laporanHariIni.forEach(x => {
     const nama = (x.Nama || 'Petugas').trim();
-    
     let fotoUrl = x.Foto || x.foto || x.FotoUrl || x.urlFoto || '';
     if (!fotoUrl) {
       const values = Object.values(x).map(v => String(v || '').trim());
@@ -2267,9 +2516,51 @@ function renderLaporanPage() {
     groupedByNama[nama].lastWaktu = extractDisplayDate(x);
   });
 
-  const resultData = Object.values(groupedByNama);
+  const daftarAnggotaMurni = (DB.anggota || []).filter(m => {
+    let j = String(m.Jabatan || '').toUpperCase();
+    return !j.includes('PJ') && !j.includes('KOORDINATOR') && !j.includes('KORDIR');
+  });
 
-  fullBox.innerHTML = resultData.map(item => {
+  let totalPetugasLapor = 0;
+  Object.keys(groupedByNama).forEach(namaPetugas => {
+    let isAnggota = daftarAnggotaMurni.some(a => String(a.Nama || '').trim().toLowerCase() === namaPetugas.trim().toLowerCase());
+    if (isAnggota) {
+      totalPetugasLapor++;
+    }
+  });
+
+  const totalAnggota = daftarAnggotaMurni.length || 0;
+
+  let resultData = Object.values(groupedByNama);
+  if (currentFilterLaporan === 'LENGKAP') {
+    resultData = resultData.filter(() => totalPetugasLapor >= totalAnggota && totalAnggota > 0);
+  } else if (currentFilterLaporan === 'PROSES') {
+    resultData = resultData.filter(() => !(totalPetugasLapor >= totalAnggota && totalAnggota > 0));
+  }
+
+  const isLengkapActive = totalPetugasLapor >= totalAnggota && totalAnggota > 0;
+
+  const rekapHTML = `
+    <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:10px; margin-bottom:8px; display:flex; justify-space-around; align-items:center;">
+      <div onclick="setFilterLaporan('ALL')" style="cursor:pointer; text-align:center; transition:all 0.2s; padding:6px 10px; border-radius:8px; ${currentFilterLaporan === 'ALL' ? 'background:var(--blue); color:#fff;' : 'color:#1e40af;'}">
+        <span style="font-size:9.5px; font-weight:800; display:block; ${currentFilterLaporan === 'ALL' ? 'color:#fff;' : 'color:var(--blue);'}">PETUGAS LAPOR HARI INI</span>
+        <b style="font-size:15px; ${currentFilterLaporan === 'ALL' ? 'color:#fff;' : 'color:#1e40af;'}">${totalPetugasLapor} / ${totalAnggota} Anggota</b>
+      </div>
+      <div style="width:1px; height:25px; background:#bfdbfe;"></div>
+      <div onclick="setFilterLaporan(isLengkapActive ? 'LENGKAP' : 'PROSES')" style="cursor:pointer; text-align:center; transition:all 0.2s; padding:6px 10px; border-radius:8px; ${currentFilterLaporan !== 'ALL' ? 'background:var(--g); color:#fff;' : 'color:#15803d;'}">
+        <span style="font-size:9.5px; font-weight:800; display:block; ${currentFilterLaporan !== 'ALL' ? 'color:#fff;' : 'color:var(--g);'}">STATUS TIM</span>
+        <b style="font-size:11.5px; ${currentFilterLaporan !== 'ALL' ? 'color:#fff;' : 'color:#15803d;'}">${isLengkapActive ? 'LENGKAP ✅' : 'PROSES ⏳'}</b>
+      </div>
+    </div>
+    ${currentFilterLaporan !== 'ALL' ? `<div style="display:flex; margin-bottom:10px;"><button onclick="setFilterLaporan('ALL')" class="back" style="font-size:11px; margin:0; flex:1;">↺ Reset Filter</button></div>` : ''}
+  `;
+
+  if (!laporanHariIni.length || !resultData.length) {
+    fullBox.innerHTML = rekapHTML + empty;
+    return;
+  }
+
+  const renderedListHTML = resultData.map(item => {
     let pekerjaanHTML = '';
     if (item.pekerjaanList.length === 1) {
       pekerjaanHTML = esc(item.pekerjaanList[0]);
@@ -2315,6 +2606,8 @@ function renderLaporanPage() {
         </div>
       </div>`;
   }).join('');
+
+  fullBox.innerHTML = rekapHTML + renderedListHTML;
 }
 
 function renderJadwalByDay() {
@@ -2369,7 +2662,7 @@ function renderJadwalByDay() {
 
     return `
       <div class="jitem" style="${bgStyle} margin-bottom: 8px; padding: 9px; border-radius: 8px;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div style="display: flex; justify- content: space-between; align-items: flex-start;">
           <div style="flex:1;">
             <b>${esc(x.tugas)}</b>
             <small style="display:block; color:#64748b; font-size:10px; margin-top:2px;">
@@ -2402,6 +2695,7 @@ function renderJadwalByDay() {
   }
 }
 
+// MEMAKSA PEMBUKAAN KAMERA HP LANGSUNG
 function openCameraBox(inputId) {
   const containerId = inputId === 'laporFoto' ? 'laporInputContainer' : 'pengaduanInputContainer';
   const container = document.getElementById(containerId);
@@ -2420,7 +2714,10 @@ function openCameraBox(inputId) {
   };
   
   container.appendChild(newInput);
-  newInput.click();
+  
+  setTimeout(() => {
+    newInput.click();
+  }, 50);
 }
 
 function previewPhoto(input, previewId, textBtnId) {
@@ -2430,7 +2727,7 @@ function previewPhoto(input, previewId, textBtnId) {
 
   if (!file) { if (img) img.style.display = 'none'; return; }
 
-  if (textBtn) textBtn.textContent = 'Foto berhasil dipilih (Ketuk untuk ganti)';
+  if (textBtn) textBtn.textContent = 'Foto berhasil diambil (Ketuk untuk ganti)';
   const reader = new FileReader();
   reader.onload = e => {
     if (img) { img.src = e.target.result; img.style.display = 'block'; }
@@ -2483,18 +2780,31 @@ function postViaHiddenForm(payload, buttonId, defaultBtnText, successCallback) {
 
   playNotifSound(); 
 
+  const iframe = document.getElementById('hidden_iframe');
+  iframe.onload = function() {
+    if (btn) { btn.disabled = false; btn.innerText = defaultBtnText; }
+    showToast('BERHASIL DIKIRIM');
+    if (successCallback) successCallback();
+    setTimeout(() => { loadData(); }, 800);
+    iframe.onload = null;
+  };
+
   document.getElementById('gasPostData').value = JSON.stringify(payload);
   document.getElementById('gasSubmitForm').submit();
 
   setTimeout(() => {
-    if (btn) { btn.disabled = false; btn.innerText = defaultBtnText; }
-    showToast('BERHASIL DIKIRIM');
-    if (successCallback) successCallback();
-    setTimeout(() => { loadData(); }, 1500);
-  }, 1200);
+    if (btn && btn.disabled) {
+      btn.disabled = false;
+      btn.innerText = defaultBtnText;
+      showToast('BERHASIL DIKIRIM');
+      if (successCallback) successCallback();
+      setTimeout(() => { loadData(); }, 1000);
+    }
+  }, 5000);
 }
 
-function kirimLaporan() {
+async function kirimLaporan() {
+  const btn = document.getElementById('btnLaporan');
   const d = {
     action: 'simpanLaporan',
     Nama: document.getElementById('laporNama').value.trim(),
@@ -2504,20 +2814,28 @@ function kirimLaporan() {
   };
   if (!d.Nama || !d.Area || !d.Pekerjaan) { alert('Nama, area, dan pekerjaan wajib diisi.'); return; }
 
-  fileToBase64('laporFoto').then(photo => {
+  if (btn) { btn.disabled = true; btn.innerText = 'Memproses Foto...'; }
+
+  try {
+    const photo = await fileToBase64('laporFoto');
     if (photo) { d.FotoBase64 = photo.base64; d.FotoNama = photo.name; }
+    
     postViaHiddenForm(d, 'btnLaporan', 'Kirim Laporan (Selesai)', () => {
       document.getElementById('laporPekerjaan').value = '';
       document.getElementById('laporCatatan').value = '';
       document.getElementById('laporPreview').style.display = 'none';
-      document.getElementById('laporTextBtn').textContent = 'Buka Kamera / Pilih Foto';
+      document.getElementById('laporTextBtn').textContent = 'Ambil Foto Kamera';
       document.getElementById('laporInputContainer').innerHTML = '<input type="file" id="laporFoto" class="camera-file-input" accept="image/*" capture="environment" onchange="previewPhoto(this,\'laporPreview\',\'laporTextBtn\')">';
       showPage('jadwal');
     });
-  }).catch(e => alert(e.message || e));
+  } catch (e) {
+    alert(e.message || e);
+    if (btn) { btn.disabled = false; btn.innerText = 'Kirim Laporan (Selesai)'; }
+  }
 }
 
 function kirimPengajuan() {
+  const btn = document.getElementById('btnPengajuan');
   const d = {
     action: 'simpanPengajuan',
     Nama: document.getElementById('pengajuanNama').value.trim(),
@@ -2536,11 +2854,12 @@ function kirimPengajuan() {
 
   postViaHiddenForm(d, 'btnPengajuan', 'Kirim Pengajuan', () => {
     for (let i = 1; i <= 6; i++) { document.getElementById('kebutuhan' + i).value = ''; }
-    showPage('home');
+    showPage('pengajuan');
   });
 }
 
-function kirimPengaduan() {
+async function kirimPengaduan() {
+  const btn = document.getElementById('btnPengaduan');
   const d = {
     action: 'simpanPengaduan',
     Nama: document.getElementById('pengaduanNama').value.trim(),
@@ -2550,19 +2869,25 @@ function kirimPengaduan() {
   };
   if (!d.Nama || !d.Area || !d.Kendala) { alert('Nama, area, dan pengaduan wajib diisi.'); return; }
 
-  fileToBase64('pengaduanFoto').then(photo => {
+  if (btn) { btn.disabled = true; btn.innerText = 'Memproses Foto...'; }
+
+  try {
+    const photo = await fileToBase64('pengaduanFoto');
     if (photo) { d.FotoBase64 = photo.base64; d.FotoNama = photo.name; }
+    
     postViaHiddenForm(d, 'btnPengaduan', 'Kirim Pengaduan', () => {
       document.getElementById('pengaduanTeks').value = '';
       document.getElementById('pengaduanPreview').style.display = 'none';
-      document.getElementById('pengaduanTextBtn').textContent = 'Buka Kamera / Pilih Foto';
+      document.getElementById('pengaduanTextBtn').textContent = 'Ambil Foto Kamera';
       document.getElementById('pengaduanInputContainer').innerHTML = '<input type="file" id="pengaduanFoto" class="camera-file-input" accept="image/*" capture="environment" onchange="previewPhoto(this,\'pengaduanPreview\',\'pengaduanTextBtn\')">';
       showPage('pengaduan');
     });
-  }).catch(e => alert(e.message || e));
+  } catch (e) {
+    alert(e.message || e);
+    if (btn) { btn.disabled = false; btn.innerText = 'Kirim Pengaduan'; }
+  }
 }
 
-// Pull to refresh
 let touchStartY = 0, isPulling = false;
 const appContainer = document.querySelector('.app');
 const pullIndicator = document.getElementById('pullIndicator');
@@ -2586,7 +2911,11 @@ appContainer.addEventListener('touchend', e => {
     fetch(SCRIPT_URL + "?action=getDashboardData&t=" + new Date().getTime())
       .then(res => res.json())
       .then(d => {
-        if (d) { DB = Object.assign(DB, d); localStorage.setItem('timSaberCacheData_v17', JSON.stringify(d)); initApp(); }
+        if (d) { 
+          DB = Object.assign(DB, d); 
+          localStorage.setItem('timSaberCacheData_v24', JSON.stringify(d)); 
+          initApp(); 
+        }
         setTimeout(() => pullIndicator.style.transform = 'translateY(0)', 400);
       })
       .catch(() => {
@@ -2596,7 +2925,133 @@ appContainer.addEventListener('touchend', e => {
   } else { pullIndicator.style.transform = 'translateY(0)'; }
 });
 
-// DATA SISWA MODUL
+// FUNGSI DOWNLOAD DENGAN FILTER PERIODE BULANAN
+function downloadDataCSV(type) {
+  let rawData = [];
+  let baseFileName = "Data_TimSaber";
+
+  if (type === 'pengaduan') {
+    rawData = DB.pengaduan || [];
+    baseFileName = "Rekap_Pengaduan_TimSaber";
+  } else if (type === 'pengajuan') {
+    rawData = DB.pengajuan || [];
+    baseFileName = "Rekap_Pengajuan_TimSaber";
+  } else if (type === 'laporan') {
+    rawData = DB.laporan || [];
+    baseFileName = "Rekap_Laporan_Kerja_TimSaber";
+  } else if (type === 'lembur') {
+    rawData = DB.lembur || [];
+    baseFileName = "Rekap_Lembur_TimSaber";
+  }
+
+  if (rawData.length === 0) {
+    alert("Tidak ada data untuk diunduh.");
+    return;
+  }
+
+  const sekarang = new Date();
+  const tahunIni = sekarang.getFullYear();
+  const bulanIni = sekarang.getMonth();
+
+  const namaBulanArr = [
+    "Januari", "Februari", "Maret", "April", "Mei", "Juni", 
+    "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+  ];
+
+  let opsiBulanHTML = namaBulanArr.map((bln, idx) => 
+    `<option value="${idx}" ${idx === bulanIni ? 'selected' : ''}>${bln}</option>`
+  ).join('');
+
+  if (typeof Swal !== 'undefined') {
+    Swal.fire({
+      title: 'Pilih Periode Download',
+      html: `
+        <div style="text-align:left; font-size:12px; margin-bottom:8px;">Pilih bulan rekap yang ingin diunduh:</div>
+        <select id="swalDownloadBulan" class="form-input" style="margin-bottom:8px;">
+          <option value="ALL">Semua Bulan (Keseluruhan)</option>
+          ${opsiBulanHTML}
+        </select>
+        <select id="swalDownloadTahun" class="form-input">
+          <option value="${tahunIni}">${tahunIni}</option>
+          <option value="${tahunIni - 1}">${tahunIni - 1}</option>
+        </select>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'Download CSV',
+      cancelButtonText: 'Batal',
+      confirmButtonColor: 'var(--blue)',
+      preConfirm: () => {
+        return {
+          bulan: document.getElementById('swalDownloadBulan').value,
+          tahun: document.getElementById('swalDownloadTahun').value
+        }
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        prosesFilterDanDownload(rawData, type, baseFileName, result.value.bulan, result.value.tahun);
+      }
+    });
+  } else {
+    prosesFilterDanDownload(rawData, type, baseFileName, 'ALL', tahunIni);
+  }
+}
+
+function prosesFilterDanDownload(rawData, type, baseFileName, targetBulan, targetTahun) {
+  let filteredData = rawData;
+
+  if (targetBulan !== 'ALL') {
+    let bIdx = parseInt(targetBulan, 10);
+    let tVal = parseInt(targetTahun, 10);
+
+    filteredData = rawData.filter(item => {
+      let tglParsed = parseSmartDate(extractDisplayDate(item));
+      if (!tglParsed) return false;
+      return tglParsed.getMonth() === bIdx && tglParsed.getFullYear() === tVal;
+    });
+
+    if (filteredData.length === 0) {
+      alert(`Tidak ada data untuk periode bulan ${['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][bIdx]} ${tVal}.`);
+      return;
+    }
+  }
+
+  let fileName = `${baseFileName}_${targetBulan === 'ALL' ? 'Semua_Bulan' : targetBulan + '_' + targetTahun}.csv`;
+
+  let keys = [];
+  filteredData.forEach(item => {
+    Object.keys(item).forEach(k => {
+      if (!keys.includes(k)) keys.push(k);
+    });
+  });
+
+  let csvContent = "\uFEFF";
+  csvContent += keys.join(",") + "\r\n";
+
+  filteredData.forEach(item => {
+    let row = keys.map(key => {
+      let val = item[key] !== undefined && item[key] !== null ? String(item[key]) : "";
+      val = val.replace(/"/g, '""');
+      if (val.includes(',') || val.includes('\n') || val.includes('"')) {
+        val = `"${val}"`;
+      }
+      return val;
+    });
+    csvContent += row.join(",") + "\r\n";
+  });
+
+  let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  let url = URL.createObjectURL(blob);
+  let a = document.createElement('a');
+  a.setAttribute('href', url);
+  a.setAttribute('download', fileName);
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  
+  showToast("BERHASIL MENGUNDUH DATA");
+}
+
 function bukaDataSiswa() {
   if (typeof Swal === 'undefined') {
     alert('Library modal sedang dimuat. Silakan coba sebentar lagi.');
@@ -2619,7 +3074,7 @@ function bukaDataSiswa() {
           Swal.close();
           const listSiswa = d.dataSiswa || DB.dataSiswa || [];
           DB.dataSiswa = listSiswa;
-          localStorage.setItem('timSaberCacheData_v17', JSON.stringify(DB));
+          localStorage.setItem('timSaberCacheData_v24', JSON.stringify(DB));
           tampilkanModalDataSiswa(listSiswa);
         })
         .catch(err => {
@@ -2748,7 +3203,11 @@ function toggleUnitDataSiswa(unitId) {
   }
 }
 
+// JALANKAN SAAT PERTAMA KALI MEMUAT
 loadData();
+
+// REGISTRASI PERIODIK PING UNTUK ONLINE STATUS (SETIAP 5 MENIT)
+setInterval(pingOnlineStatus, 5 * 60 * 1000);
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(regs => {
