@@ -1090,10 +1090,10 @@ html, body{
 </div>
 
 <script>
-// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 24)
-if (localStorage.getItem('timSaberCacheVersion') !== 'v24') {
+// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 26)
+if (localStorage.getItem('timSaberCacheVersion') !== 'v26') {
   localStorage.clear();
-  localStorage.setItem('timSaberCacheVersion', 'v24');
+  localStorage.setItem('timSaberCacheVersion', 'v26');
 }
 
 // URL WEB APP APPS SCRIPT TERBARU
@@ -1425,7 +1425,7 @@ function pingOnlineStatus() {
 
 // LOAD DATA
 function loadData() {
-  const cachedData = localStorage.getItem('timSaberCacheData_v24');
+  const cachedData = localStorage.getItem('timSaberCacheData_v26');
   if (cachedData) {
     try {
       DB = Object.assign(DB, JSON.parse(cachedData));
@@ -1442,7 +1442,7 @@ function loadData() {
       if (d) {
         const newStr = JSON.stringify(d);
         DB = Object.assign(DB, d);
-        localStorage.setItem('timSaberCacheData_v24', newStr);
+        localStorage.setItem('timSaberCacheData_v26', newStr);
         initApp();
       }
     })
@@ -1458,7 +1458,7 @@ function loadDataFallback() {
   window.handleDashboardResponse = function(d) {
     if (d) {
       DB = Object.assign(DB, d);
-      localStorage.setItem('timSaberCacheData_v24', JSON.stringify(d));
+      localStorage.setItem('timSaberCacheData_v26', JSON.stringify(d));
       initApp();
     }
   };
@@ -1494,7 +1494,6 @@ function initApp() {
   renderLaporanPage();
   renderJadwalByDay();
 
-  // Jalankan ping status online saat dibuka & interval 5 menit
   pingOnlineStatus();
 }
 
@@ -1522,7 +1521,8 @@ function updateActiveMemberForms() {
     if (e) e.value = m.Nama || '';
   });
 
-  ['laporArea', 'pengajuanArea', 'pengaduanArea'].forEach(id => {
+  // HANYA UNTUK LAPOR KERJA & PENGAJUAN YANG OTOMATIS MENGISI AREA MEMBER. PENGADUAN DILEPAS BEBAS.
+  ['laporArea', 'pengajuanArea'].forEach(id => {
     const e = document.getElementById(id);
     if (e && m.Area) e.value = m.Area;
   });
@@ -1742,7 +1742,7 @@ function extractDisplayDate(item) {
 
   let strVal = String(val).trim();
 
-  if (strVal.includes('T') && strVal.includes('Z')) {
+  if (strVal.includes('T') && (strVal.includes('Z') || strVal.includes('+'))) {
     let d = new Date(strVal);
     if (!isNaN(d.getTime())) {
       return d.toLocaleString('id-ID', {
@@ -1752,8 +1752,9 @@ function extractDisplayDate(item) {
         year: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
-        second: '2-digit'
-      });
+        second: '2-digit',
+        hour12: false
+      }).replace(/\./g, ':');
     }
   }
 
@@ -1776,7 +1777,7 @@ function extractDisplayDate(item) {
 function parseSmartDate(dateStr) {
   if (!dateStr) return null;
   let rawStr = String(dateStr).trim();
-  if (rawStr.includes('T')) {
+  if (rawStr.includes('T') || rawStr.includes('Z')) {
     let dIso = new Date(rawStr);
     if (!isNaN(dIso.getTime())) {
       return dIso;
@@ -2104,7 +2105,44 @@ function setFilterLaporan(filter) {
   renderLaporanPage();
 }
 
-// FUNGSI PENGADUAN DENGAN LOGIKA URUTAN TERBARU & TAMPILAN RAPI
+// FORMATTER TANGGAL ZONA JAKARTA (WIB) KHUSUS KARTU PENGADUAN
+function itemDateFormatter(val) {
+  if (!val) return '-';
+  let strVal = String(val).trim();
+  if (!strVal) return '-';
+
+  if (strVal.includes('T') && (strVal.includes('Z') || strVal.includes('+'))) {
+    let d = new Date(strVal);
+    if (!isNaN(d.getTime())) {
+      return d.toLocaleString('id-ID', {
+        timeZone: 'Asia/Jakarta',
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      }).replace(/\./g, ':');
+    }
+  }
+
+  if (strVal.match(/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}/)) {
+    let parts = strVal.split(' ');
+    let dateParts = parts[0].split('-');
+    let timePart = parts[1] || '';
+    
+    const namaBulan = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    let tgl = dateParts[2];
+    let bln = namaBulan[parseInt(dateParts[1], 10) - 1] || dateParts[1];
+    let thn = dateParts[0];
+
+    return `${tgl} ${bln} ${thn} ${timePart}`;
+  }
+  return strVal;
+}
+
+// FUNGSI PENGADUAN DENGAN DUA TANGGAL MONITORING (KOLOM A & G)
 function renderPengaduanPage() {
   const allList = [...(DB.pengaduan || [])].sort((a, b) => parseDateVal(b) - parseDateVal(a));
   const h = document.getElementById('homePengaduanBox');
@@ -2162,11 +2200,17 @@ function renderPengaduanPage() {
     ${currentFilterPengaduan !== 'ALL' ? `<div style="display:flex; margin-bottom:10px;"><button onclick="setFilterPengaduan('ALL')" class="back" style="font-size:11px; margin:0; flex:1;">↺ Reset Filter</button></div>` : ''}
   `;
 
-  // MAPPER DESAIN KARTU PENGADUAN KOMPAK & RAPI
+  // MAPPER DESAIN KARTU PENGADUAN DENGAN DUA TANGGAL MONITORING
   const mapper = x => {
     const values = Object.values(x).map(v => String(v || '').trim());
     let fotoUrl = values.find(v => v.startsWith('http://') || v.startsWith('https://')) || '';
-    let tglPelaporan = extractDisplayDate(x);
+
+    // 1. TANGGAL LAPORAN MASUK (KOLOM A / Waktu System)
+    let tglLaporanMasuk = itemDateFormatter(x['Waktu System'] || x.WaktuSystem || x.Tanggal || values[0] || '');
+
+    // 2. TANGGAL UPDATE MONITORING (KOLOM G / Hari/Tanggal)
+    let rawTglUpdate = x['Hari/Tanggal'] || x.HariTanggal || x['Hari/tgl'] || values[6] || '';
+    let tglUpdateStatus = itemDateFormatter(rawTglUpdate);
 
     let statusText = String(x.Status || x.status || '').trim();
     if (!statusText) {
@@ -2185,12 +2229,10 @@ function renderPengaduanPage() {
       badgeStyle = 'background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0;';
     } else if (stLow.includes('progres') || stLow.includes('proses') || stLow.includes('cek')) {
       badgeStyle = 'background:#fff7ed; color:#ea580c; border:1px solid #fed7aa;';
-    } else {
-      badgeStyle = 'background:#fff7ed; color:#ea580c; border:1px solid #fed7aa;';
     }
 
-    let namaUser = String(x.Nama || x.nama || values[0] || 'Pengguna').trim();
-    let areaUser = String(x.Area || x.area || values[1] || '-').trim();
+    let namaUser = String(x.Nama || x.nama || values[1] || 'Pengguna').trim();
+    let areaUser = String(x.Area || x.area || values[2] || '-').trim();
 
     let rawKendala = String(x.Kendala || x.kendala || x.Deskripsi || x.deskripsi || '').trim();
     if (!rawKendala) {
@@ -2218,7 +2260,16 @@ function renderPengaduanPage() {
     if (keteranganLanjutan) {
       htmlKeterangan = `
         <div style="font-size:11px; color:#1e293b; line-height:1.45; word-break:break-word; margin-top:6px; background:#f0fdf4; border:1px solid #bbf7d0; padding:8px 10px; border-radius:10px;">
-          <b style="color:var(--g); display:block; margin-bottom:2px; font-size:10px; text-transform:uppercase;"><i class="fa-solid fa-square-check"></i> Keterangan / Penanganan:</b>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;">
+            <b style="color:var(--g); font-size:10px; text-transform:uppercase;">
+              <i class="fa-solid fa-square-check"></i> Keterangan / Penanganan:
+            </b>
+            ${tglUpdateStatus && tglUpdateStatus !== '-' && tglUpdateStatus !== tglLaporanMasuk ? `
+              <span style="font-size:9px; color:#166534; font-weight:700; background:#dcfce7; padding:2px 6px; border-radius:4px;">
+                <i class="fa-solid fa-clock-rotate-left"></i> ${esc(tglUpdateStatus)}
+              </span>
+            ` : ''}
+          </div>
           <span style="font-weight:600;">${esc(keteranganLanjutan)}</span>
         </div>
       `;
@@ -2244,8 +2295,8 @@ function renderPengaduanPage() {
         ${htmlKeterangan}
 
         <div style="margin-top:8px; border-top:1px dashed #e2e8f0; padding-top:6px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
-          <span style="background:transparent; color:#64748b; font-size:9.5px; font-weight:600; display:inline-flex; align-items:center;">
-            <i class="fa-regular fa-calendar-days" style="color:var(--g); margin-right:4px;"></i> ${esc(tglPelaporan)}
+          <span style="background:#f1f5f9; color:#334155; font-size:9.5px; font-weight:700; padding:3px 8px; border-radius:6px; display:inline-flex; align-items:center;">
+            <i class="fa-regular fa-calendar-days" style="color:var(--g); margin-right:4px;"></i> Masuk: ${esc(tglLaporanMasuk)}
           </span>
 
           ${fotoUrl ? `
@@ -2548,7 +2599,7 @@ function renderLaporanPage() {
       </div>
       <div style="width:1px; height:25px; background:#bfdbfe;"></div>
       <div onclick="setFilterLaporan(isLengkapActive ? 'LENGKAP' : 'PROSES')" style="cursor:pointer; text-align:center; transition:all 0.2s; padding:6px 10px; border-radius:8px; ${currentFilterLaporan !== 'ALL' ? 'background:var(--g); color:#fff;' : 'color:#15803d;'}">
-        <span style="font-size:9.5px; font-weight:800; display:block; ${currentFilterLaporan !== 'ALL' ? 'color:#fff;' : 'color:var(--g);'}">STATUS TIM</span>
+        <span style="font-size:9.5px; font-weight:800; display:block; ${currentFilterLaporan !== 'ALL' ? 'color:#fff;' : 'color:#15803d;'}">STATUS TIM</span>
         <b style="font-size:11.5px; ${currentFilterLaporan !== 'ALL' ? 'color:#fff;' : 'color:#15803d;'}">${isLengkapActive ? 'LENGKAP ✅' : 'PROSES ⏳'}</b>
       </div>
     </div>
@@ -2662,7 +2713,7 @@ function renderJadwalByDay() {
 
     return `
       <div class="jitem" style="${bgStyle} margin-bottom: 8px; padding: 9px; border-radius: 8px;">
-        <div style="display: flex; justify- content: space-between; align-items: flex-start;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
           <div style="flex:1;">
             <b>${esc(x.tugas)}</b>
             <small style="display:block; color:#64748b; font-size:10px; margin-top:2px;">
@@ -2876,6 +2927,7 @@ async function kirimPengaduan() {
     if (photo) { d.FotoBase64 = photo.base64; d.FotoNama = photo.name; }
     
     postViaHiddenForm(d, 'btnPengaduan', 'Kirim Pengaduan', () => {
+      document.getElementById('pengaduanArea').value = '';
       document.getElementById('pengaduanTeks').value = '';
       document.getElementById('pengaduanPreview').style.display = 'none';
       document.getElementById('pengaduanTextBtn').textContent = 'Ambil Foto Kamera';
@@ -2913,7 +2965,7 @@ appContainer.addEventListener('touchend', e => {
       .then(d => {
         if (d) { 
           DB = Object.assign(DB, d); 
-          localStorage.setItem('timSaberCacheData_v24', JSON.stringify(d)); 
+          localStorage.setItem('timSaberCacheData_v26', JSON.stringify(d)); 
           initApp(); 
         }
         setTimeout(() => pullIndicator.style.transform = 'translateY(0)', 400);
@@ -3074,7 +3126,7 @@ function bukaDataSiswa() {
           Swal.close();
           const listSiswa = d.dataSiswa || DB.dataSiswa || [];
           DB.dataSiswa = listSiswa;
-          localStorage.setItem('timSaberCacheData_v24', JSON.stringify(DB));
+          localStorage.setItem('timSaberCacheData_v26', JSON.stringify(DB));
           tampilkanModalDataSiswa(listSiswa);
         })
         .catch(err => {
