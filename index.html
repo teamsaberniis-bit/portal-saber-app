@@ -2142,7 +2142,7 @@ function itemDateFormatter(val) {
   return strVal;
 }
 
-// FUNGSI PENGADUAN DENGAN DUA TANGGAL MONITORING (KOLOM A & G)
+// FUNGSI PENGADUAN DENGAN TATA LETAK FOOTER RAPI (TANGGAL MASUK & UPDATE BERBEDA)
 function renderPengaduanPage() {
   const allList = [...(DB.pengaduan || [])].sort((a, b) => parseDateVal(b) - parseDateVal(a));
   const h = document.getElementById('homePengaduanBox');
@@ -2206,7 +2206,16 @@ function renderPengaduanPage() {
 
     let tglLaporanMasuk = itemDateFormatter(x['Waktu System'] || x.WaktuSystem || x.Tanggal || values[0] || '');
     let rawTglUpdate = x['Hari/Tanggal'] || x.HariTanggal || x['Hari/tgl'] || values[6] || '';
-    let tglUpdateStatus = itemDateFormatter(rawTglUpdate);
+    let tglUpdateStatus = '-';
+    let keteranganLanjutan = String(x.Keterangan || x.keterangan || x.TindakLanjut || x.Penanganan || '').trim();
+
+    if (rawTglUpdate.includes('|')) {
+      let parts = rawTglUpdate.split('|');
+      tglUpdateStatus = itemDateFormatter(parts[0].trim());
+      if (!keteranganLanjutan) keteranganLanjutan = parts.slice(1).join('|').trim();
+    } else {
+      tglUpdateStatus = itemDateFormatter(rawTglUpdate);
+    }
 
     let statusText = String(x.Status || x.status || '').trim();
     if (!statusText) {
@@ -2244,35 +2253,28 @@ function renderPengaduanPage() {
     }
 
     let kendalaTeks = rawKendala;
-    let keteranganLanjutan = String(x.Keterangan || x.keterangan || x.TindakLanjut || x.Penanganan || '').trim();
-
     if (rawKendala.includes('|')) {
       let parts = rawKendala.split('|');
       kendalaTeks = parts[0].trim();
-      keteranganLanjutan = parts.slice(1).join('|').trim();
+      if (!keteranganLanjutan) keteranganLanjutan = parts.slice(1).join('|').trim();
     }
 
     let htmlKeterangan = '';
     if (keteranganLanjutan) {
       htmlKeterangan = `
-        <div style="font-size:11px; color:#1e293b; line-height:1.45; word-break:break-word; margin-top:6px; background:#f0fdf4; border:1px solid #bbf7d0; padding:8px 10px; border-radius:10px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;">
-            <b style="color:var(--g); font-size:10px; text-transform:uppercase;">
-              <i class="fa-solid fa-square-check"></i> Keterangan / Penanganan:
-            </b>
-            ${tglUpdateStatus && tglUpdateStatus !== '-' && tglUpdateStatus !== tglLaporanMasuk ? `
-              <span style="font-size:9px; color:#166534; font-weight:700; background:#dcfce7; padding:2px 6px; border-radius:4px;">
-                <i class="fa-solid fa-clock-rotate-left"></i> ${esc(tglUpdateStatus)}
-              </span>
-            ` : ''}
-          </div>
+        <div style="font-size:11px; color:#1e293b; line-height:1.45; word-break:break-word; margin-top:8px; background:#f0fdf4; border:1px solid #bbf7d0; padding:8px 10px; border-radius:10px;">
+          <b style="color:#16a34a; font-size:10px; text-transform:uppercase; display:block; margin-bottom:3px;">
+            <i class="fa-solid fa-square-check"></i> Keterangan / Penanganan:
+          </b>
           <span style="font-weight:600;">${esc(keteranganLanjutan)}</span>
         </div>
       `;
     }
 
     return `
-      <div class="card" style="position:relative; border-radius:14px; padding:12px; margin-bottom:9px; background:#fff; border:1px solid var(--b);">
+      <div class="card" style="position:relative; border-radius:14px; padding:12px; margin-bottom:10px; background:#fff; border:1px solid var(--b); box-shadow:0 2px 6px rgba(0,0,0,0.02);">
+        
+        <!-- HEADER KARTU: NAMA & STATUS -->
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:6px;">
           <div style="flex:1; min-width:0;">
             <h4 style="font-size:13px; font-weight:800; color:var(--t); text-overflow:ellipsis; overflow:hidden; white-space:nowrap; margin:0;">${esc(namaUser)}</h4>
@@ -2283,24 +2285,39 @@ function renderPengaduanPage() {
           </span>
         </div>
         
+        <!-- DESKRIPSI KENDALA -->
         <div style="font-size:11.5px; color:#c2410c; line-height:1.4; word-break:break-word; margin:6px 0; background:#fff7ed; border:1px solid #fed7aa; padding:8px 10px; border-radius:10px;">
           <b style="display:block; margin-bottom:2px; font-size:10px; color:#ea580c; text-transform:uppercase;"><i class="fa-solid fa-triangle-exclamation" style="margin-right:3px;"></i> Kendala:</b>
           <span style="font-weight:700;">${esc(kendalaTeks)}</span>
         </div>
 
+        <!-- KETERANGAN PENANGANAN -->
         ${htmlKeterangan}
 
-        <div style="margin-top:8px; border-top:1px dashed #e2e8f0; padding-top:6px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
-          <span style="background:#f1f5f9; color:#334155; font-size:9.5px; font-weight:700; padding:3px 8px; border-radius:6px; display:inline-flex; align-items:center;">
-            <i class="fa-regular fa-calendar-days" style="color:var(--g); margin-right:4px;"></i> Masuk: ${esc(tglLaporanMasuk)}
-          </span>
+        <!-- FOOTER: TANGGAL MASUK, TANGGAL UPDATE, & FOTO -->
+        <div style="margin-top:10px; border-top:1px dashed #e2e8f0; padding-top:8px; display:flex; justify-content:space-between; align-items:center; gap:6px;">
+          <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
+            <!-- BADGE TANGGAL MASUK -->
+            <span style="background:#f1f5f9; color:#475569; font-size:9px; font-weight:700; padding:3px 7px; border-radius:6px; display:inline-flex; align-items:center;">
+              <i class="fa-regular fa-calendar-plus" style="color:#64748b; margin-right:4px;"></i> Masuk: ${esc(tglLaporanMasuk)}
+            </span>
 
+            <!-- BADGE TANGGAL UPDATE / PROGRES -->
+            ${tglUpdateStatus && tglUpdateStatus !== '-' ? `
+              <span style="background:#dcfce7; color:#15803d; font-size:9px; font-weight:700; padding:3px 7px; border-radius:6px; display:inline-flex; align-items:center;">
+                <i class="fa-solid fa-clock-rotate-left" style="color:#16a34a; margin-right:4px;"></i> Update: ${esc(tglUpdateStatus)}
+              </span>
+            ` : ''}
+          </div>
+
+          <!-- TOMBOL LIHAT FOTO -->
           ${fotoUrl ? `
-            <button type="button" onclick="openPhotoModal(['${esc(fotoUrl)}'], 0)" style="font-size:10px; color:var(--blue); font-weight:800; display:inline-flex; align-items:center; gap:4px; background:#eff6ff; padding:4px 9px; border-radius:6px; border:1px solid #bfdbfe; cursor:pointer;">
-              <i class="fa-solid fa-image"></i> Lihat Foto
+            <button type="button" onclick="openPhotoModal(['${esc(fotoUrl)}'], 0)" style="font-size:9.5px; color:var(--blue); font-weight:800; display:inline-flex; align-items:center; gap:4px; background:#eff6ff; padding:3px 8px; border-radius:6px; border:1px solid #bfdbfe; cursor:pointer;">
+              <i class="fa-solid fa-image"></i> Foto
             </button>
           ` : ''}
         </div>
+
       </div>`;
   };
 
