@@ -976,10 +976,10 @@ html, body{
     <input class="form-input" id="laporNama" disabled>
     <div class="form-label">Area</div>
     <input class="form-input" id="laporArea" placeholder="Area kerja">
-    <div class="form-label">Pekerjaan</div>
-    <input class="form-input" id="laporPekerjaan" placeholder="Pekerjaan yang dilakukan">
+    <div class="form-label">Pekerjaan (Sesuaikan 5 Basic)</div>
+    <input class="form-input" id="laporPekerjaan" placeholder="Contoh: Dusting list kaca, Sweeping & Mopping kelas">
     <div class="form-label">Catatan</div>
-    <textarea class="form-textarea" id="laporCatatan" placeholder="Catatan pekerjaan"></textarea>
+    <textarea class="form-textarea" id="laporCatatan" placeholder="Catatan tambahan pekerjaan..."></textarea>
     <div class="form-label">Foto Pekerjaan</div>
     <div class="camera-upload-box">
       <div id="laporInputContainer">
@@ -1090,10 +1090,10 @@ html, body{
 </div>
 
 <script>
-// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 26)
-if (localStorage.getItem('timSaberCacheVersion') !== 'v26') {
+// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 29)
+if (localStorage.getItem('timSaberCacheVersion') !== 'v29') {
   localStorage.clear();
-  localStorage.setItem('timSaberCacheVersion', 'v26');
+  localStorage.setItem('timSaberCacheVersion', 'v29');
 }
 
 // URL WEB APP APPS SCRIPT TERBARU
@@ -1108,7 +1108,7 @@ const TEMPLATE_DAILY_BY_AREA = {
       tugas: [
         "Membuka pintu & menghidupkan AC",
         "Mengecek dan membersihkan ruangan, koridor, toilet dll",
-        "Membersihkan kaca ruangan / kelas"
+        "Glass cleaning kaca ruangan / kelas"
       ]
     },
     { jam: "06.55 - 07.30", spesial: "TILAWAH BERSAMA" },
@@ -1117,10 +1117,10 @@ const TEMPLATE_DAILY_BY_AREA = {
       label: "Rutinitas Pagi",
       tugas: [
         "Mendistribusikan snack siswa dan pegawai",
-        "Membersihkan area tangga (area yang memiliki tangga)",
-        "Membersihkan lemari tempat makan dan mengecek kelengkapannya",
+        "Dusting & Sweeping area tangga",
+        "Dusting lemari tempat makan dan mengecek kelengkapannya",
         "Mengecek ketersediaan air minum / mengisi ulang galon",
-        "Mengecek & membersihkan toilet dll",
+        "Toilet Cleaning & pengecekan rutin",
         "Mengerjakan jobdes sesuai jadwal"
       ]
     },
@@ -1130,7 +1130,7 @@ const TEMPLATE_DAILY_BY_AREA = {
       tugas: [
         "Mendistribusikan makan siang siswa dan pegawai",
         "Mengumpulkan iner, piring bekas snack & membawa ke tempat cucian",
-        "Mengecek & membersihkan koridor, toilet dll",
+        "Mengecek & Sweeping/Mopping koridor, Toilet Cleaning",
         "Mendistribusikan piring snack yang telah dicuci",
         "Mengerjakan jobdes sesuai jadwal"
       ]
@@ -1140,9 +1140,9 @@ const TEMPLATE_DAILY_BY_AREA = {
       jam: "13.10 - 15.00",
       label: "Pembersihan Siang",
       tugas: [
-        "Mengecek & membersihkan koridor, toilet dll",
+        "Mengecek & Mopping koridor, Toilet Cleaning",
         "Merapihkan perlengkapan makan yang kotor & membawa ke tempat cucian",
-        "Membersihkan lemari makan & mengecek ketersediaan air minum",
+        "Dusting lemari makan & mengecek ketersediaan air minum",
         "Mendistribusikan piring snack & perlengkapan makan siswa",
         "Mengerjakan jobdes sesuai jadwal"
       ]
@@ -1150,13 +1150,13 @@ const TEMPLATE_DAILY_BY_AREA = {
     { jam: "15.00 - 15.30", spesial: "SHOLAT ASHAR & AL-MATSURAT BERSAMA" },
     {
       jam: "15.30 - 17.00",
-      label: "General Cleaning Sore",
+      label: "General Cleaning Sore (5 Basic)",
       orange: true,
       tugas: [
-        "Merapihkan meja, kursi, barang-barang kelas & ruangan",
-        "Membersihkan kelas & ruangan yang menjadi tanggung jawab secara menyeluruh",
-        "Membersihkan koridor & area tangga (area yang memiliki tangga)",
-        "Membersihkan toilet secara menyeluruh",
+        "Dusting meja, kursi, & barang-barang kelas secara menyeluruh",
+        "Sweeping & Mopping kelas serta ruangan tanggung jawab",
+        "Sweeping & Mopping koridor & area tangga",
+        "Toilet Cleaning secara menyeluruh (sikat & karbol)",
         "Merapihkan perlengkapan makan yang belum didistribusikan",
         "Membersihkan peralatan kebersihan dan menyimpannya kembali",
         "Pastikan kembali AC, lampu ruangan dalam keadaan off & pintu terkunci",
@@ -1171,8 +1171,8 @@ const TEMPLATE_DAILY_BY_AREA = {
       label: "Persiapan Pagi & Masjid",
       tugas: [
         "Membuka pintu kelas TK A & menyalakan AC",
-        "Membersihkan masjid secara menyeluruh",
-        "Membersihkan toilet masjid"
+        "Sweeping & Mopping masjid secara menyeluruh",
+        "Toilet Cleaning masjid"
       ]
     },
     { jam: "06.55 - 07.30", spesial: "TILAWAH BERSAMA" },
@@ -1182,7 +1182,7 @@ const TEMPLATE_DAILY_BY_AREA = {
       tugas: [
         "Mengecek ketersediaan air minum / mengisi ulang galon",
         "Mendistribusikan snack siswa dan pegawai",
-        "Membersihkan toilet TK",
+        "Toilet Cleaning TK",
         "Mengumpulkan piring, iner kotor dan membawa ke tempat cucian",
         "Mengerjakan jobdes sesuai jadwal"
       ]
@@ -1192,7 +1192,7 @@ const TEMPLATE_DAILY_BY_AREA = {
       label: "Layanan Siang & Masjid",
       tugas: [
         "Mendistribusikan makan siang pegawai",
-        "Membersihkan masjid sebelum waktu sholat dzuhur",
+        "Sweeping & Dusting masjid sebelum waktu sholat dzuhur",
         "Merapikan peralatan makan/snack anak & membawa ke tempat cucian",
         "Mendistribusikan piring/perlengkapan makan yang telah dicuci",
         "Mengerjakan jobdes sesuai jadwal"
@@ -1204,7 +1204,7 @@ const TEMPLATE_DAILY_BY_AREA = {
       label: "Pembersihan Siang & Display",
       tugas: [
         "Display kembali piring snack & cangkir ke kelas TK",
-        "Mengepel lantai kelas TK A & merapikan meja/kursi",
+        "Mopping lantai kelas TK A & Dusting meja/kursi",
         "Mengerjakan jobdes sesuai jadwal"
       ]
     },
@@ -1214,8 +1214,8 @@ const TEMPLATE_DAILY_BY_AREA = {
       label: "General Cleaning Sore (Masjid & TK A)",
       orange: true,
       tugas: [
-        "Membersihkan masjid & toilet masjid secara menyeluruh sebelum sholat Ashar",
-        "Menyapu & mengepel area kelas TK A secara menyeluruh",
+        "Sweeping, Mopping & Toilet Cleaning masjid secara menyeluruh",
+        "Sweeping & Mopping area kelas TK A secara menyeluruh",
         "Membuang seluruh sampah & memastikan ruangan terkunci aman"
       ]
     },
@@ -1227,7 +1227,7 @@ const TEMPLATE_DAILY_BY_AREA = {
       label: "Persiapan Pagi Kelas",
       tugas: [
         "Membuka seluruh pintu kelas TK, area bermain, & menyalakan AC",
-        "Mengecek & membersihkan ruang kelas & area sekitar",
+        "Dusting & Sweeping ruang kelas & area sekitar",
         "Memastikan kebersihan karpet/matras bermain anak",
         "Menyiapkan air galon minum untuk kelas"
       ]
@@ -1259,7 +1259,7 @@ const TEMPLATE_DAILY_BY_AREA = {
       label: "Pembersihan Siang & Display",
       tugas: [
         "Display kembali piring snack & cangkir ke kelas",
-        "Mengepel seluruh lantai kelas TK & merapikan meja/kursi kecil",
+        "Mopping seluruh lantai kelas TK & Dusting meja/kursi kecil",
         "Sterilisasi mainan anak & membersihkan karpet bermain",
         "Mengerjakan jobdes sesuai jadwal"
       ]
@@ -1270,8 +1270,8 @@ const TEMPLATE_DAILY_BY_AREA = {
       label: "General Cleaning Sore Kelas",
       orange: true,
       tugas: [
-        "Menyapu & mengepel seluruh area kelas TK secara menyeluruh",
-        "Membersihkan toilet anak & guru area TK",
+        "Sweeping & Mopping seluruh area kelas TK secara menyeluruh",
+        "Toilet Cleaning anak & guru area TK",
         "Membuang seluruh sampah kelas ke penampungan",
         "Memastikan seluruh AC, lampu OFF, jendela & pintu kelas terkunci rapat"
       ]
@@ -1284,8 +1284,8 @@ const TEMPLATE_DAILY_BY_AREA = {
       label: "Persiapan Pagi Office",
       tugas: [
         "Membuka pintu kantor & menyalakan AC",
-        "Mengecek & membersihkan ruang kantor, koridor, toilet office dll",
-        "Membersihkan area tangga"
+        "Dusting & Sweeping ruang kantor, koridor, toilet office dll",
+        "Sweeping area tangga"
       ]
     },
     { jam: "06.55 - 07.30", spesial: "TILAWAH BERSAMA" },
@@ -1293,10 +1293,10 @@ const TEMPLATE_DAILY_BY_AREA = {
       jam: "07.30 - 10.15",
       label: "Rutinitas Pagi Office",
       tugas: [
-        "Membersihkan kaca bagian luar dan belakang",
+        "Glass cleaning kaca bagian luar dan belakang",
         "Mendistribusikan snack pegawai",
         "Mengecek ketersediaan air minum / mengisi ulang galon kantor",
-        "Mengecek & membersihkan toilet office",
+        "Toilet Cleaning office",
         "Mengerjakan jobdes sesuai jadwal"
       ]
     },
@@ -1305,7 +1305,7 @@ const TEMPLATE_DAILY_BY_AREA = {
       label: "Layanan Siang Office",
       tugas: [
         "Menyiapkan makan siang pegawai",
-        "Mengecek & membersihkan koridor serta toilet office",
+        "Mengecek & Sweeping/Mopping koridor serta Toilet Cleaning office",
         "Mengerjakan jobdes sesuai jadwal"
       ]
     },
@@ -1314,9 +1314,9 @@ const TEMPLATE_DAILY_BY_AREA = {
       jam: "13.10 - 15.00",
       label: "Pembersihan Siang Office",
       tugas: [
-        "Mengecek & membersihkan area kantor dan toilet",
+        "Mopping area kantor dan Toilet Cleaning",
         "Merapikan perlengkapan makan kotor ke tempat cucian",
-        "Membersihkan lemari makan & mengecek ketersediaan air minum",
+        "Dusting lemari makan & mengecek ketersediaan air minum",
         "Mengerjakan jobdes sesuai jadwal"
       ]
     },
@@ -1326,9 +1326,10 @@ const TEMPLATE_DAILY_BY_AREA = {
       label: "General Cleaning Sore Office",
       orange: true,
       tugas: [
-        "Merapihkan meja, kursi, & barang-barang di area kantor",
-        "Membersihkan seluruh ruangan kantor secara menyeluruh (sapu & pel)",
-        "Membersihkan toilet office secara menyeluruh",
+        "Dusting meja, kursi, & barang-barang di area kantor",
+        "Sweeping & Mopping seluruh ruangan kantor secara menyeluruh",
+        "Sweeping & Mopping area tangga kantor",
+        "Toilet Cleaning office secara menyeluruh",
         "Membuang sampah kantor",
         "Pastikan kembali AC, lampu dalam keadaan off & pintu kantor terkunci"
       ]
@@ -1425,7 +1426,7 @@ function pingOnlineStatus() {
 
 // LOAD DATA
 function loadData() {
-  const cachedData = localStorage.getItem('timSaberCacheData_v26');
+  const cachedData = localStorage.getItem('timSaberCacheData_v29');
   if (cachedData) {
     try {
       DB = Object.assign(DB, JSON.parse(cachedData));
@@ -1442,7 +1443,7 @@ function loadData() {
       if (d) {
         const newStr = JSON.stringify(d);
         DB = Object.assign(DB, d);
-        localStorage.setItem('timSaberCacheData_v26', newStr);
+        localStorage.setItem('timSaberCacheData_v29', newStr);
         initApp();
       }
     })
@@ -1458,7 +1459,7 @@ function loadDataFallback() {
   window.handleDashboardResponse = function(d) {
     if (d) {
       DB = Object.assign(DB, d);
-      localStorage.setItem('timSaberCacheData_v26', JSON.stringify(d));
+      localStorage.setItem('timSaberCacheData_v29', JSON.stringify(d));
       initApp();
     }
   };
@@ -1521,7 +1522,6 @@ function updateActiveMemberForms() {
     if (e) e.value = m.Nama || '';
   });
 
-  // HANYA UNTUK LAPOR KERJA & PENGAJUAN YANG OTOMATIS MENGISI AREA MEMBER. PENGADUAN DILEPAS BEBAS.
   ['laporArea', 'pengajuanArea'].forEach(id => {
     const e = document.getElementById(id);
     if (e && m.Area) e.value = m.Area;
@@ -2200,15 +2200,11 @@ function renderPengaduanPage() {
     ${currentFilterPengaduan !== 'ALL' ? `<div style="display:flex; margin-bottom:10px;"><button onclick="setFilterPengaduan('ALL')" class="back" style="font-size:11px; margin:0; flex:1;">↺ Reset Filter</button></div>` : ''}
   `;
 
-  // MAPPER DESAIN KARTU PENGADUAN DENGAN DUA TANGGAL MONITORING
   const mapper = x => {
     const values = Object.values(x).map(v => String(v || '').trim());
     let fotoUrl = values.find(v => v.startsWith('http://') || v.startsWith('https://')) || '';
 
-    // 1. TANGGAL LAPORAN MASUK (KOLOM A / Waktu System)
     let tglLaporanMasuk = itemDateFormatter(x['Waktu System'] || x.WaktuSystem || x.Tanggal || values[0] || '');
-
-    // 2. TANGGAL UPDATE MONITORING (KOLOM G / Hari/Tanggal)
     let rawTglUpdate = x['Hari/Tanggal'] || x.HariTanggal || x['Hari/tgl'] || values[6] || '';
     let tglUpdateStatus = itemDateFormatter(rawTglUpdate);
 
@@ -2567,20 +2563,16 @@ function renderLaporanPage() {
     groupedByNama[nama].lastWaktu = extractDisplayDate(x);
   });
 
-  const daftarAnggotaMurni = (DB.anggota || []).filter(m => {
-    let j = String(m.Jabatan || '').toUpperCase();
-    return !j.includes('PJ') && !j.includes('KOORDINATOR') && !j.includes('KORDIR');
-  });
+  // TOTAL ANGGOTA PRESISI SAMA DENGAN FOLDER ANGGOTA
+  const totalAnggota = (DB.anggota || []).length;
 
   let totalPetugasLapor = 0;
   Object.keys(groupedByNama).forEach(namaPetugas => {
-    let isAnggota = daftarAnggotaMurni.some(a => String(a.Nama || '').trim().toLowerCase() === namaPetugas.trim().toLowerCase());
-    if (isAnggota) {
+    let isAdaDiAnggota = (DB.anggota || []).some(a => String(a.Nama || '').trim().toLowerCase() === namaPetugas.trim().toLowerCase());
+    if (isAdaDiAnggota) {
       totalPetugasLapor++;
     }
   });
-
-  const totalAnggota = daftarAnggotaMurni.length || 0;
 
   let resultData = Object.values(groupedByNama);
   if (currentFilterLaporan === 'LENGKAP') {
@@ -2680,12 +2672,14 @@ function renderJadwalByDay() {
   }
 
   const masterTugas = [
-    { tugas: 'Glass cleaning kelas / ruangan', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
-    { tugas: 'Cleaning masjid', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
-    { tugas: 'Cleaning kelas / ruangan secara menyeluruh', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
-    { tugas: 'Cleaning list kaca & lemari prasman siswa', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
-    { tugas: 'Toilet cleaning', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
-    { tugas: 'Membuang sampah', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
+    { tugas: '1. Dusting (List kaca, furnitur & perlengkapan pendukung)', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
+    { tugas: '2. Glass cleaning (Pembersihan kaca & cermin)', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
+    { tugas: '3. Sweeping (Menyapu kelas/ruangan dan koridor)', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
+    { tugas: '4. Mopping (Mengepel area kelas/ruangan dan koridor)', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
+    { tugas: '5. Toilet cleaning (Pembersihan & sterilisasi toilet)', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
+    { tugas: 'Pengosongan & pembuangan tempat sampah ruangan/area', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
+    { tugas: 'Cleaning area tangga (Sweeping & Mopping)', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
+    { tugas: 'General cleaning area tangga (Sikat & Lap Railing)', frekuensi: '1x Seminggu', pelaksanaan: 'Setiap Rabu', days: [3], kategori: 'Mingguan' },
     { tugas: 'Cleaning karpet toilet & keset', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5], kategori: 'Mingguan' },
     { tugas: 'General cleaning toilet', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5], kategori: 'Mingguan' },
     { tugas: 'Cleaning tempat sampah', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5], kategori: 'Mingguan' },
@@ -2732,7 +2726,7 @@ function renderJadwalByDay() {
   if (box) {
     box.innerHTML = `
       <div class="jcol">
-        <div class="jhead"><i class="fa-solid fa-sun"></i> Pekerjaan Harian (Senin - Jumat)</div>
+        <div class="jhead"><i class="fa-solid fa-sun"></i> 5 Basic & Pekerjaan Harian (Senin - Jumat)</div>
         <div style="padding:7px">${harianList.map(renderItemHTML).join('')}</div>
       </div>
       <div class="jcol" style="margin-top:4px;">
@@ -2965,7 +2959,7 @@ appContainer.addEventListener('touchend', e => {
       .then(d => {
         if (d) { 
           DB = Object.assign(DB, d); 
-          localStorage.setItem('timSaberCacheData_v26', JSON.stringify(d)); 
+          localStorage.setItem('timSaberCacheData_v29', JSON.stringify(d)); 
           initApp(); 
         }
         setTimeout(() => pullIndicator.style.transform = 'translateY(0)', 400);
@@ -3126,7 +3120,7 @@ function bukaDataSiswa() {
           Swal.close();
           const listSiswa = d.dataSiswa || DB.dataSiswa || [];
           DB.dataSiswa = listSiswa;
-          localStorage.setItem('timSaberCacheData_v26', JSON.stringify(DB));
+          localStorage.setItem('timSaberCacheData_v29', JSON.stringify(DB));
           tampilkanModalDataSiswa(listSiswa);
         })
         .catch(err => {
