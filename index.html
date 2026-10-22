@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 
-<!-- MOBILE VIEWPORT -->
+<!-- MOBILE & DESKTOP VIEWPORT -->
 <meta name="viewport"
       content="width=device-width,
                initial-scale=1.0,
@@ -63,7 +63,7 @@ html, body{
 
 .app{
   width:100%;
-  max-width:414px;
+  max-width:100%;
   height:100vh;
   height:100dvh;
   margin:0 auto;
@@ -72,21 +72,6 @@ html, body{
   flex-direction:column;
   position:relative;
   overflow:hidden;
-}
-
-@media (min-width:415px){
-  body{
-    background:#0f172a;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-  }
-  .app{
-    height:100dvh;
-    max-height:900px;
-    border-radius:22px;
-    box-shadow:0 15px 45px rgba(0,0,0,.45);
-  }
 }
 
 .pull-refresh-indicator{
@@ -110,10 +95,10 @@ html, body{
 
 .header{
   background:#ffffff;
-  padding:calc(11px + env(safe-area-inset-top)) 14px 11px 14px;
+  padding:calc(11px + env(safe-area-inset-top)) 16px 11px 16px;
   display:flex;
   align-items:center;
-  gap:11px;
+  gap:12px;
   border-bottom:1px solid var(--b);
   flex:0 0 auto;
   min-height:64px;
@@ -149,6 +134,7 @@ html, body{
 
 .top-member-select{
   width:100%;
+  max-width:300px;
   border:0;
   background:transparent;
   color:var(--t);
@@ -174,7 +160,7 @@ html, body{
   width:100%;
   overflow-y:auto;
   overflow-x:hidden;
-  padding:12px 13px 18px 13px;
+  padding:12px 14px 18px 14px;
   -webkit-overflow-scrolling:touch;
   overscroll-behavior-y:contain;
 }
@@ -192,8 +178,8 @@ html, body{
   background:linear-gradient(135deg, var(--g), var(--gd));
   color:#fff;
   border-radius:14px;
-  padding:15px;
-  margin-bottom:12px;
+  padding:16px;
+  margin-bottom:14px;
   box-shadow:0 6px 15px #16a34a20;
 }
 
@@ -401,19 +387,19 @@ html, body{
   background:#fff;
   border:1px solid var(--b);
   border-radius:12px;
-  padding:11px;
-  margin-bottom:8px;
+  padding:12px;
+  margin-bottom:10px;
 }
 
 .card h4{
-  font-size:12.5px;
+  font-size:13px;
   color:var(--t);
   margin-bottom:2px;
   font-weight:800;
 }
 
 .card p{
-  font-size:11px;
+  font-size:11.5px;
   line-height:1.45;
   color:var(--s);
 }
@@ -452,7 +438,7 @@ html, body{
   border:1px solid var(--b);
   border-radius:9px;
   padding:11px 10px;
-  font-size:16px;
+  font-size:14px;
   background:#fff;
   color:var(--t);
   outline:none;
@@ -467,7 +453,7 @@ html, body{
 .form-textarea{ min-height:90px; resize:vertical; }
 
 .form-label{
-  font-size:10.5px;
+  font-size:11px;
   font-weight:800;
   color:var(--t);
   display:block;
@@ -486,8 +472,10 @@ html, body{
   font-weight:800;
   margin-top:10px;
   cursor:pointer;
+  transition: opacity 0.2s;
 }
 
+.btn:hover{ opacity: 0.9; }
 .btn.o{ background:var(--o); }
 .btn:disabled{ opacity:.6; }
 
@@ -540,8 +528,8 @@ html, body{
   background:#fff;
   border:1px solid var(--b);
   border-radius:14px;
-  padding:12px;
-  margin-bottom:10px;
+  padding:14px;
+  margin-bottom:12px;
 }
 
 .anggota-detail.active{ display:block; }
@@ -597,14 +585,14 @@ html, body{
   background:#f8fafc;
   border:1px solid var(--b);
   border-radius:10px;
-  padding:9px;
+  padding:10px;
   margin-bottom:9px;
 }
 
 .detail-info-item{
   display:flex;
   gap:8px;
-  font-size:10.5px;
+  font-size:11px;
   margin-bottom:6px;
 }
 
@@ -761,7 +749,7 @@ html, body{
 .image-modal-content {
   position: relative;
   width: 100%;
-  max-width: 414px;
+  max-width: 600px;
   height: 80vh;
   display: flex;
   align-items: center;
@@ -814,6 +802,105 @@ html, body{
   background: rgba(255, 255, 255, 0.2);
   padding: 4px 12px;
   border-radius: 12px;
+}
+
+/* =========================================================
+   MODE PC & TABLET RESPONSIVE (MEDIA QUERY DESKTOP >= 768px)
+   ========================================================= */
+@media (min-width: 768px) {
+  body {
+    background: #0f172a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .app {
+    max-width: 1200px;
+    height: 90vh;
+    max-height: 900px;
+    border-radius: 20px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .header {
+    padding: 16px 24px;
+  }
+
+  .content {
+    padding: 20px 24px;
+  }
+
+  /* Grid Menu Utama di PC */
+  .menu {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .ico {
+    width: 52px;
+    height: 52px;
+    font-size: 20px;
+    border-radius: 16px;
+  }
+
+  /* Grid Layout untuk Laporan, Pengaduan, dan Pengajuan di PC */
+  #laporHistoryContainer, 
+  #pengaduanListFull, 
+  #pengajuanListFull, 
+  #infoList, 
+  #lemburPageList, 
+  #anggotaList {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .home-info-card, .home-pengaduan-card {
+    margin-bottom: 0;
+  }
+
+  #homeInfoBox, #homePengaduanBox {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  /* Layout Kolom Jadwal Kerja di PC */
+  .jadwal-cols {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  /* Form Input Pengajuan & Pengaduan Sampingan di PC */
+  #pengajuan .card, #pengaduan .card {
+    max-width: 700px;
+    margin: 0 auto 16px;
+  }
+
+  /* Bottom Navigation Bar di PC */
+  .nav {
+    justify-content: center;
+    gap: 20px;
+    padding: 10px 24px;
+  }
+
+  .nav a {
+    max-width: 140px;
+    font-size: 11px;
+    flex-direction: row;
+    gap: 8px;
+    padding: 8px 12px;
+  }
+
+  .nav i {
+    font-size: 16px;
+  }
 }
 </style>
 </head>
@@ -958,9 +1045,9 @@ html, body{
 <section id="jadwal" class="page">
   <button class="back" onclick="showPage('home')">← Beranda</button>
   <div class="section">Jadwal & Status Pekerjaan</div>
-  <div class="card" style="background:var(--gl);border-color:#bbf7d0;margin-bottom:9px">
-    <b id="jadwalHariIni" style="font-size:11.5px">Jadwal hari ini</b>
-    <div id="jadwalTanggalHariIni" class="muted" style="margin-top:2px;font-size:9.5px"></div>
+  <div class="card" style="background:var(--gl);border-color:#bbf7d0;margin-bottom:12px">
+    <b id="jadwalHariIni" style="font-size:12px">Jadwal hari ini</b>
+    <div id="jadwalTanggalHariIni" class="muted" style="margin-top:2px;font-size:10px"></div>
   </div>
   <div id="jadwalCols" class="jadwal-cols"></div>
 </section>
@@ -1068,7 +1155,7 @@ html, body{
 
 <!-- MODAL POPUP LAPOR KERJA DARI JADWAL -->
 <div id="modalLaporTugas" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.7); z-index:9999; align-items:center; justify-content:center; padding:16px;">
-  <div style="background:#fff; width:100%; max-width:380px; border-radius:16px; padding:16px; box-shadow:0 10px 25px rgba(0,0,0,0.2); position:relative;">
+  <div style="background:#fff; width:100%; max-width:400px; border-radius:16px; padding:16px; box-shadow:0 10px 25px rgba(0,0,0,0.2); position:relative;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
       <h3 style="font-size:14px; font-weight:800; color:var(--t);">Laporan Pekerjaan</h3>
       <button onclick="tutupModalLapor()" style="border:0; background:#f1f5f9; width:28px; height:28px; border-radius:50%; font-weight:800; color:var(--s); cursor:pointer;">✕</button>
@@ -1097,10 +1184,10 @@ html, body{
 </div>
 
 <script>
-// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 30)
-if (localStorage.getItem('timSaberCacheVersion') !== 'v30') {
+// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 31 - PC MODE ENABLED)
+if (localStorage.getItem('timSaberCacheVersion') !== 'v31') {
   localStorage.clear();
-  localStorage.setItem('timSaberCacheVersion', 'v30');
+  localStorage.setItem('timSaberCacheVersion', 'v31');
 }
 
 // URL WEB APP APPS SCRIPT TERBARU
@@ -1434,7 +1521,7 @@ function pingOnlineStatus() {
 }
 
 function loadData() {
-  const cachedData = localStorage.getItem('timSaberCacheData_v30');
+  const cachedData = localStorage.getItem('timSaberCacheData_v31');
   if (cachedData) {
     try {
       DB = Object.assign(DB, JSON.parse(cachedData));
@@ -1451,7 +1538,7 @@ function loadData() {
       if (d) {
         const newStr = JSON.stringify(d);
         DB = Object.assign(DB, d);
-        localStorage.setItem('timSaberCacheData_v30', newStr);
+        localStorage.setItem('timSaberCacheData_v31', newStr);
         initApp();
       }
     })
@@ -1467,7 +1554,7 @@ function loadDataFallback() {
   window.handleDashboardResponse = function(d) {
     if (d) {
       DB = Object.assign(DB, d);
-      localStorage.setItem('timSaberCacheData_v30', JSON.stringify(d));
+      localStorage.setItem('timSaberCacheData_v31', JSON.stringify(d));
       initApp();
     }
   };
@@ -1590,9 +1677,6 @@ function openAnggotaDetail(i) {
   let jabatanUpperActiveUser = String(currentActiveUser.Jabatan || '').toUpperCase();
   let isUserActivePJ = jabatanUpperActiveUser.includes('PJ') || jabatanUpperActiveUser.includes('KOORDINATOR') || jabatanUpperActiveUser.includes('KORDIR');
 
-  // ==========================================
-  // FITUR HITUNG FREKUENSI / REKAP KERJA ANGGOTA
-  // ==========================================
   const namaTarget = (m.Nama || '').trim().toLowerCase();
   const semuaLaporan = DB.laporan || [];
   
@@ -1655,7 +1739,7 @@ function openAnggotaDetail(i) {
         <div style="font-size:11px; font-weight:800; color:var(--blue); margin-bottom:6px; display:flex; align-items:center; gap:5px;">
           <i class="fa-solid fa-download"></i> Panel Download Rekap Data
         </div>
-        <div style="display:flex; flex-direction:column; gap:6px;">
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:6px;">
           <button type="button" onclick="downloadDataCSV('pengaduan')" class="btn" style="margin:0; font-size:11px; background:var(--blue); min-height:36px;">
             <i class="fa-solid fa-file-arrow-down"></i> Download Rekap Pengaduan (Bulanan)
           </button>
@@ -1778,7 +1862,7 @@ function bukaDailyActivityModal(areaStr, namaPetugas) {
   Swal.fire({
     title: `Daily Activity:<br><span style="text-transform:uppercase; font-weight:800;">${esc(namaPetugas)}</span><br>(${esc(displayArea)})`,
     html: html,
-    width: '450px',
+    width: '480px',
     confirmButtonText: 'Tutup',
     confirmButtonColor: 'var(--g)'
   });
@@ -1973,7 +2057,7 @@ function renderLemburCard() {
       }
 
       return `
-        <div class="card" style="${cardStyle} margin-bottom:9px;">
+        <div class="card" style="${cardStyle}">
           <div style="display:flex; align-items:center; flex-wrap:wrap; margin-bottom:4px;">
             <h4 style="margin:0; font-size:13px; font-weight:800;">${esc(x.Kegiatan || '-')}</h4>
             ${badgeTag}
@@ -2061,7 +2145,7 @@ function renderInformasiPage() {
     const cardStyle = isToday ? 'border: 2px solid var(--g); background: #f0fdf4;' : 'border: 1px solid var(--b); background: #fff;';
 
     return `
-      <div class="home-info-card" style="${cardStyle} border-radius: 14px; padding: 12px 14px; margin-bottom: 9px;">
+      <div class="home-info-card" style="${cardStyle} border-radius: 14px; padding: 12px 14px;">
         <div style="display:flex; align-items:center; flex-wrap:wrap; gap:4px; margin-bottom:4px;">
           <span style="font-size:13px; font-weight:800; color:var(--t);">${esc(x.Judul || x.Title || 'Informasi')}</span>
           ${badgeKegiatanHariIni}
@@ -2238,21 +2322,23 @@ function renderPengaduanPage() {
   };
 
   const rekapHTML = `
-    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-bottom:8px;">
-      <div onclick="setFilterPengaduan('BARU')" style="cursor:pointer; padding:9px; border-radius:10px; text-align:center; transition:all 0.2s; ${styleBox('BARU', '#fef2f2', '#fecaca', '#dc2626', '#dc2626', '#fff')}">
-        <span style="font-size:9.5px; font-weight:800; display:block; ${currentFilterPengaduan === 'BARU' ? 'color:#fff;' : 'color:#dc2626;'}">BARU</span>
-        <b style="font-size:16px; ${currentFilterPengaduan === 'BARU' ? 'color:#fff;' : 'color:#b91c1c;'}">${countBaru}</b>
+    <div style="grid-column: 1 / -1; margin-bottom: 10px;">
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px;">
+        <div onclick="setFilterPengaduan('BARU')" style="cursor:pointer; padding:9px; border-radius:10px; text-align:center; transition:all 0.2s; ${styleBox('BARU', '#fef2f2', '#fecaca', '#dc2626', '#dc2626', '#fff')}">
+          <span style="font-size:10px; font-weight:800; display:block; ${currentFilterPengaduan === 'BARU' ? 'color:#fff;' : 'color:#dc2626;'}">BARU</span>
+          <b style="font-size:16px; ${currentFilterPengaduan === 'BARU' ? 'color:#fff;' : 'color:#b91c1c;'}">${countBaru}</b>
+        </div>
+        <div onclick="setFilterPengaduan('PROSES')" style="cursor:pointer; padding:9px; border-radius:10px; text-align:center; transition:all 0.2s; ${styleBox('PROSES', '#fff7ed', '#fed7aa', '#ea580c', '#ea580c', '#fff')}">
+          <span style="font-size:10px; font-weight:800; display:block; ${currentFilterPengaduan === 'PROSES' ? 'color:#fff;' : 'color:#ea580c;'}">PROSES</span>
+          <b style="font-size:16px; ${currentFilterPengaduan === 'PROSES' ? 'color:#fff;' : 'color:#c2410c;'}">${countProgres}</b>
+        </div>
+        <div onclick="setFilterPengaduan('SELESAI')" style="cursor:pointer; padding:9px; border-radius:10px; text-align:center; transition:all 0.2s; ${styleBox('SELESAI', '#f0fdf4', '#bbf7d0', '#16a34a', '#16a34a', '#fff')}">
+          <span style="font-size:10px; font-weight:800; display:block; ${currentFilterPengaduan === 'SELESAI' ? 'color:#fff;' : 'color:#16a34a;'}">SELESAI</span>
+          <b style="font-size:16px; ${currentFilterPengaduan === 'SELESAI' ? 'color:#fff;' : 'color:#15803d;'}">${countSelesai}</b>
+        </div>
       </div>
-      <div onclick="setFilterPengaduan('PROSES')" style="cursor:pointer; padding:9px; border-radius:10px; text-align:center; transition:all 0.2s; ${styleBox('PROSES', '#fff7ed', '#fed7aa', '#ea580c', '#ea580c', '#fff')}">
-        <span style="font-size:9.5px; font-weight:800; display:block; ${currentFilterPengaduan === 'PROSES' ? 'color:#fff;' : 'color:#ea580c;'}">PROSES</span>
-        <b style="font-size:16px; ${currentFilterPengaduan === 'PROSES' ? 'color:#fff;' : 'color:#c2410c;'}">${countProgres}</b>
-      </div>
-      <div onclick="setFilterPengaduan('SELESAI')" style="cursor:pointer; padding:9px; border-radius:10px; text-align:center; transition:all 0.2s; ${styleBox('SELESAI', '#f0fdf4', '#bbf7d0', '#16a34a', '#16a34a', '#fff')}">
-        <span style="font-size:9.5px; font-weight:800; display:block; ${currentFilterPengaduan === 'SELESAI' ? 'color:#fff;' : 'color:#16a34a;'}">SELESAI</span>
-        <b style="font-size:16px; ${currentFilterPengaduan === 'SELESAI' ? 'color:#fff;' : 'color:#15803d;'}">${countSelesai}</b>
-      </div>
+      ${currentFilterPengaduan !== 'ALL' ? `<div style="display:flex; margin-top:8px;"><button onclick="setFilterPengaduan('ALL')" class="back" style="font-size:11px; margin:0; flex:1;">↺ Reset Filter</button></div>` : ''}
     </div>
-    ${currentFilterPengaduan !== 'ALL' ? `<div style="display:flex; margin-bottom:10px;"><button onclick="setFilterPengaduan('ALL')" class="back" style="font-size:11px; margin:0; flex:1;">↺ Reset Filter</button></div>` : ''}
   `;
 
   const mapper = x => {
@@ -2327,7 +2413,7 @@ function renderPengaduanPage() {
     }
 
     return `
-      <div class="card" style="position:relative; border-radius:14px; padding:12px; margin-bottom:10px; background:#fff; border:1px solid var(--b); box-shadow:0 2px 6px rgba(0,0,0,0.02);">
+      <div class="card" style="position:relative; border-radius:14px; padding:12px; margin-bottom:0; background:#fff; border:1px solid var(--b); box-shadow:0 2px 6px rgba(0,0,0,0.02);">
         
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:6px;">
           <div style="flex:1; min-width:0;">
@@ -2420,21 +2506,23 @@ function renderPengajuanPage() {
   };
 
   const rekapHTML = `
-    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-bottom:8px;">
-      <div onclick="setFilterPengajuan('MENUNGGU')" style="cursor:pointer; padding:9px; border-radius:10px; text-align:center; transition:all 0.2s; ${styleBox('MENUNGGU', '#fff7ed', '#fed7aa', '#ea580c', '#ea580c', '#fff')}">
-        <span style="font-size:9.5px; font-weight:800; display:block; ${currentFilterPengajuan === 'MENUNGGU' ? 'color:#fff;' : 'color:#ea580c;'}">MENUNGGU</span>
-        <b style="font-size:16px; ${currentFilterPengajuan === 'MENUNGGU' ? 'color:#fff;' : 'color:#c2410c;'}">${countMenunggu}</b>
+    <div style="grid-column: 1 / -1; margin-bottom: 10px;">
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px;">
+        <div onclick="setFilterPengajuan('MENUNGGU')" style="cursor:pointer; padding:9px; border-radius:10px; text-align:center; transition:all 0.2s; ${styleBox('MENUNGGU', '#fff7ed', '#fed7aa', '#ea580c', '#ea580c', '#fff')}">
+          <span style="font-size:10px; font-weight:800; display:block; ${currentFilterPengajuan === 'MENUNGGU' ? 'color:#fff;' : 'color:#ea580c;'}">MENUNGGU</span>
+          <b style="font-size:16px; ${currentFilterPengajuan === 'MENUNGGU' ? 'color:#fff;' : 'color:#c2410c;'}">${countMenunggu}</b>
+        </div>
+        <div onclick="setFilterPengajuan('DISETUJUI')" style="cursor:pointer; padding:9px; border-radius:10px; text-align:center; transition:all 0.2s; ${styleBox('DISETUJUI', '#f0fdf4', '#bbf7d0', '#16a34a', '#16a34a', '#fff')}">
+          <span style="font-size:10px; font-weight:800; display:block; ${currentFilterPengajuan === 'DISETUJUI' ? 'color:#fff;' : 'color:#16a34a;'}">DISETUJUI</span>
+          <b style="font-size:16px; ${currentFilterPengajuan === 'DISETUJUI' ? 'color:#fff;' : 'color:#15803d;'}">${countDisetujui}</b>
+        </div>
+        <div onclick="setFilterPengajuan('MENDESAK')" style="cursor:pointer; padding:9px; border-radius:10px; text-align:center; transition:all 0.2s; ${styleBox('MENDESAK', '#fef2f2', '#fecaca', '#dc2626', '#dc2626', '#fff')}">
+          <span style="font-size:10px; font-weight:800; display:block; ${currentFilterPengajuan === 'MENDESAK' ? 'color:#fff;' : 'color:#dc2626;'}">MENDESAK</span>
+          <b style="font-size:16px; ${currentFilterPengajuan === 'MENDESAK' ? 'color:#fff;' : 'color:#b91c1c;'}">${countMendesak}</b>
+        </div>
       </div>
-      <div onclick="setFilterPengajuan('DISETUJUI')" style="cursor:pointer; padding:9px; border-radius:10px; text-align:center; transition:all 0.2s; ${styleBox('DISETUJUI', '#f0fdf4', '#bbf7d0', '#16a34a', '#16a34a', '#fff')}">
-        <span style="font-size:9.5px; font-weight:800; display:block; ${currentFilterPengajuan === 'DISETUJUI' ? 'color:#fff;' : 'color:#16a34a;'}">DISETUJUI</span>
-        <b style="font-size:16px; ${currentFilterPengajuan === 'DISETUJUI' ? 'color:#fff;' : 'color:#15803d;'}">${countDisetujui}</b>
-      </div>
-      <div onclick="setFilterPengajuan('MENDESAK')" style="cursor:pointer; padding:9px; border-radius:10px; text-align:center; transition:all 0.2s; ${styleBox('MENDESAK', '#fef2f2', '#fecaca', '#dc2626', '#dc2626', '#fff')}">
-        <span style="font-size:9.5px; font-weight:800; display:block; ${currentFilterPengajuan === 'MENDESAK' ? 'color:#fff;' : 'color:#dc2626;'}">MENDESAK</span>
-        <b style="font-size:16px; ${currentFilterPengajuan === 'MENDESAK' ? 'color:#fff;' : 'color:#b91c1c;'}">${countMendesak}</b>
-      </div>
+      ${currentFilterPengajuan !== 'ALL' ? `<div style="display:flex; margin-top:8px;"><button onclick="setFilterPengajuan('ALL')" class="back" style="font-size:11px; margin:0; flex:1;">↺ Reset Filter</button></div>` : ''}
     </div>
-    ${currentFilterPengajuan !== 'ALL' ? `<div style="display:flex; margin-bottom:10px;"><button onclick="setFilterPengajuan('ALL')" class="back" style="font-size:11px; margin:0; flex:1;">↺ Reset Filter</button></div>` : ''}
   `;
 
   const mapper = x => {
@@ -2467,7 +2555,7 @@ function renderPengajuanPage() {
     }
 
     return `
-      <div class="card" style="margin-bottom:10px;">
+      <div class="card" style="margin-bottom:0;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">
           <div>
             <h4 style="font-size:13px; font-weight:800; color:var(--t);">${esc(nama)} (${esc(area)})</h4>
@@ -2657,7 +2745,7 @@ function renderLaporanPage() {
     }
 
     return `
-      <div class="card" style="margin-bottom:10px; border:1px solid var(--b); border-radius:12px; padding:12px; background:#fff;">
+      <div class="card" style="margin-bottom:0; border:1px solid var(--b); border-radius:12px; padding:12px; background:#fff;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
           <div>
             <h4 style="font-size:13.5px; font-weight:800; color:var(--t); margin:0;">${esc(g.nama)}</h4>
@@ -2777,11 +2865,11 @@ function renderJadwalByDay() {
         <div class="jhead"><i class="fa-solid fa-sun"></i> 5 Basic & Pekerjaan Harian (Senin - Jumat)</div>
         <div style="padding:7px">${harianList.map(renderItemHTML).join('')}</div>
       </div>
-      <div class="jcol" style="margin-top:4px;">
+      <div class="jcol">
         <div class="jhead" style="background:var(--blue);"><i class="fa-solid fa-calendar-week"></i> Pekerjaan Mingguan</div>
         <div style="padding:7px">${mingguanList.map(renderItemHTML).join('')}</div>
       </div>
-      <div class="jcol" style="margin-top:4px;">
+      <div class="jcol">
         <div class="jhead" style="background:var(--o);"><i class="fa-solid fa-calendar-alt"></i> Pekerjaan Bulanan / Berkala</div>
         <div style="padding:7px">${bulananList.map(renderItemHTML).join('')}</div>
       </div>`;
@@ -3030,7 +3118,7 @@ appContainer.addEventListener('touchend', e => {
       .then(d => {
         if (d) { 
           DB = Object.assign(DB, d); 
-          localStorage.setItem('timSaberCacheData_v30', JSON.stringify(d)); 
+          localStorage.setItem('timSaberCacheData_v31', JSON.stringify(d)); 
           initApp(); 
         }
         setTimeout(() => pullIndicator.style.transform = 'translateY(0)', 400);
@@ -3190,7 +3278,7 @@ function bukaDataSiswa() {
           Swal.close();
           const listSiswa = d.dataSiswa || DB.dataSiswa || [];
           DB.dataSiswa = listSiswa;
-          localStorage.setItem('timSaberCacheData_v30', JSON.stringify(DB));
+          localStorage.setItem('timSaberCacheData_v31', JSON.stringify(DB));
           tampilkanModalDataSiswa(listSiswa);
         })
         .catch(err => {
@@ -3299,7 +3387,7 @@ function tampilkanModalDataSiswa(data) {
   Swal.fire({
     title: 'Rekapitulasi Data Siswa',
     html: htmlContent,
-    width: '450px',
+    width: '480px',
     confirmButtonText: 'Tutup',
     confirmButtonColor: 'var(--g)'
   });
