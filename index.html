@@ -1184,10 +1184,10 @@ html, body{
 </div>
 
 <script>
-// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 31 - PC MODE ENABLED)
-if (localStorage.getItem('timSaberCacheVersion') !== 'v31') {
+// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 32 - FINAL)
+if (localStorage.getItem('timSaberCacheVersion') !== 'v32') {
   localStorage.clear();
-  localStorage.setItem('timSaberCacheVersion', 'v31');
+  localStorage.setItem('timSaberCacheVersion', 'v32');
 }
 
 // URL WEB APP APPS SCRIPT TERBARU
@@ -1356,7 +1356,7 @@ const TEMPLATE_DAILY_BY_AREA = {
       label: "Pembersihan Siang & Display",
       tugas: [
         "Display kembali piring snack & cangkir ke kelas",
-        "Mopping seluruh lantai kelas TK & Dusting meja/kursi kecil",
+        "Mopping seluruh lantai kelas TK & Dusting meja/kursi",
         "Sterilisasi mainan anak & membersihkan karpet bermain",
         "Mengerjakan jobdes sesuai jadwal"
       ]
@@ -1521,7 +1521,7 @@ function pingOnlineStatus() {
 }
 
 function loadData() {
-  const cachedData = localStorage.getItem('timSaberCacheData_v31');
+  const cachedData = localStorage.getItem('timSaberCacheData_v32');
   if (cachedData) {
     try {
       DB = Object.assign(DB, JSON.parse(cachedData));
@@ -1538,7 +1538,7 @@ function loadData() {
       if (d) {
         const newStr = JSON.stringify(d);
         DB = Object.assign(DB, d);
-        localStorage.setItem('timSaberCacheData_v31', newStr);
+        localStorage.setItem('timSaberCacheData_v32', newStr);
         initApp();
       }
     })
@@ -1554,7 +1554,7 @@ function loadDataFallback() {
   window.handleDashboardResponse = function(d) {
     if (d) {
       DB = Object.assign(DB, d);
-      localStorage.setItem('timSaberCacheData_v31', JSON.stringify(d));
+      localStorage.setItem('timSaberCacheData_v32', JSON.stringify(d));
       initApp();
     }
   };
@@ -1732,6 +1732,31 @@ function openAnggotaDetail(i) {
     }
   }
 
+  // BOX REKAP AKTIVITAS KERJA (HANYA MUNCUL UNTUK ANGGOTA, TIDAK ADA UNTUK ATASAN / PJ)
+  let rekapKeaktifanHTML = '';
+  if (!isTargetPJ) {
+    rekapKeaktifanHTML = `
+      <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:10px; margin-bottom:10px;">
+        <div style="font-size:11px; font-weight:800; color:var(--g); margin-bottom:6px; display:flex; align-items:center; gap:5px;">
+          <i class="fa-solid fa-chart-line"></i> Rekap Keaktifan Kerja
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:6px;">
+          <div style="background:#fff; border:1px solid #bbf7d0; padding:6px 8px; border-radius:8px; text-align:center;">
+            <span style="font-size:9.5px; color:var(--s); display:block;">Bulan Ini</span>
+            <b style="font-size:14px; color:var(--g);">${laporanBulanIni.length} Laporan</b>
+          </div>
+          <div style="background:#fff; border:1px solid #bbf7d0; padding:6px 8px; border-radius:8px; text-align:center;">
+            <span style="font-size:9.5px; color:var(--s); display:block;">Total Keseluruhan</span>
+            <b style="font-size:14px; color:var(--g);">${totalSelesaiAll} Laporan</b>
+          </div>
+        </div>
+        <div style="font-size:10px; color:var(--s); font-weight:600;">
+          <i class="fa-regular fa-clock" style="color:var(--g)"></i> Terakhir Laporan: <b>${esc(tglTerakhir)}</b>
+        </div>
+      </div>
+    `;
+  }
+
   let panelDownloadPJ = '';
   if (isTargetPJ && isUserActivePJ) {
     panelDownloadPJ = `
@@ -1772,25 +1797,7 @@ function openAnggotaDetail(i) {
       <button class="detail-close" onclick="closeAnggotaDetail()"><i class="fa-solid fa-xmark"></i></button>
     </div>
 
-    <!-- BOX REKAP AKTIVITAS / FREKUENSI KERJA -->
-    <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:10px; margin-bottom:10px;">
-      <div style="font-size:11px; font-weight:800; color:var(--g); margin-bottom:6px; display:flex; align-items:center; gap:5px;">
-        <i class="fa-solid fa-chart-line"></i> Rekap Keaktifan Kerja
-      </div>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:6px;">
-        <div style="background:#fff; border:1px solid #bbf7d0; padding:6px 8px; border-radius:8px; text-align:center;">
-          <span style="font-size:9.5px; color:var(--s); display:block;">Bulan Ini</span>
-          <b style="font-size:14px; color:var(--g);">${laporanBulanIni.length} Laporan</b>
-        </div>
-        <div style="background:#fff; border:1px solid #bbf7d0; padding:6px 8px; border-radius:8px; text-align:center;">
-          <span style="font-size:9.5px; color:var(--s); display:block;">Total Keseluruhan</span>
-          <b style="font-size:14px; color:var(--g);">${totalSelesaiAll} Laporan</b>
-        </div>
-      </div>
-      <div style="font-size:10px; color:var(--s); font-weight:600;">
-        <i class="fa-regular fa-clock" style="color:var(--g)"></i> Terakhir Laporan: <b>${esc(tglTerakhir)}</b>
-      </div>
-    </div>
+    ${rekapKeaktifanHTML}
 
     <div class="detail-info">
       <div class="detail-info-item"><i class="fa-solid fa-location-dot" style="color:var(--g)"></i><span>Area: <b>${esc(m.Area || '-')}</b></span></div>
@@ -3118,7 +3125,7 @@ appContainer.addEventListener('touchend', e => {
       .then(d => {
         if (d) { 
           DB = Object.assign(DB, d); 
-          localStorage.setItem('timSaberCacheData_v31', JSON.stringify(d)); 
+          localStorage.setItem('timSaberCacheData_v32', JSON.stringify(d)); 
           initApp(); 
         }
         setTimeout(() => pullIndicator.style.transform = 'translateY(0)', 400);
@@ -3278,7 +3285,7 @@ function bukaDataSiswa() {
           Swal.close();
           const listSiswa = d.dataSiswa || DB.dataSiswa || [];
           DB.dataSiswa = listSiswa;
-          localStorage.setItem('timSaberCacheData_v31', JSON.stringify(DB));
+          localStorage.setItem('timSaberCacheData_v32', JSON.stringify(DB));
           tampilkanModalDataSiswa(listSiswa);
         })
         .catch(err => {
