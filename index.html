@@ -1055,7 +1055,7 @@ html, body{
 <!-- RIWAYAT LAPORAN -->
 <section id="lapor" class="page">
   <button class="back" onclick="showPage('home')">← Beranda</button>
-  <div class="section">Riwayat & Rekap Laporan Kerja</div>
+  <div class="section">Riwayat Laporan Kerja Pekan Ini (Senin - Jumat)</div>
   <div id="laporHistoryContainer"></div>
 </section>
 
@@ -1184,10 +1184,10 @@ html, body{
 </div>
 
 <script>
-// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 32 - FINAL)
-if (localStorage.getItem('timSaberCacheVersion') !== 'v32') {
+// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 35 - TITLE UPDATED)
+if (localStorage.getItem('timSaberCacheVersion') !== 'v35') {
   localStorage.clear();
-  localStorage.setItem('timSaberCacheVersion', 'v32');
+  localStorage.setItem('timSaberCacheVersion', 'v35');
 }
 
 // URL WEB APP APPS SCRIPT TERBARU
@@ -1521,7 +1521,7 @@ function pingOnlineStatus() {
 }
 
 function loadData() {
-  const cachedData = localStorage.getItem('timSaberCacheData_v32');
+  const cachedData = localStorage.getItem('timSaberCacheData_v35');
   if (cachedData) {
     try {
       DB = Object.assign(DB, JSON.parse(cachedData));
@@ -1538,7 +1538,7 @@ function loadData() {
       if (d) {
         const newStr = JSON.stringify(d);
         DB = Object.assign(DB, d);
-        localStorage.setItem('timSaberCacheData_v32', newStr);
+        localStorage.setItem('timSaberCacheData_v35', newStr);
         initApp();
       }
     })
@@ -1554,7 +1554,7 @@ function loadDataFallback() {
   window.handleDashboardResponse = function(d) {
     if (d) {
       DB = Object.assign(DB, d);
-      localStorage.setItem('timSaberCacheData_v32', JSON.stringify(d));
+      localStorage.setItem('timSaberCacheData_v35', JSON.stringify(d));
       initApp();
     }
   };
@@ -1732,7 +1732,6 @@ function openAnggotaDetail(i) {
     }
   }
 
-  // BOX REKAP AKTIVITAS KERJA (HANYA MUNCUL UNTUK ANGGOTA, TIDAK ADA UNTUK ATASAN / PJ)
   let rekapKeaktifanHTML = '';
   if (!isTargetPJ) {
     rekapKeaktifanHTML = `
@@ -2248,11 +2247,6 @@ function setFilterPengajuan(filter) {
   renderPengajuanPage();
 }
 
-function setFilterLaporan(filter) {
-  currentFilterLaporan = currentFilterLaporan === filter ? 'ALL' : filter;
-  renderLaporanPage();
-}
-
 function itemDateFormatter(val) {
   if (!val) return '-';
   let strVal = String(val).trim();
@@ -2681,11 +2675,21 @@ function closePhotoModal() {
   });
 })();
 
-// FUNGSI RIWAYAT LAPORAN - DIKELOMPOKKAN PER PETUGAS & TANGGAL
+// FUNGSI RIWAYAT LAPORAN - DIBATASI 7 HARI KALENDER UNTUK MENAMPILKAN SENIN - JUMAT
 function renderLaporanPage() {
-  const list = [...(DB.laporan || [])].sort((a, b) => parseDateVal(b) - parseDateVal(a));
+  const batasHari = 7;
+  const waktuBatas = new Date().getTime() - (batasHari * 24 * 60 * 60 * 1000);
+
+  const list = [...(DB.laporan || [])]
+    .filter(item => {
+      const tglParsed = parseSmartDate(extractDisplayDate(item));
+      if (!tglParsed) return true;
+      return tglParsed.getTime() >= waktuBatas;
+    })
+    .sort((a, b) => parseDateVal(b) - parseDateVal(a));
+
   const historyBox = document.getElementById('laporHistoryContainer');
-  const empty = '<div class="card"><p class="muted">Belum ada riwayat laporan kerja selesai.</p></div>';
+  const empty = '<div class="card"><p class="muted">Belum ada riwayat laporan kerja pekan ini (Senin - Jumat).</p></div>';
 
   if (!historyBox) return;
 
@@ -2790,7 +2794,7 @@ function renderJadwalByDay() {
   const day = now.getDay(); 
   const hariNama = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
   const tanggalStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
-  const isWeekend = (day === 0 || day === 6);
+  const isWeekend = (day === 0 || day === 6); // 0 = Minggu, 6 = Sabtu
   
   const todayKey = 'saber_completed_' + now.toISOString().slice(0, 10);
   const completedTasks = JSON.parse(localStorage.getItem(todayKey) || '[]');
@@ -2804,6 +2808,20 @@ function renderJadwalByDay() {
     tanggalEl.textContent = isWeekend 
       ? 'Hari Libur: Tidak ada jadwal pekerjaan rutin pada hari Sabtu & Minggu.' 
       : 'Ketuk tombol "KERJAKAN HARI INI" pada tugas untuk melaporkan pekerjaan secara otomatis.';
+  }
+
+  // Jika hari Sabtu atau Minggu, tampilkan pesan libur secara khusus
+  if (isWeekend) {
+    if (box) {
+      box.innerHTML = `
+        <div class="card" style="grid-column: 1 / -1; text-align:center; padding:35px 20px; background:#f8fafc; border:1px dashed var(--b);">
+          <div style="font-size:38px; color:var(--g); margin-bottom:12px;"><i class="fa-solid fa-mug-hot"></i></div>
+          <h3 style="font-size:16px; font-weight:800; color:var(--t); margin-bottom:6px;">Tidak Ada Pekerjaan</h3>
+          <p style="font-size:13px; color:var(--s); font-weight:600;">Selamat berlibur! Nikmati waktu istirahat bersama keluarga. 🌿</p>
+        </div>
+      `;
+    }
+    return;
   }
 
   const masterTugas = [
@@ -2836,9 +2854,7 @@ function renderJadwalByDay() {
     const isCompleted = completedTasks.includes(x.tugas);
     
     let statusLabel = '';
-    if (isWeekend) {
-      statusLabel = '<span class="status" style="background:#f1f5f9; color:#64748b;">LIBUR</span>';
-    } else if (isCompleted) {
+    if (isCompleted) {
       statusLabel = '<span class="status" style="background:#15803d; color:#fff; font-weight:800;"><i class="fa-solid fa-check"></i> ✓ SELESAI (TERCEKLIS)</span>';
     } else if (wajibHariIni) {
       statusLabel = `<button type="button" onclick="bukaModalLapor('${esc(x.tugas).replace(/'/g, "\\'")}')" class="status" style="background:#16a34a; color:#fff; font-weight:800; border:0; padding:6px 10px; border-radius:6px; cursor:pointer; width:100%; text-align:center;"><i class="fa-solid fa-check"></i> KERJAKAN HARI INI</button>`;
@@ -3125,7 +3141,7 @@ appContainer.addEventListener('touchend', e => {
       .then(d => {
         if (d) { 
           DB = Object.assign(DB, d); 
-          localStorage.setItem('timSaberCacheData_v32', JSON.stringify(d)); 
+          localStorage.setItem('timSaberCacheData_v35', JSON.stringify(d)); 
           initApp(); 
         }
         setTimeout(() => pullIndicator.style.transform = 'translateY(0)', 400);
@@ -3285,7 +3301,7 @@ function bukaDataSiswa() {
           Swal.close();
           const listSiswa = d.dataSiswa || DB.dataSiswa || [];
           DB.dataSiswa = listSiswa;
-          localStorage.setItem('timSaberCacheData_v32', JSON.stringify(DB));
+          localStorage.setItem('timSaberCacheData_v35', JSON.stringify(DB));
           tampilkanModalDataSiswa(listSiswa);
         })
         .catch(err => {
