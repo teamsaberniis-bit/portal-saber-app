@@ -804,9 +804,7 @@ html, body{
   border-radius: 12px;
 }
 
-/* =========================================================
-   MODE PC & TABLET RESPONSIVE (MEDIA QUERY DESKTOP >= 768px)
-   ========================================================= */
+/* MODE PC & TABLET RESPONSIVE (MEDIA QUERY DESKTOP >= 768px) */
 @media (min-width: 768px) {
   body {
     background: #0f172a;
@@ -835,7 +833,6 @@ html, body{
     padding: 20px 24px;
   }
 
-  /* Grid Menu Utama di PC */
   .menu {
     grid-template-columns: repeat(8, minmax(0, 1fr));
     gap: 12px;
@@ -848,7 +845,6 @@ html, body{
     border-radius: 16px;
   }
 
-  /* Grid Layout untuk Laporan, Pengaduan, dan Pengajuan di PC */
   #laporHistoryContainer, 
   #pengaduanListFull, 
   #pengajuanListFull, 
@@ -870,20 +866,17 @@ html, body{
     gap: 12px;
   }
 
-  /* Layout Kolom Jadwal Kerja di PC */
   .jadwal-cols {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 14px;
   }
 
-  /* Form Input Pengajuan & Pengaduan Sampingan di PC */
   #pengajuan .card, #pengaduan .card {
     max-width: 700px;
     margin: 0 auto 16px;
   }
 
-  /* Bottom Navigation Bar di PC */
   .nav {
     justify-content: center;
     gap: 20px;
@@ -927,7 +920,6 @@ html, body{
       <span onclick="tutupDetailInformasi()" style="font-size:24px; cursor:pointer; line-height:1; color:#fff;">&times;</span>
     </div>
     
-    <!-- OPTIMALISASI PREVIEW GAMBAR KEGIATAN -->
     <div id="infoDetailFotoBox" style="display:none; width:100%; max-height:200px; overflow:hidden; background:#0f172a;">
       <img id="infoDetailFoto" src="" alt="Foto Kegiatan" style="width:100%; height:100%; object-fit:cover; cursor:pointer;" onclick="openPhotoModal([this.src], 0)">
     </div>
@@ -1063,7 +1055,7 @@ html, body{
   </div>
 
   <div class="section-header">
-    <div class="section">Informasi</div>
+    <div class="section">Informasi / Kegiatan Hari Ini</div>
     <a class="section-link" onclick="showPage('informasi')">Lihat Semua</a>
   </div>
   <div id="homeInfoBox"></div>
@@ -1225,10 +1217,10 @@ html, body{
 </div>
 
 <script>
-// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 36 - FINAL OPTIMIZED)
-if (localStorage.getItem('timSaberCacheVersion') !== 'v36') {
+// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 38 - STRICT TODAY FILTER IN HOME)
+if (localStorage.getItem('timSaberCacheVersion') !== 'v38') {
   localStorage.clear();
-  localStorage.setItem('timSaberCacheVersion', 'v36');
+  localStorage.setItem('timSaberCacheVersion', 'v38');
 }
 
 // URL WEB APP APPS SCRIPT TERBARU
@@ -1240,9 +1232,17 @@ function formatImageUrl(rawUrl) {
   let url = String(rawUrl).trim();
   if (!url) return '';
   
-  let fileIdMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
-  if (fileIdMatch && fileIdMatch[1]) {
-    return 'https://lh3.googleusercontent.com/d/' + fileIdMatch[1];
+  let fileId = '';
+  let m1 = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  let m2 = url.match(/id=([a-zA-Z0-9_-]+)/);
+  let m3 = url.match(/file\/d\/([a-zA-Z0-9_-]+)/);
+
+  if (m1 && m1[1]) fileId = m1[1];
+  else if (m2 && m2[1]) fileId = m2[1];
+  else if (m3 && m3[1]) fileId = m3[1];
+
+  if (fileId) {
+    return 'https://lh3.googleusercontent.com/d/' + fileId;
   }
   return url;
 }
@@ -1575,7 +1575,7 @@ function pingOnlineStatus() {
 }
 
 function loadData() {
-  const cachedData = localStorage.getItem('timSaberCacheData_v36');
+  const cachedData = localStorage.getItem('timSaberCacheData_v38');
   if (cachedData) {
     try {
       DB = Object.assign(DB, JSON.parse(cachedData));
@@ -1592,7 +1592,7 @@ function loadData() {
       if (d) {
         const newStr = JSON.stringify(d);
         DB = Object.assign(DB, d);
-        localStorage.setItem('timSaberCacheData_v36', newStr);
+        localStorage.setItem('timSaberCacheData_v38', newStr);
         initApp();
       }
     })
@@ -1608,7 +1608,7 @@ function loadDataFallback() {
   window.handleDashboardResponse = function(d) {
     if (d) {
       DB = Object.assign(DB, d);
-      localStorage.setItem('timSaberCacheData_v36', JSON.stringify(d));
+      localStorage.setItem('timSaberCacheData_v38', JSON.stringify(d));
       initApp();
     }
   };
@@ -1659,7 +1659,7 @@ function updateActiveMemberForms() {
   const a = document.getElementById('headerAvatar');
   if (a) {
     let fotoUrl = formatImageUrl(m.Foto);
-    a.innerHTML = fotoUrl ? `<img src="${esc(fotoUrl)}">` : esc((m.Nama || 'D').charAt(0).toUpperCase());
+    a.innerHTML = fotoUrl ? `<img src="${esc(fotoUrl)}" onerror="this.onerror=null; this.parentElement.innerHTML='${esc((m.Nama || 'D').charAt(0).toUpperCase())}';">` : esc((m.Nama || 'D').charAt(0).toUpperCase());
   }
 
   const area = document.getElementById('headerArea');
@@ -1701,11 +1701,16 @@ function renderAnggotaList() {
       : 'background:#94a3b8;';
 
     let fotoUrl = formatImageUrl(m.Foto);
+    let inisial = esc((m.Nama || 'D').charAt(0).toUpperCase());
 
     return `
       <div class="row" onclick="openAnggotaDetail(${i})">
         <div class="pic">
-          ${fotoUrl ? `<img src="${esc(fotoUrl)}">` : esc((m.Nama || 'D').charAt(0).toUpperCase())}
+          ${fotoUrl 
+            ? `<img src="${esc(fotoUrl)}" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='grid';">
+               <span style="display:none; width:100%; height:100%; place-items:center; font-weight:800; background:var(--gl); color:var(--g);">${inisial}</span>`
+            : `<span style="display:grid; width:100%; height:100%; place-items:center; font-weight:800; background:var(--gl); color:var(--g);">${inisial}</span>`
+          }
           <span style="position:absolute; bottom:2px; right:2px; width:10px; height:10px; border-radius:50%; border:2px solid #fff; ${dotStyle}"></span>
         </div>
         <div class="rowmain">
@@ -1841,11 +1846,16 @@ function openAnggotaDetail(i) {
   const idKaryawan = m.IdKaryawan || m.id_karyawan || m.IDKaryawan || '-';
   const divisi = m.Divisi || m.divisi || '-';
   let fotoUrl = formatImageUrl(m.Foto);
+  let inisialDetail = esc((m.Nama || 'D').charAt(0).toUpperCase());
 
   box.innerHTML = `
     <div class="anggota-detail-head">
       <div class="detail-pic">
-        ${fotoUrl ? `<img src="${esc(fotoUrl)}">` : esc((m.Nama || 'D').charAt(0).toUpperCase())}
+        ${fotoUrl 
+          ? `<img src="${esc(fotoUrl)}" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='grid';">
+             <span style="display:none; width:100%; height:100%; place-items:center; font-weight:800; background:var(--gl); color:var(--g);">${inisialDetail}</span>`
+          : `<span style="display:grid; width:100%; height:100%; place-items:center; font-weight:800; background:var(--gl); color:var(--g);">${inisialDetail}</span>`
+        }
       </div>
       <div style="min-width:0">
         <div class="detail-name">${esc(m.Nama || '-')}</div>
@@ -2176,6 +2186,7 @@ function parseDateVal(x) {
   return !isNaN(t) ? t : 0;
 }
 
+// FUNGSI UTAMA INFORMASI - DIPERBARUI UNTUK PENYARINGAN KETAT HARI INI DI BERANDA
 function renderInformasiPage() {
   const list = [...getInformasiData()].sort((a, b) => parseDateVal(b) - parseDateVal(a));
   
@@ -2184,7 +2195,8 @@ function renderInformasiPage() {
 
   const b = document.getElementById('infoList');
   const h = document.getElementById('homeInfoBox');
-  const empty = '<div class="card"><p class="muted">Belum ada informasi.</p></div>';
+  const emptyAll = '<div class="card"><p class="muted">Belum ada informasi.</p></div>';
+  const emptyToday = '<div class="card"><p class="muted">Tidak ada kegiatan / informasi untuk hari ini.</p></div>';
 
   if (list.length > 0) {
     const infoTerbaru = (list[0].Judul || list[0].Title || '') + '|' + (list[0].Informasi || list[0].Isi || '');
@@ -2197,17 +2209,26 @@ function renderInformasiPage() {
     localStorage.setItem('lastSeenInfo', infoTerbaru);
   }
 
+  // Set tanggal hari ini (jam diset ke 00:00:00)
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+
+  // Filter khusus untuk informasi yang tanggalnya HARI INI
+  const infoHariIni = list.filter(x => {
+    const rawTgl = extractDisplayDate(x);
+    const tglInfo = parseSmartDate(rawTgl);
+    return tglInfo && tglInfo.getTime() === today.getTime();
+  });
 
   const mapper = (x, index) => {
     const rawTgl = extractDisplayDate(x);
     const tglInfo = parseSmartDate(rawTgl);
     const isToday = tglInfo && tglInfo.getTime() === today.getTime();
 
+    // Penanda Khusus Kegiatan Hari Ini
     const badgeKegiatanHariIni = isToday ? `
       <span style="background:var(--g); color:#fff; font-size:10px; font-weight:800; padding:3px 8px; border-radius:12px; display:inline-block; margin-left:8px; text-transform:uppercase; vertical-align:middle;">
-        KEGIATAN HARI INI
+        <i class="fa-solid fa-star" style="margin-right:3px;"></i> KEGIATAN HARI INI
       </span>` : '';
 
     const cardStyle = isToday ? 'border: 2px solid var(--g); background: #f0fdf4;' : 'border: 1px solid var(--b); background: #fff;';
@@ -2223,36 +2244,18 @@ function renderInformasiPage() {
       </div>`;
   };
 
-  if (b) b.innerHTML = list.length ? list.map((x, i) => mapper(x, i)).join('') : empty;
+  // Render halaman utama Informasi (menampilkan semua data)
+  if (b) b.innerHTML = list.length ? list.map((x, i) => mapper(x, i)).join('') : emptyAll;
   
+  // Render Beranda (HANYA menampilkan yang tanggalnya HARI INI)
   if (h) {
-    if (list.length === 0) {
-      h.innerHTML = empty;
+    if (infoHariIni.length > 0) {
+      h.innerHTML = infoHariIni.map(x => {
+        const originalIndex = list.indexOf(x);
+        return mapper(x, originalIndex);
+      }).join('');
     } else {
-      const futureAndTodayList = list.filter(x => {
-        const d = parseSmartDate(extractDisplayDate(x));
-        return !d || d.getTime() >= today.getTime();
-      });
-
-      if (futureAndTodayList.length === 0) {
-        h.innerHTML = '<div class="card"><p class="muted">Tidak ada informasi/kegiatan mendatang.</p></div>';
-      } else {
-        futureAndTodayList.sort((a, b) => {
-          const dA = parseSmartDate(extractDisplayDate(a));
-          const dB = parseSmartDate(extractDisplayDate(b));
-          const timeA = dA ? dA.getTime() : Infinity;
-          const timeB = dB ? dB.getTime() : Infinity;
-          return timeA - timeB;
-        });
-
-        const todayItemsCount = futureAndTodayList.filter(x => {
-          const d = parseSmartDate(extractDisplayDate(x));
-          return d && d.getTime() === today.getTime();
-        }).length;
-
-        const limit = Math.max(2, todayItemsCount);
-        h.innerHTML = futureAndTodayList.slice(0, limit).map((x, i) => mapper(x, i)).join('');
-      }
+      h.innerHTML = emptyToday;
     }
   }
 }
@@ -2271,7 +2274,6 @@ function bukaDetailInformasi(item) {
   const waktu = extractDisplayDate(item);
   const kebutuhan = item.Kebutuhan || item.Informasi || item.Keterangan || item.Isi || '-';
   
-  // PENANGANAN FOTO KEGIATAN DI DETAIL MODAL
   let fotoRaw = item.Foto || item.foto || item.Gambar || item.gambar || item.FotoUrl || '';
   let fotoUrl = formatImageUrl(fotoRaw);
 
@@ -2899,7 +2901,7 @@ function renderJadwalByDay() {
   const day = now.getDay(); 
   const hariNama = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
   const tanggalStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
-  const isWeekend = (day === 0 || day === 6); // 0 = Minggu, 6 = Sabtu
+  const isWeekend = (day === 0 || day === 6);
   
   const todayKey = 'saber_completed_' + now.toISOString().slice(0, 10);
   const completedTasks = JSON.parse(localStorage.getItem(todayKey) || '[]');
@@ -2915,7 +2917,6 @@ function renderJadwalByDay() {
       : 'Ketuk tombol "KERJAKAN HARI INI" pada tugas untuk melaporkan pekerjaan secara otomatis.';
   }
 
-  // Jika hari Sabtu atau Minggu, tampilkan pesan libur secara khusus
   if (isWeekend) {
     if (box) {
       box.innerHTML = `
@@ -3251,7 +3252,7 @@ appContainer.addEventListener('touchend', e => {
       .then(d => {
         if (d) { 
           DB = Object.assign(DB, d); 
-          localStorage.setItem('timSaberCacheData_v36', JSON.stringify(d)); 
+          localStorage.setItem('timSaberCacheData_v38', JSON.stringify(d)); 
           initApp(); 
         }
         setTimeout(() => pullIndicator.style.transform = 'translateY(0)', 400);
@@ -3411,7 +3412,7 @@ function bukaDataSiswa() {
           Swal.close();
           const listSiswa = d.dataSiswa || DB.dataSiswa || [];
           DB.dataSiswa = listSiswa;
-          localStorage.setItem('timSaberCacheData_v36', JSON.stringify(DB));
+          localStorage.setItem('timSaberCacheData_v38', JSON.stringify(DB));
           tampilkanModalDataSiswa(listSiswa);
         })
         .catch(err => {
