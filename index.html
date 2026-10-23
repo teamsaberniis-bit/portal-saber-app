@@ -919,6 +919,47 @@ html, body{
   <div class="gallery-counter" id="galleryCounter">1 / 1</div>
 </div>
 
+<!-- MODAL DETAIL INFORMASI / KEGIATAN -->
+<div id="modalDetailInformasi" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.7); z-index:9999; align-items:center; justify-content:center; padding:16px;">
+  <div style="background:#fff; width:100%; max-width:420px; border-radius:16px; overflow:hidden; box-shadow:0 10px 25px rgba(0,0,0,0.2); position:relative;">
+    <div style="background-color:var(--g); color:white; padding:16px; display:flex; justify-content:space-between; align-items:center;">
+      <h3 id="infoDetailNama" style="margin:0; font-size:1.1rem; font-weight:800;">Nama Kegiatan</h3>
+      <span onclick="tutupDetailInformasi()" style="font-size:24px; cursor:pointer; line-height:1; color:#fff;">&times;</span>
+    </div>
+    
+    <!-- OPTIMALISASI PREVIEW GAMBAR KEGIATAN -->
+    <div id="infoDetailFotoBox" style="display:none; width:100%; max-height:200px; overflow:hidden; background:#0f172a;">
+      <img id="infoDetailFoto" src="" alt="Foto Kegiatan" style="width:100%; height:100%; object-fit:cover; cursor:pointer;" onclick="openPhotoModal([this.src], 0)">
+    </div>
+
+    <div style="padding:16px; max-height:60vh; overflow-y:auto;">
+      <div style="margin-bottom:12px; display:flex; flex-direction:column;">
+        <span style="font-size:0.75rem; color:var(--s); text-transform:uppercase; font-weight:800;">Unit</span>
+        <span id="infoDetailUnit" style="font-size:0.95rem; color:var(--t); font-weight:700; margin-top:2px;">-</span>
+      </div>
+      <div style="margin-bottom:12px; display:flex; flex-direction:column;">
+        <span style="font-size:0.75rem; color:var(--s); text-transform:uppercase; font-weight:800;">PIC / Penanggung Jawab</span>
+        <span id="infoDetailPic" style="font-size:0.95rem; color:var(--t); font-weight:700; margin-top:2px;">-</span>
+      </div>
+      <div style="margin-bottom:12px; display:flex; flex-direction:column;">
+        <span style="font-size:0.75rem; color:var(--s); text-transform:uppercase; font-weight:800;">Tempat / Lokasi</span>
+        <span id="infoDetailTempat" style="font-size:0.95rem; color:var(--t); font-weight:700; margin-top:2px;">-</span>
+      </div>
+      <div style="margin-bottom:12px; display:flex; flex-direction:column;">
+        <span style="font-size:0.75rem; color:var(--s); text-transform:uppercase; font-weight:800;">Waktu</span>
+        <span id="infoDetailWaktu" style="font-size:0.95rem; color:var(--t); font-weight:700; margin-top:2px;">-</span>
+      </div>
+      <div style="background-color:#f8fafc; border:1px dashed var(--b); padding:10px; border-radius:8px; margin-top:8px;">
+        <span style="font-size:0.8rem; font-weight:800; color:var(--t); display:block; margin-bottom:4px;">Kebutuhan / Keterangan:</span>
+        <p id="infoDetailKebutuhan" style="margin:0; font-size:0.9rem; color:#334155; white-space:pre-line; line-height:1.45;">-</p>
+      </div>
+    </div>
+    <div style="padding:12px 16px; text-align:right; border-top:1px solid var(--b); background:#f8fafc;">
+      <button onclick="tutupDetailInformasi()" class="btn" style="margin:0; width:auto; padding:8px 20px; background:#e2e8f0; color:#334155; min-height:auto;">Tutup</button>
+    </div>
+  </div>
+</div>
+
 <!-- IFRAME & FORM TERSEMBUNYI UNTUK PENGIRIMAN TANPA CORS -->
 <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
 <form id="gasSubmitForm" action="https://script.google.com/macros/s/AKfycbxWCJP6Y8I-EJF9s61MjMm7ceDKTlzQRxN__jq9p5LFVKUgMjEbuWTPh_sJW7NLYVOGcg/exec" method="POST" target="hidden_iframe" style="display:none;">
@@ -1184,14 +1225,27 @@ html, body{
 </div>
 
 <script>
-// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 35 - TITLE UPDATED)
-if (localStorage.getItem('timSaberCacheVersion') !== 'v35') {
+// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 36 - FINAL OPTIMIZED)
+if (localStorage.getItem('timSaberCacheVersion') !== 'v36') {
   localStorage.clear();
-  localStorage.setItem('timSaberCacheVersion', 'v35');
+  localStorage.setItem('timSaberCacheVersion', 'v36');
 }
 
 // URL WEB APP APPS SCRIPT TERBARU
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxWCJP6Y8I-EJF9s61MjMm7ceDKTlzQRxN__jq9p5LFVKUgMjEbuWTPh_sJW7NLYVOGcg/exec";
+
+// HELPER PARSING GAMBAR GOOGLE DRIVE / LINK LAIN
+function formatImageUrl(rawUrl) {
+  if (!rawUrl) return '';
+  let url = String(rawUrl).trim();
+  if (!url) return '';
+  
+  let fileIdMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
+  if (fileIdMatch && fileIdMatch[1]) {
+    return 'https://lh3.googleusercontent.com/d/' + fileIdMatch[1];
+  }
+  return url;
+}
 
 // TEMPLATE DAILY ACTIVITY BERDASARKAN AREA
 const TEMPLATE_DAILY_BY_AREA = {
@@ -1521,7 +1575,7 @@ function pingOnlineStatus() {
 }
 
 function loadData() {
-  const cachedData = localStorage.getItem('timSaberCacheData_v35');
+  const cachedData = localStorage.getItem('timSaberCacheData_v36');
   if (cachedData) {
     try {
       DB = Object.assign(DB, JSON.parse(cachedData));
@@ -1538,7 +1592,7 @@ function loadData() {
       if (d) {
         const newStr = JSON.stringify(d);
         DB = Object.assign(DB, d);
-        localStorage.setItem('timSaberCacheData_v35', newStr);
+        localStorage.setItem('timSaberCacheData_v36', newStr);
         initApp();
       }
     })
@@ -1554,7 +1608,7 @@ function loadDataFallback() {
   window.handleDashboardResponse = function(d) {
     if (d) {
       DB = Object.assign(DB, d);
-      localStorage.setItem('timSaberCacheData_v35', JSON.stringify(d));
+      localStorage.setItem('timSaberCacheData_v36', JSON.stringify(d));
       initApp();
     }
   };
@@ -1604,7 +1658,8 @@ function updateActiveMemberForms() {
   const m = DB.anggota[activeMemberIndex] || { Nama: '', Jabatan: 'Anggota', Area: '' };
   const a = document.getElementById('headerAvatar');
   if (a) {
-    a.innerHTML = m.Foto ? `<img src="${esc(m.Foto)}">` : esc((m.Nama || 'D').charAt(0).toUpperCase());
+    let fotoUrl = formatImageUrl(m.Foto);
+    a.innerHTML = fotoUrl ? `<img src="${esc(fotoUrl)}">` : esc((m.Nama || 'D').charAt(0).toUpperCase());
   }
 
   const area = document.getElementById('headerArea');
@@ -1645,10 +1700,12 @@ function renderAnggotaList() {
       ? 'background:#22c55e; box-shadow: 0 0 6px #22c55e;' 
       : 'background:#94a3b8;';
 
+    let fotoUrl = formatImageUrl(m.Foto);
+
     return `
       <div class="row" onclick="openAnggotaDetail(${i})">
         <div class="pic">
-          ${m.Foto ? `<img src="${esc(m.Foto)}">` : esc((m.Nama || 'D').charAt(0).toUpperCase())}
+          ${fotoUrl ? `<img src="${esc(fotoUrl)}">` : esc((m.Nama || 'D').charAt(0).toUpperCase())}
           <span style="position:absolute; bottom:2px; right:2px; width:10px; height:10px; border-radius:50%; border:2px solid #fff; ${dotStyle}"></span>
         </div>
         <div class="rowmain">
@@ -1705,7 +1762,7 @@ function openAnggotaDetail(i) {
   let dailyActivityHTML = '';
 
   if (!isTargetPJ) {
-    let dailyImg = m.DailyActivity || m['Daily Activity'] || m.Daily || m.FotoDaily || m.daily || '';
+    let dailyImg = formatImageUrl(m.DailyActivity || m['Daily Activity'] || m.Daily || m.FotoDaily || m.daily || '');
 
     if (dailyImg) {
       dailyActivityHTML = `
@@ -1783,11 +1840,12 @@ function openAnggotaDetail(i) {
 
   const idKaryawan = m.IdKaryawan || m.id_karyawan || m.IDKaryawan || '-';
   const divisi = m.Divisi || m.divisi || '-';
+  let fotoUrl = formatImageUrl(m.Foto);
 
   box.innerHTML = `
     <div class="anggota-detail-head">
       <div class="detail-pic">
-        ${m.Foto ? `<img src="${esc(m.Foto)}">` : esc((m.Nama || 'D').charAt(0).toUpperCase())}
+        ${fotoUrl ? `<img src="${esc(fotoUrl)}">` : esc((m.Nama || 'D').charAt(0).toUpperCase())}
       </div>
       <div style="min-width:0">
         <div class="detail-name">${esc(m.Nama || '-')}</div>
@@ -2120,6 +2178,10 @@ function parseDateVal(x) {
 
 function renderInformasiPage() {
   const list = [...getInformasiData()].sort((a, b) => parseDateVal(b) - parseDateVal(a));
+  
+  // Simpan data list secara global
+  window._currentInfoList = list;
+
   const b = document.getElementById('infoList');
   const h = document.getElementById('homeInfoBox');
   const empty = '<div class="card"><p class="muted">Belum ada informasi.</p></div>';
@@ -2138,7 +2200,7 @@ function renderInformasiPage() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const mapper = x => {
+  const mapper = (x, index) => {
     const rawTgl = extractDisplayDate(x);
     const tglInfo = parseSmartDate(rawTgl);
     const isToday = tglInfo && tglInfo.getTime() === today.getTime();
@@ -2151,7 +2213,7 @@ function renderInformasiPage() {
     const cardStyle = isToday ? 'border: 2px solid var(--g); background: #f0fdf4;' : 'border: 1px solid var(--b); background: #fff;';
 
     return `
-      <div class="home-info-card" style="${cardStyle} border-radius: 14px; padding: 12px 14px;">
+      <div class="home-info-card" style="${cardStyle} border-radius: 14px; padding: 12px 14px; cursor: pointer;" onclick="bukaDetailInformasiByIndex(${index})">
         <div style="display:flex; align-items:center; flex-wrap:wrap; gap:4px; margin-bottom:4px;">
           <span style="font-size:13px; font-weight:800; color:var(--t);">${esc(x.Judul || x.Title || 'Informasi')}</span>
           ${badgeKegiatanHariIni}
@@ -2161,7 +2223,7 @@ function renderInformasiPage() {
       </div>`;
   };
 
-  if (b) b.innerHTML = list.length ? list.map(mapper).join('') : empty;
+  if (b) b.innerHTML = list.length ? list.map((x, i) => mapper(x, i)).join('') : empty;
   
   if (h) {
     if (list.length === 0) {
@@ -2189,10 +2251,54 @@ function renderInformasiPage() {
         }).length;
 
         const limit = Math.max(2, todayItemsCount);
-        h.innerHTML = futureAndTodayList.slice(0, limit).map(mapper).join('');
+        h.innerHTML = futureAndTodayList.slice(0, limit).map((x, i) => mapper(x, i)).join('');
       }
     }
   }
+}
+
+function bukaDetailInformasiByIndex(index) {
+  const item = window._currentInfoList && window._currentInfoList[index];
+  if (!item) return;
+  bukaDetailInformasi(item);
+}
+
+function bukaDetailInformasi(item) {
+  const nama = item.Judul || item.Title || item.NamaKegiatan || 'Informasi';
+  const unit = item.Unit || item.unit || 'Umum / Semua Unit';
+  const pic = item.PIC || item.pic || item.PenanggungJawab || '-';
+  const tempat = item.Tempat || item.lokasi || item.Lokasi || item.Aula || '-';
+  const waktu = extractDisplayDate(item);
+  const kebutuhan = item.Kebutuhan || item.Informasi || item.Keterangan || item.Isi || '-';
+  
+  // PENANGANAN FOTO KEGIATAN DI DETAIL MODAL
+  let fotoRaw = item.Foto || item.foto || item.Gambar || item.gambar || item.FotoUrl || '';
+  let fotoUrl = formatImageUrl(fotoRaw);
+
+  document.getElementById('infoDetailNama').innerText = nama;
+  document.getElementById('infoDetailUnit').innerText = unit;
+  document.getElementById('infoDetailPic').innerText = pic;
+  document.getElementById('infoDetailTempat').innerText = tempat;
+  document.getElementById('infoDetailWaktu').innerText = waktu;
+  document.getElementById('infoDetailKebutuhan').innerText = kebutuhan;
+
+  const boxFoto = document.getElementById('infoDetailFotoBox');
+  const imgFoto = document.getElementById('infoDetailFoto');
+  
+  if (fotoUrl) {
+    if (imgFoto) imgFoto.src = fotoUrl;
+    if (boxFoto) boxFoto.style.display = 'block';
+  } else {
+    if (boxFoto) boxFoto.style.display = 'none';
+  }
+
+  const modal = document.getElementById('modalDetailInformasi');
+  if (modal) modal.style.display = 'flex';
+}
+
+function tutupDetailInformasi() {
+  const modal = document.getElementById('modalDetailInformasi');
+  if (modal) modal.style.display = 'none';
 }
 
 function playNotifSound() {
@@ -2344,7 +2450,8 @@ function renderPengaduanPage() {
 
   const mapper = x => {
     const values = Object.values(x).map(v => String(v || '').trim());
-    let fotoUrl = values.find(v => v.startsWith('http://') || v.startsWith('https://')) || '';
+    let rawFoto = values.find(v => v.startsWith('http://') || v.startsWith('https://')) || '';
+    let fotoUrl = formatImageUrl(rawFoto);
 
     let tglLaporanMasuk = itemDateFormatter(x['Waktu System'] || x.WaktuSystem || x.Tanggal || values[0] || '');
     let rawTglUpdate = x['Hari/Tanggal'] || x.HariTanggal || x['Hari/tgl'] || values[6] || '';
@@ -2385,7 +2492,7 @@ function renderPengaduanPage() {
     if (!rawKendala) {
       rawKendala = values.find(v => {
         if (!v) return false;
-        if (v === namaUser || v === areaUser || v === fotoUrl) return false;
+        if (v === namaUser || v === areaUser || v === rawFoto) return false;
         if (v.includes('T') && v.includes('Z')) return false;
         if (v.toLowerCase() === statusText.toLowerCase()) return false;
         if (v.startsWith('http')) return false;
@@ -2587,15 +2694,18 @@ let currentGalleryIndex = 0;
 
 function openPhotoModal(urls, index = 0) {
   if (!urls) return;
+  
+  let formattedList = [];
   if (typeof urls === 'string') {
-    currentGalleryList = [urls];
+    formattedList = [formatImageUrl(urls)];
   } else if (Array.isArray(urls)) {
-    currentGalleryList = urls;
+    formattedList = urls.map(u => formatImageUrl(u)).filter(Boolean);
   } else {
     return;
   }
 
-  if (currentGalleryList.length === 0) return;
+  if (formattedList.length === 0) return;
+  currentGalleryList = formattedList;
   currentGalleryIndex = Math.max(0, Math.min(index, currentGalleryList.length - 1));
 
   const modal = document.getElementById('photoModal');
@@ -2611,13 +2721,7 @@ function updateGalleryPhoto() {
   const prevBtn = document.getElementById('galleryPrevBtn');
   const nextBtn = document.getElementById('galleryNextBtn');
 
-  let rawUrl = currentGalleryList[currentGalleryIndex] || '';
-  let directUrl = rawUrl;
-
-  let fileIdMatch = rawUrl.match(/\/d\/([a-zA-Z0-9_-]+)/) || rawUrl.match(/id=([a-zA-Z0-9_-]+)/);
-  if (fileIdMatch && fileIdMatch[1]) {
-    directUrl = 'https://lh3.googleusercontent.com/d/' + fileIdMatch[1];
-  }
+  let directUrl = currentGalleryList[currentGalleryIndex] || '';
 
   if (modalImg) modalImg.src = directUrl;
   if (counter) counter.textContent = `${currentGalleryIndex + 1} / ${currentGalleryList.length}`;
@@ -2708,11 +2812,12 @@ function renderLaporanPage() {
     const tglKey = tglRaw.split(' ')[0] || tglRaw;
     const groupKey = `${nama.toLowerCase()}_${area.toLowerCase()}_${tglKey}`;
 
-    let fotoUrl = item.Foto || item.foto || item.FotoUrl || item.urlFoto || '';
-    if (!fotoUrl) {
+    let rawFoto = item.Foto || item.foto || item.FotoUrl || item.urlFoto || '';
+    if (!rawFoto) {
       const values = Object.values(item).map(v => String(v || '').trim());
-      fotoUrl = values.find(v => v.startsWith('http://') || v.startsWith('https://')) || '';
+      rawFoto = values.find(v => v.startsWith('http://') || v.startsWith('https://')) || '';
     }
+    let fotoUrl = formatImageUrl(rawFoto);
 
     if (!grouped[groupKey]) {
       grouped[groupKey] = {
@@ -2938,6 +3043,11 @@ function openCameraBoxModal() {
   setTimeout(() => newInput.click(), 50);
 }
 
+function openCameraBox(id) {
+  const input = document.getElementById(id);
+  if (input) input.click();
+}
+
 function previewPhoto(input, previewId, textBtnId) {
   const file = input.files && input.files[0];
   const img = document.getElementById(previewId);
@@ -3141,7 +3251,7 @@ appContainer.addEventListener('touchend', e => {
       .then(d => {
         if (d) { 
           DB = Object.assign(DB, d); 
-          localStorage.setItem('timSaberCacheData_v35', JSON.stringify(d)); 
+          localStorage.setItem('timSaberCacheData_v36', JSON.stringify(d)); 
           initApp(); 
         }
         setTimeout(() => pullIndicator.style.transform = 'translateY(0)', 400);
@@ -3301,7 +3411,7 @@ function bukaDataSiswa() {
           Swal.close();
           const listSiswa = d.dataSiswa || DB.dataSiswa || [];
           DB.dataSiswa = listSiswa;
-          localStorage.setItem('timSaberCacheData_v35', JSON.stringify(DB));
+          localStorage.setItem('timSaberCacheData_v36', JSON.stringify(DB));
           tampilkanModalDataSiswa(listSiswa);
         })
         .catch(err => {
