@@ -1217,10 +1217,10 @@ html, body{
 </div>
 
 <script>
-// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 38 - STRICT TODAY FILTER IN HOME)
-if (localStorage.getItem('timSaberCacheVersion') !== 'v38') {
+// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 39 - FIXED MONTHLY SCHEDULE FILTER)
+if (localStorage.getItem('timSaberCacheVersion') !== 'v39') {
   localStorage.clear();
-  localStorage.setItem('timSaberCacheVersion', 'v38');
+  localStorage.setItem('timSaberCacheVersion', 'v39');
 }
 
 // URL WEB APP APPS SCRIPT TERBARU
@@ -1575,7 +1575,7 @@ function pingOnlineStatus() {
 }
 
 function loadData() {
-  const cachedData = localStorage.getItem('timSaberCacheData_v38');
+  const cachedData = localStorage.getItem('timSaberCacheData_v39');
   if (cachedData) {
     try {
       DB = Object.assign(DB, JSON.parse(cachedData));
@@ -1592,7 +1592,7 @@ function loadData() {
       if (d) {
         const newStr = JSON.stringify(d);
         DB = Object.assign(DB, d);
-        localStorage.setItem('timSaberCacheData_v38', newStr);
+        localStorage.setItem('timSaberCacheData_v39', newStr);
         initApp();
       }
     })
@@ -1608,7 +1608,7 @@ function loadDataFallback() {
   window.handleDashboardResponse = function(d) {
     if (d) {
       DB = Object.assign(DB, d);
-      localStorage.setItem('timSaberCacheData_v38', JSON.stringify(d));
+      localStorage.setItem('timSaberCacheData_v39', JSON.stringify(d));
       initApp();
     }
   };
@@ -2186,11 +2186,8 @@ function parseDateVal(x) {
   return !isNaN(t) ? t : 0;
 }
 
-// FUNGSI UTAMA INFORMASI - DIPERBARUI UNTUK PENYARINGAN KETAT HARI INI DI BERANDA
 function renderInformasiPage() {
   const list = [...getInformasiData()].sort((a, b) => parseDateVal(b) - parseDateVal(a));
-  
-  // Simpan data list secara global
   window._currentInfoList = list;
 
   const b = document.getElementById('infoList');
@@ -2209,11 +2206,9 @@ function renderInformasiPage() {
     localStorage.setItem('lastSeenInfo', infoTerbaru);
   }
 
-  // Set tanggal hari ini (jam diset ke 00:00:00)
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Filter khusus untuk informasi yang tanggalnya HARI INI
   const infoHariIni = list.filter(x => {
     const rawTgl = extractDisplayDate(x);
     const tglInfo = parseSmartDate(rawTgl);
@@ -2225,7 +2220,6 @@ function renderInformasiPage() {
     const tglInfo = parseSmartDate(rawTgl);
     const isToday = tglInfo && tglInfo.getTime() === today.getTime();
 
-    // Penanda Khusus Kegiatan Hari Ini
     const badgeKegiatanHariIni = isToday ? `
       <span style="background:var(--g); color:#fff; font-size:10px; font-weight:800; padding:3px 8px; border-radius:12px; display:inline-block; margin-left:8px; text-transform:uppercase; vertical-align:middle;">
         <i class="fa-solid fa-star" style="margin-right:3px;"></i> KEGIATAN HARI INI
@@ -2244,10 +2238,8 @@ function renderInformasiPage() {
       </div>`;
   };
 
-  // Render halaman utama Informasi (menampilkan semua data)
   if (b) b.innerHTML = list.length ? list.map((x, i) => mapper(x, i)).join('') : emptyAll;
   
-  // Render Beranda (HANYA menampilkan yang tanggalnya HARI INI)
   if (h) {
     if (infoHariIni.length > 0) {
       h.innerHTML = infoHariIni.map(x => {
@@ -2781,7 +2773,6 @@ function closePhotoModal() {
   });
 })();
 
-// FUNGSI RIWAYAT LAPORAN - DIBATASI 7 HARI KALENDER UNTUK MENAMPILKAN SENIN - JUMAT
 function renderLaporanPage() {
   const batasHari = 7;
   const waktuBatas = new Date().getTime() - (batasHari * 24 * 60 * 60 * 1000);
@@ -2896,9 +2887,19 @@ function renderLaporanPage() {
   }).join('');
 }
 
+// FUNGSI HELPER UNTUK MENGHITUNG URUTAN MINGGU DALAM BULAN
+function getWeekOfMonth(date) {
+  const dayOfMonth = date.getDate();
+  const firstDayOfWeek = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+  const adjustedFirstDay = (firstDayOfWeek === 0) ? 6 : firstDayOfWeek - 1;
+  return Math.ceil((dayOfMonth + adjustedFirstDay) / 7);
+}
+
 function renderJadwalByDay() {
   const now = new Date();
   const day = now.getDay(); 
+  const currentWeek = getWeekOfMonth(now);
+  
   const hariNama = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
   const tanggalStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
   const isWeekend = (day === 0 || day === 6);
@@ -2914,7 +2915,7 @@ function renderJadwalByDay() {
   if (tanggalEl) {
     tanggalEl.textContent = isWeekend 
       ? 'Hari Libur: Tidak ada jadwal pekerjaan rutin pada hari Sabtu & Minggu.' 
-      : 'Ketuk tombol "KERJAKAN HARI INI" pada tugas untuk melaporkan pekerjaan secara otomatis.';
+      : `Minggu ke-${currentWeek} bulan berjalan. Ketuk tombol "KERJAKAN HARI INI" pada tugas yang sesuai.`;
   }
 
   if (isWeekend) {
@@ -2931,32 +2932,37 @@ function renderJadwalByDay() {
   }
 
   const masterTugas = [
-    { tugas: '1. Dusting (List kaca, furnitur & perlengkapan pendukung)', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
-    { tugas: '2. Glass cleaning (Pembersihan kaca & cermin)', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
-    { tugas: '3. Sweeping (Menyapu kelas/ruangan dan koridor)', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
-    { tugas: '4. Mopping (Mengepel area kelas/ruangan dan koridor)', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
-    { tugas: '5. Toilet cleaning (Pembersihan & sterilisasi toilet)', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
-    { tugas: 'Pengosongan & pembuangan tempat sampah ruangan/area', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
-    { tugas: 'Cleaning area tangga (Sweeping & Mopping)', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], kategori: 'Harian' },
-    { tugas: 'General cleaning area tangga (Sikat & Lap Railing)', frekuensi: '1x Seminggu', pelaksanaan: 'Setiap Rabu', days: [3], kategori: 'Mingguan' },
-    { tugas: 'Cleaning karpet toilet & keset', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5], kategori: 'Mingguan' },
-    { tugas: 'General cleaning toilet', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5], kategori: 'Mingguan' },
-    { tugas: 'Cleaning tempat sampah', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5], kategori: 'Mingguan' },
-    { tugas: 'Penggantian sprei', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5], kategori: 'Mingguan' },
-    { tugas: 'Vaccum karpet Masjid', frekuensi: '2x Seminggu', pelaksanaan: "Rabu & Jum'at", days: [3,5], kategori: 'Mingguan' },
-    { tugas: 'Vaccum karpet', frekuensi: '2x Seminggu', pelaksanaan: 'Selasa & Kamis', days: [2,4], kategori: 'Mingguan' },
-    { tugas: 'Cleaning sawang-sawang', frekuensi: '2x Seminggu', pelaksanaan: 'Selasa & Kamis', days: [2,4], kategori: 'Mingguan' },
-    { tugas: 'Cleaning dinding kelas', frekuensi: '2x Seminggu', pelaksanaan: 'Senin & Rabu', days: [1,3], kategori: 'Mingguan' },
-    { tugas: 'Cleaning balkon dan kaca', frekuensi: '2x Sebulan', pelaksanaan: 'Minggu ke 1 & Minggu ke 3', days: [1,2,3,4,5], kategori: 'Bulanan' },
-    { tugas: 'Cleaning dispenser', frekuensi: '2x Sebulan', pelaksanaan: 'Minggu ke 2 & Minggu ke 4', days: [1,2,3,4,5], kategori: 'Bulanan' },
-    { tugas: 'General cleaning Masjid', frekuensi: '1x Sebulan', pelaksanaan: 'Minggu ke 4', days: [5], kategori: 'Bulanan' },
-    { tugas: 'Brusing lantai koridor', frekuensi: '1x Sebulan', pelaksanaan: 'Minggu ke 3', days: [5], kategori: 'Bulanan' },
-    { tugas: 'Penyemprotan disinfektan', frekuensi: '1x Sebulan', pelaksanaan: 'Minggu ke 2', days: [5], kategori: 'Bulanan' },
-    { tugas: 'Fogging', frekuensi: '1x 3 bulan', pelaksanaan: 'Minggu ke 1', days: [5], kategori: 'Bulanan' }
+    { tugas: '1. Dusting (List kaca, furnitur & perlengkapan pendukung)', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], weeks: [1,2,3,4,5], kategori: 'Harian' },
+    { tugas: '2. Glass cleaning (Pembersihan kaca & cermin)', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], weeks: [1,2,3,4,5], kategori: 'Harian' },
+    { tugas: '3. Sweeping (Menyapu kelas/ruangan dan koridor)', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], weeks: [1,2,3,4,5], kategori: 'Harian' },
+    { tugas: '4. Mopping (Mengepel area kelas/ruangan dan koridor)', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], weeks: [1,2,3,4,5], kategori: 'Harian' },
+    { tugas: '5. Toilet cleaning (Pembersihan & sterilisasi toilet)', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], weeks: [1,2,3,4,5], kategori: 'Harian' },
+    { tugas: 'Pengosongan & pembuangan tempat sampah ruangan/area', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], weeks: [1,2,3,4,5], kategori: 'Harian' },
+    { tugas: 'Cleaning area tangga (Sweeping & Mopping)', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], weeks: [1,2,3,4,5], kategori: 'Harian' },
+    { tugas: 'General cleaning area tangga (Sikat & Lap Railing)', frekuensi: '1x Seminggu', pelaksanaan: 'Setiap Rabu', days: [3], weeks: [1,2,3,4,5], kategori: 'Mingguan' },
+    { tugas: 'Cleaning karpet toilet & keset', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5], weeks: [1,2,3,4,5], kategori: 'Mingguan' },
+    { tugas: 'General cleaning toilet', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5], weeks: [1,2,3,4,5], kategori: 'Mingguan' },
+    { tugas: 'Cleaning tempat sampah', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5], weeks: [1,2,3,4,5], kategori: 'Mingguan' },
+    { tugas: 'Penggantian sprei', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5], weeks: [1,2,3,4,5], kategori: 'Mingguan' },
+    { tugas: 'Vaccum karpet Masjid', frekuensi: '2x Seminggu', pelaksanaan: "Rabu & Jum'at", days: [3,5], weeks: [1,2,3,4,5], kategori: 'Mingguan' },
+    { tugas: 'Vaccum karpet', frekuensi: '2x Seminggu', pelaksanaan: 'Selasa & Kamis', days: [2,4], weeks: [1,2,3,4,5], kategori: 'Mingguan' },
+    { tugas: 'Cleaning sawang-sawang', frekuensi: '2x Seminggu', pelaksanaan: 'Selasa & Kamis', days: [2,4], weeks: [1,2,3,4,5], kategori: 'Mingguan' },
+    { tugas: 'Cleaning dinding kelas', frekuensi: '2x Seminggu', pelaksanaan: 'Senin & Rabu', days: [1,3], weeks: [1,2,3,4,5], kategori: 'Mingguan' },
+    
+    // PEKERJAAN BULANAN (DITENTUKAN WEEKS-NYA)
+    { tugas: 'Cleaning balkon dan kaca', frekuensi: '2x Sebulan', pelaksanaan: 'Minggu ke 1 & Minggu ke 3', days: [1,2,3,4,5], weeks: [1, 3], kategori: 'Bulanan' },
+    { tugas: 'Cleaning dispenser', frekuensi: '2x Sebulan', pelaksanaan: 'Minggu ke 2 & Minggu ke 4', days: [1,2,3,4,5], weeks: [2, 4], kategori: 'Bulanan' },
+    { tugas: 'General cleaning Masjid', frekuensi: '1x Sebulan', pelaksanaan: 'Minggu ke 4', days: [5], weeks: [4], kategori: 'Bulanan' },
+    { tugas: 'Brusing lantai koridor', frekuensi: '1x Sebulan', pelaksanaan: 'Minggu ke 3', days: [5], weeks: [3], kategori: 'Bulanan' },
+    { tugas: 'Penyemprotan disinfektan', frekuensi: '1x Sebulan', pelaksanaan: 'Minggu ke 2', days: [5], weeks: [2], kategori: 'Bulanan' },
+    { tugas: 'Fogging', frekuensi: '1x 3 bulan', pelaksanaan: 'Minggu ke 1', days: [5], weeks: [1], kategori: 'Bulanan' }
   ];
 
   const renderItemHTML = (x) => {
-    const wajibHariIni = !isWeekend && x.days.includes(day);
+    const matchDay = x.days.includes(day);
+    const matchWeek = x.weeks ? x.weeks.includes(currentWeek) : true;
+    const wajibHariIni = !isWeekend && matchDay && matchWeek;
+    
     const isCompleted = completedTasks.includes(x.tugas);
     
     let statusLabel = '';
@@ -3252,7 +3258,7 @@ appContainer.addEventListener('touchend', e => {
       .then(d => {
         if (d) { 
           DB = Object.assign(DB, d); 
-          localStorage.setItem('timSaberCacheData_v38', JSON.stringify(d)); 
+          localStorage.setItem('timSaberCacheData_v39', JSON.stringify(d)); 
           initApp(); 
         }
         setTimeout(() => pullIndicator.style.transform = 'translateY(0)', 400);
@@ -3412,7 +3418,7 @@ function bukaDataSiswa() {
           Swal.close();
           const listSiswa = d.dataSiswa || DB.dataSiswa || [];
           DB.dataSiswa = listSiswa;
-          localStorage.setItem('timSaberCacheData_v38', JSON.stringify(DB));
+          localStorage.setItem('timSaberCacheData_v39', JSON.stringify(DB));
           tampilkanModalDataSiswa(listSiswa);
         })
         .catch(err => {
