@@ -1808,7 +1808,6 @@ function updateActiveMemberForms() {
   });
 }
 
-// FUNGSI UPDATE INDIKATOR BADGE PADA LONCENG
 function updateBellNotification() {
   const badge = document.getElementById('bellBadge');
   if (!badge) return;
@@ -1826,7 +1825,6 @@ function updateBellNotification() {
   }
 }
 
-// FUNGSI POPUP MODAL KETIKA LONCENG DIKETUK
 function bukaModalAbsen() {
   const anggotaAbsen = (DB.anggota || []).filter(m => {
     let st = String(m.StatusKehadiran || m.Status || '').toLowerCase();
@@ -2292,7 +2290,6 @@ function renderLemburCard() {
       const petugas = x.Petugas || x.PIC || x['Petugas/PIC'] || x.Nama || '-';
       const rawTgl = extractDisplayDate(x);
       
-      // MENGHAPUS JAM / "00:00:00" DARI TAMPILAN KARTU HIJAU BERANDA
       let tglBersih = rawTgl.split(' pukul ')[0].split(' 00:00:00')[0].trim();
 
       const tglLembur = parseSmartDate(rawTgl);
@@ -2781,15 +2778,38 @@ function renderPengaduanPage() {
   }
 }
 
+// FUNGSI MENDAPATKAN HARI SENIN MINGGU INI
+function getMondayThisWeek() {
+  let now = new Date();
+  let day = now.getDay();
+  let diff = now.getDate() - day + (day === 0 ? -6 : 1);
+  let monday = new Date(now.setDate(diff));
+  monday.setHours(0, 0, 0, 0);
+  return monday;
+}
+
+let pengajuanViewMode = 'aktif'; // 'aktif' (Senin-Jumat pekan ini) atau 'arsip' (semua riwayat)
+
 function renderPengajuanPage() {
   const allList = [...(DB.pengajuan || [])].sort((a, b) => parseDateVal(b) - parseDateVal(a));
   const f = document.getElementById('pengajuanListFull');
-  const empty = '<div class="card"><p class="muted">Belum ada riwayat pengajuan.</p></div>';
+  const empty = '<div class="card" style="grid-column: 1 / -1;"><p class="muted">Belum ada riwayat pengajuan untuk periode ini.</p></div>';
 
   if (!f) return;
 
+  // Filter otomatis hanya minggu berjalan (Senin s.d. Jumat/Minggu ini) jika mode 'aktif'
+  let monday = getMondayThisWeek();
+  let scopedList = allList.filter(x => {
+    let rawWaktu = extractDisplayDate(x);
+    let itemDate = parseSmartDate(rawWaktu);
+    if (pengajuanViewMode === 'aktif') {
+      return itemDate && itemDate >= monday;
+    }
+    return true; // Mode 'arsip' menampilkan semua riwayat dari waktu ke waktu
+  });
+
   let countMenunggu = 0, countDisetujui = 0, countMendesak = 0;
-  allList.forEach(x => {
+  scopedList.forEach(x => {
     let st = String(x.Status || x.status || 'MENUNGGU').toUpperCase();
     let pr = String(x.Prioritas || x.prioritas || '').toUpperCase();
     if (st.includes('SELESAI') || st.includes('DISETUJUI')) countDisetujui++;
@@ -2797,19 +2817,19 @@ function renderPengajuanPage() {
     if (pr.includes('MENDESAK')) countMendesak++;
   });
 
-  let list = allList;
+  let list = scopedList;
   if (currentFilterPengajuan === 'MENUNGGU') {
-    list = allList.filter(x => {
+    list = scopedList.filter(x => {
       let st = String(x.Status || x.status || 'MENUNGGU').toUpperCase();
       return !st.includes('SELESAI') && !st.includes('DISETUJUI');
     });
   } else if (currentFilterPengajuan === 'DISETUJUI') {
-    list = allList.filter(x => {
+    list = scopedList.filter(x => {
       let st = String(x.Status || x.status || '').toUpperCase();
       return st.includes('SELESAI') || st.includes('DISETUJUI');
     });
   } else if (currentFilterPengajuan === 'MENDESAK') {
-    list = allList.filter(x => {
+    list = scopedList.filter(x => {
       let pr = String(x.Prioritas || x.prioritas || '').toUpperCase();
       return pr.includes('MENDESAK');
     });
@@ -2822,8 +2842,21 @@ function renderPengajuanPage() {
     return `background:${defaultBg}; border:1px solid ${defaultBorder}; color:${defaultColor};`;
   };
 
+  // Tombol pilihan tab tampilan (Minggu Ini vs Semua Arsip) - Menyerupai sistem Riwayat Laporan / Arsip
+  const tabSwitchHTML = `
+    <div style="grid-column: 1 / -1; margin-bottom: 10px; display: flex; background: #e2e8f0; padding: 3px; border-radius: 10px;">
+      <button onclick="setPengajuanViewMode('aktif')" style="flex:1; border:0; padding:8px; border-radius:8px; font-size:11px; font-weight:800; cursor:pointer; ${pengajuanViewMode === 'aktif' ? 'background:#fff; color:var(--g); box-shadow:0 2px 5px rgba(0,0,0,0.05);' : 'background:transparent; color:var(--s);'}">
+        📅 Pengajuan Minggu Ini (Senin - Jumat)
+      </button>
+      <button onclick="setPengajuanViewMode('arsip')" style="flex:1; border:0; padding:8px; border-radius:8px; font-size:11px; font-weight:800; cursor:pointer; ${pengajuanViewMode === 'arsip' ? 'background:#fff; color:var(--g); box-shadow:0 2px 5px rgba(0,0,0,0.05);' : 'background:transparent; color:var(--s);'}">
+        📂 Semua Riwayat (Arsip)
+      </button>
+    </div>
+  `;
+
   const rekapHTML = `
     <div style="grid-column: 1 / -1; margin-bottom: 10px;">
+      ${tabSwitchHTML}
       <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px;">
         <div onclick="setFilterPengajuan('MENUNGGU')" style="cursor:pointer; padding:9px; border-radius:10px; text-align:center; transition:all 0.2s; ${styleBox('MENUNGGU', '#fff7ed', '#fed7aa', '#ea580c', '#ea580c', '#fff')}">
           <span style="font-size:10px; font-weight:800; display:block; ${currentFilterPengajuan === 'MENUNGGU' ? 'color:#fff;' : 'color:#ea580c;'}">MENUNGGU</span>
@@ -2842,69 +2875,92 @@ function renderPengajuanPage() {
     </div>
   `;
 
-  const mapper = x => {
-    let nama = x.Nama || x.nama || 'Petugas';
-    let area = x.Area || x.area || '-';
+  // DIKELOMPOKKAN & DIBUAT SERUPA DENGAN TAMPILAN RIWAYAT LAPORAN KERJA
+  const grouped = {};
 
-    let rawWaktu = extractDisplayDate(x);
-    let waktuFormatted = itemDateFormatter(rawWaktu);
+  list.forEach(item => {
+    const nama = (item.Nama || item.nama || 'Petugas').trim();
+    const area = (item.Area || item.area || '-').trim();
+    const tglRaw = extractDisplayDate(item);
+    const tglKey = tglRaw.split(' ')[0] || tglRaw;
+    const groupKey = `${nama.toLowerCase()}_${area.toLowerCase()}_${tglKey}_${item.Status || 'MENUNGGU'}`;
 
-    let prioritas = x.Prioritas || x.prioritas || 'Normal';
-    let status = (x.Status || x.status || 'MENUNGGU').toUpperCase();
+    if (!grouped[groupKey]) {
+      grouped[groupKey] = {
+        nama: nama,
+        area: area,
+        tglDisplay: tglRaw,
+        status: (item.Status || item.status || 'MENUNGGU').toUpperCase(),
+        prioritas: item.Prioritas || item.prioritas || 'Normal',
+        kebutuhanList: []
+      };
+    }
 
+    for (let i = 1; i <= 6; i++) {
+      let val = item['Kebutuhan' + i] || item['kebutuhan' + i] || '';
+      if (val && !grouped[groupKey].kebutuhanList.includes(val)) {
+        grouped[groupKey].kebutuhanList.push(val);
+      }
+    }
+    if (grouped[groupKey].kebutuhanList.length === 0 && item.Keterangan) {
+      grouped[groupKey].kebutuhanList.push(item.Keterangan);
+    }
+  });
+
+  const cardsHTML = Object.values(grouped).map(g => {
     let badgeStyle = 'background:#fff7ed; color:#ea580c; border:1px solid #fed7aa;';
-    if (status.includes('SELESAI') || status.includes('DISETUJUI')) {
+    if (g.status.includes('SELESAI') || g.status.includes('DISETUJUI')) {
       badgeStyle = 'background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0;';
-    } else if (status.includes('DITOLAK')) {
+    } else if (g.status.includes('DITOLAK')) {
       badgeStyle = 'background:#fef2f2; color:#dc2626; border:1px solid #fecaca;';
     }
 
     let prioritasColor = 'var(--g)';
-    if (prioritas.toLowerCase() === 'penting') prioritasColor = 'var(--o)';
-    if (prioritas.toLowerCase() === 'mendesak') prioritasColor = '#dc2626';
+    if (g.prioritas.toLowerCase() === 'penting') prioritasColor = 'var(--o)';
+    if (g.prioritas.toLowerCase() === 'mendesak') prioritasColor = '#dc2626';
 
-    let listKebutuhanHTML = '';
-    for (let i = 1; i <= 6; i++) {
-      let itemVal = x['Kebutuhan' + i] || x['kebutuhan' + i] || '';
-      if (itemVal) {
-        listKebutuhanHTML += `<li>${esc(itemVal)}</li>`;
-      }
-    }
-    if (!listKebutuhanHTML) {
-      listKebutuhanHTML = `<li>${esc(x.Keterangan || x.keterangan || '-')}</li>`;
-    }
+    const daftarKebutuhanHTML = g.kebutuhanList.map(k => `<li style="margin-bottom:3px;">${esc(k)}</li>`).join('');
 
     return `
-      <div class="card" style="margin-bottom:0;">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">
+      <div class="card" style="margin-bottom:0; border:1px solid var(--b); border-radius:12px; padding:12px; background:#fff;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
           <div>
-            <h4 style="font-size:13.5px; font-weight:800; color:var(--t); margin:0;">${esc(nama)}</h4>
+            <h4 style="font-size:13.5px; font-weight:800; color:var(--t); margin:0;">${esc(g.nama)}</h4>
             <div style="font-size:10.5px; color:var(--s); font-weight:600; margin-top:2px;">
-              <i class="fa-solid fa-location-dot" style="color:var(--g); margin-right:3px;"></i>${esc(area)}
+              <i class="fa-solid fa-location-dot" style="color:var(--g)"></i> ${esc(g.area)}
             </div>
           </div>
-          <span class="badge-status" style="${badgeStyle}">${esc(status)}</span>
+          <span class="badge-status" style="${badgeStyle} font-size:9px; font-weight:800; padding:3px 8px; border-radius:6px;">
+            ${esc(g.status)}
+          </span>
         </div>
 
-        <div style="font-size:11px; background:#f8fafc; padding:8px 10px; border-radius:8px; border:1px solid var(--b);">
+        <div style="font-size:11.5px; color:var(--t); background:#f8fafc; border:1px solid var(--b); padding:8px 10px; border-radius:8px;">
           <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
             <span style="color:var(--s);">Prioritas:</span>
-            <b style="color:${prioritasColor};"><i class="fa-solid fa-triangle-exclamation"></i> ${esc(prioritas.toUpperCase())}</b>
+            <b style="color:${prioritasColor};"><i class="fa-solid fa-triangle-exclamation"></i> ${esc(g.prioritas.toUpperCase())}</b>
           </div>
-          <div style="color:var(--t); font-weight:700; margin-top:4px;">Detail Kebutuhan:</div>
-          <ul style="padding-left:16px; margin-top:2px; color:var(--s);">
-            ${listKebutuhanHTML}
+          <b style="color:var(--g); font-size:10.5px; display:block; margin-top:6px; margin-bottom:4px;">Detail Kebutuhan Alat / Bahan:</b>
+          <ul style="padding-left:16px; margin:0; color:#334155; font-weight:600;">
+            ${daftarKebutuhanHTML}
           </ul>
         </div>
 
-        <div style="margin-top:8px; border-top:1px dashed #e2e8f0; padding-top:6px; font-size:10px; color:var(--s); font-weight:600;">
-          <i class="fa-regular fa-calendar-days" style="color:var(--g); margin-right:4px;"></i> Waktu Pengajuan: <b>${esc(waktuFormatted)}</b>
+        <div style="margin-top:10px; border-top:1px dashed #e2e8f0; padding-top:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+          <span class="status" style="background:#f8fafc; color:#64748b; border:1px solid #e2e8f0; font-weight:700; margin:0; font-size:10px; padding:3px 8px; border-radius:6px;">
+            <i class="fa-regular fa-calendar-days" style="color:var(--g); margin-right:4px;"></i> ${esc(g.tglDisplay)}
+          </span>
         </div>
       </div>
     `;
-  };
+  }).join('');
 
-  f.innerHTML = rekapHTML + (list.length ? list.map(mapper).join('') : empty);
+  f.innerHTML = rekapHTML + (cardsHTML ? cardsHTML : empty);
+}
+
+function setPengajuanViewMode(mode) {
+  pengajuanViewMode = mode;
+  renderPengajuanPage();
 }
 
 let currentGalleryList = [];
