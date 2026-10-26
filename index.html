@@ -155,6 +155,42 @@ html, body{
   text-overflow:ellipsis;
 }
 
+/* TOMBOL LONCENG DI HEADER */
+.header-bell-btn {
+  position: relative;
+  background: var(--gl);
+  border: 1.5px solid #bbf7d0;
+  color: var(--g);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+  flex: none;
+  transition: all 0.2s ease;
+  margin-left: auto;
+}
+.header-bell-btn:active { transform: scale(0.92); }
+.bell-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #fff;
+}
+
 .content{
   flex:1 1 auto;
   min-height:0;
@@ -1062,7 +1098,7 @@ html, body{
   Memperbarui data...
 </div>
 
-<!-- HEADER -->
+<!-- HEADER DENGAN TOMBOL LONCENG NOTIFIKASI -->
 <header class="header">
   <div class="avatar" id="headerAvatar">D</div>
   <div style="flex:1;min-width:0">
@@ -1070,6 +1106,12 @@ html, body{
     <select id="memberSelectTop" class="top-member-select" onchange="changeActiveMember(this.value)"></select>
     <div class="top-area" id="headerArea">• Anggota</div>
   </div>
+  
+  <!-- TOMBOL LONCENG -->
+  <button type="button" class="header-bell-btn" onclick="bukaModalAbsen()" title="Pemberitahuan Anggota Tidak Masuk">
+    <i class="fa-solid fa-bell"></i>
+    <span id="bellBadge" class="bell-badge">0</span>
+  </button>
 </header>
 
 <!-- CONTENT -->
@@ -1304,10 +1346,10 @@ html, body{
 </div>
 
 <script>
-// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 42 - FIXED SHEETS COLUMN MAPPING)
-if (localStorage.getItem('timSaberCacheVersion') !== 'v42') {
+// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 45 - LEMBUR DATE CLEAN)
+if (localStorage.getItem('timSaberCacheVersion') !== 'v45') {
   localStorage.clear();
-  localStorage.setItem('timSaberCacheVersion', 'v42');
+  localStorage.setItem('timSaberCacheVersion', 'v45');
 }
 
 // URL WEB APP APPS SCRIPT TERBARU
@@ -1662,7 +1704,7 @@ function pingOnlineStatus() {
 }
 
 function loadData() {
-  const cachedData = localStorage.getItem('timSaberCacheData_v42');
+  const cachedData = localStorage.getItem('timSaberCacheData_v45');
   if (cachedData) {
     try {
       DB = Object.assign(DB, JSON.parse(cachedData));
@@ -1679,7 +1721,7 @@ function loadData() {
       if (d) {
         const newStr = JSON.stringify(d);
         DB = Object.assign(DB, d);
-        localStorage.setItem('timSaberCacheData_v42', newStr);
+        localStorage.setItem('timSaberCacheData_v45', newStr);
         initApp();
       }
     })
@@ -1695,7 +1737,7 @@ function loadDataFallback() {
   window.handleDashboardResponse = function(d) {
     if (d) {
       DB = Object.assign(DB, d);
-      localStorage.setItem('timSaberCacheData_v42', JSON.stringify(d));
+      localStorage.setItem('timSaberCacheData_v45', JSON.stringify(d));
       initApp();
     }
   };
@@ -1724,6 +1766,7 @@ function initApp() {
 
   updateActiveMemberForms();
   renderAnggotaList();
+  updateBellNotification();
   renderLemburCard();
   renderInformasiPage();
   renderPengaduanPage();
@@ -1765,6 +1808,73 @@ function updateActiveMemberForms() {
   });
 }
 
+// FUNGSI UPDATE INDIKATOR BADGE PADA LONCENG
+function updateBellNotification() {
+  const badge = document.getElementById('bellBadge');
+  if (!badge) return;
+
+  const anggotaAbsen = (DB.anggota || []).filter(m => {
+    let st = String(m.StatusKehadiran || m.Status || '').toLowerCase();
+    return st.includes('sakit') || st.includes('izin') || st.includes('cuti') || st.includes('alpa') || st.includes('off');
+  });
+
+  if (anggotaAbsen.length > 0) {
+    badge.textContent = anggotaAbsen.length;
+    badge.style.display = 'flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+// FUNGSI POPUP MODAL KETIKA LONCENG DIKETUK
+function bukaModalAbsen() {
+  const anggotaAbsen = (DB.anggota || []).filter(m => {
+    let st = String(m.StatusKehadiran || m.Status || '').toLowerCase();
+    return st.includes('sakit') || st.includes('izin') || st.includes('cuti') || st.includes('alpa') || st.includes('off');
+  });
+
+  if (anggotaAbsen.length === 0) {
+    Swal.fire({
+      title: 'Status Kehadiran',
+      text: 'Semua anggota hadir hari ini.',
+      icon: 'success',
+      confirmButtonText: 'Tutup',
+      confirmButtonColor: 'var(--g)'
+    });
+    return;
+  }
+
+  let htmlList = anggotaAbsen.map(m => {
+    let statusRaw = (m.StatusKehadiran || m.Status || 'Izin').toUpperCase();
+    let badgeBg = statusRaw.includes('SAKIT') ? '#dc2626' : 'var(--o)';
+
+    return `
+      <div style="display:flex; align-items:center; justify-content:space-between; background:#f8fafc; border:1px solid var(--b); border-left:4px solid ${badgeBg}; padding:10px 12px; border-radius:10px; margin-bottom:8px; text-align:left;">
+        <div>
+          <b style="font-size:13px; color:var(--t); display:block;">${esc(m.Nama)}</b>
+          <small style="font-size:11px; color:var(--s); display:block; margin-top:2px;">
+            <i class="fa-solid fa-location-dot" style="color:var(--g)"></i> Area: <b>${esc(m.Area || 'Umum')}</b>
+          </small>
+          <small style="font-size:11px; color:#475569; display:block; margin-top:2px;">
+            Ket: <em>${esc(m.KeteranganAbsen || m.Keterangan || 'Tidak ada keterangan')}</em>
+          </small>
+        </div>
+        <span style="font-size:10px; font-weight:800; background:${badgeBg}; color:#fff; padding:4px 8px; border-radius:6px; flex:none; text-transform:uppercase;">
+          ${esc(statusRaw)}
+        </span>
+      </div>
+    `;
+  }).join('');
+
+  Swal.fire({
+    title: `Anggota Tidak Masuk (${anggotaAbsen.length})`,
+    html: `<div style="max-height: 350px; overflow-y: auto; padding: 2px;">${htmlList}</div>`,
+    width: '420px',
+    confirmButtonText: 'Tutup',
+    confirmButtonColor: 'var(--g)'
+  });
+}
+
 function renderAnggotaList() {
   const b = document.getElementById('anggotaList');
   if (!b) return;
@@ -1783,9 +1893,21 @@ function renderAnggotaList() {
       }
     }
 
-    const dotStyle = isOnline 
-      ? 'background:#22c55e; box-shadow: 0 0 6px #22c55e;' 
-      : 'background:#94a3b8;';
+    let statusAbsen = String(m.StatusKehadiran || m.Status || '').toUpperCase();
+    let isAbsen = statusAbsen.includes('SAKIT') || statusAbsen.includes('IZIN') || statusAbsen.includes('CUTI') || statusAbsen.includes('OFF') || statusAbsen.includes('ALPA');
+
+    const dotStyle = isAbsen 
+      ? 'background:#ef4444;' 
+      : (isOnline ? 'background:#22c55e; box-shadow: 0 0 6px #22c55e;' : 'background:#94a3b8;');
+
+    let badgeStatusHTML = '';
+    if (isAbsen) {
+      let badgeBg = statusAbsen.includes('SAKIT') ? '#dc2626' : 'var(--o)';
+      badgeStatusHTML = `
+        <span style="font-size:9px; font-weight:800; background:${badgeBg}; color:#fff; padding:2px 6px; border-radius:4px; margin-left:6px; vertical-align:middle;">
+          ${esc(statusAbsen)}
+        </span>`;
+    }
 
     let fotoUrl = formatImageUrl(m.Foto);
     let inisial = esc((m.Nama || 'D').charAt(0).toUpperCase());
@@ -1801,7 +1923,7 @@ function renderAnggotaList() {
           <span style="position:absolute; bottom:2px; right:2px; width:10px; height:10px; border-radius:50%; border:2px solid #fff; ${dotStyle}"></span>
         </div>
         <div class="rowmain">
-          <b>${esc(m.Nama || '-')}</b>
+          <b>${esc(m.Nama || '-')} ${badgeStatusHTML}</b>
           <small>${esc(m.Jabatan || 'Anggota')} • ${esc(m.Area || 'Umum')}</small>
         </div>
         <i class="fa-solid fa-chevron-right arrow"></i>
@@ -2169,8 +2291,11 @@ function renderLemburCard() {
     s.innerHTML = data.map(x => {
       const petugas = x.Petugas || x.PIC || x['Petugas/PIC'] || x.Nama || '-';
       const rawTgl = extractDisplayDate(x);
-      const tglLembur = parseSmartDate(rawTgl);
       
+      // MENGHAPUS JAM / "00:00:00" DARI TAMPILAN KARTU HIJAU BERANDA
+      let tglBersih = rawTgl.split(' pukul ')[0].split(' 00:00:00')[0].trim();
+
+      const tglLembur = parseSmartDate(rawTgl);
       const isToday = tglLembur && tglLembur.getTime() === today.getTime();
 
       let badgeText = x.Keterangan || 'Lembur';
@@ -2188,7 +2313,7 @@ function renderLemburCard() {
               <div class="lt"><i class="fa-solid fa-user-clock"></i> Jadwal Lembur</div>
               <span class="badge" style="${badgeStyle}">${esc(badgeText)}</span>
             </div>
-            <div class="ld"><i class="fa-regular fa-calendar"></i> ${esc(rawTgl)}</div>
+            <div class="ld"><i class="fa-regular fa-calendar"></i> ${esc(tglBersih)}</div>
             <div class="grid2">
               <div class="cell"><span>Petugas</span><b>${esc(petugas)}</b></div>
               <div class="cell"><span>Kegiatan</span><b>${esc(x.Kegiatan || '-')}</b></div>
@@ -3275,15 +3400,14 @@ async function kirimLaporanModal() {
   }
 }
 
-// PERBAIKAN URUTAN KOLOM AGAR SINKRON DENGAN GOOGLE SHEETS
 function kirimPengajuan() {
   const btn = document.getElementById('btnPengajuan');
   const d = {
     action: 'simpanPengajuan',
-    Waktu: new Date().toISOString(),                                // Masuk ke kolom A (Waktu)
-    Nama: document.getElementById('pengajuanNama').value.trim(),     // Masuk ke kolom B (Nama)
-    Area: document.getElementById('pengajuanArea').value.trim(),     // Masuk ke kolom C (Area)
-    Prioritas: (document.querySelector('input[name="prioritas"]:checked') || {}).value || 'Normal' // Masuk ke kolom D (Prioritas)
+    Waktu: new Date().toISOString(),
+    Nama: document.getElementById('pengajuanNama').value.trim(),
+    Area: document.getElementById('pengajuanArea').value.trim(),
+    Prioritas: (document.querySelector('input[name="prioritas"]:checked') || {}).value || 'Normal'
   };
   
   for (let i = 1; i <= 6; i++) { 
@@ -3357,7 +3481,7 @@ appContainer.addEventListener('touchend', e => {
       .then(d => {
         if (d) { 
           DB = Object.assign(DB, d); 
-          localStorage.setItem('timSaberCacheData_v42', JSON.stringify(d)); 
+          localStorage.setItem('timSaberCacheData_v45', JSON.stringify(d)); 
           initApp(); 
         }
         setTimeout(() => pullIndicator.style.transform = 'translateY(0)', 400);
@@ -3517,7 +3641,7 @@ function bukaDataSiswa() {
           Swal.close();
           const listSiswa = d.dataSiswa || DB.dataSiswa || [];
           DB.dataSiswa = listSiswa;
-          localStorage.setItem('timSaberCacheData_v42', JSON.stringify(DB));
+          localStorage.setItem('timSaberCacheData_v45', JSON.stringify(DB));
           tampilkanModalDataSiswa(listSiswa);
         })
         .catch(err => {
