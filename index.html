@@ -1346,10 +1346,10 @@ html, body{
 </div>
 
 <script>
-// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 45 - LEMBUR DATE CLEAN)
-if (localStorage.getItem('timSaberCacheVersion') !== 'v45') {
+// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 46 - INFORMASI ASCENDING SORT)
+if (localStorage.getItem('timSaberCacheVersion') !== 'v46') {
   localStorage.clear();
-  localStorage.setItem('timSaberCacheVersion', 'v45');
+  localStorage.setItem('timSaberCacheVersion', 'v46');
 }
 
 // URL WEB APP APPS SCRIPT TERBARU
@@ -1704,7 +1704,7 @@ function pingOnlineStatus() {
 }
 
 function loadData() {
-  const cachedData = localStorage.getItem('timSaberCacheData_v45');
+  const cachedData = localStorage.getItem('timSaberCacheData_v46');
   if (cachedData) {
     try {
       DB = Object.assign(DB, JSON.parse(cachedData));
@@ -1721,7 +1721,7 @@ function loadData() {
       if (d) {
         const newStr = JSON.stringify(d);
         DB = Object.assign(DB, d);
-        localStorage.setItem('timSaberCacheData_v45', newStr);
+        localStorage.setItem('timSaberCacheData_v46', newStr);
         initApp();
       }
     })
@@ -1737,7 +1737,7 @@ function loadDataFallback() {
   window.handleDashboardResponse = function(d) {
     if (d) {
       DB = Object.assign(DB, d);
-      localStorage.setItem('timSaberCacheData_v45', JSON.stringify(d));
+      localStorage.setItem('timSaberCacheData_v46', JSON.stringify(d));
       initApp();
     }
   };
@@ -2399,7 +2399,8 @@ function parseDateVal(x) {
 }
 
 function renderInformasiPage() {
-  const list = [...getInformasiData()].sort((a, b) => parseDateVal(b) - parseDateVal(a));
+  // Diubah menjadi (a - b) agar urutan dari tanggal terkecil ke terbesar
+  const list = [...getInformasiData()].sort((a, b) => parseDateVal(a) - parseDateVal(b));
   window._currentInfoList = list;
 
   const b = document.getElementById('infoList');
@@ -2440,13 +2441,15 @@ function renderInformasiPage() {
     const cardStyle = isToday ? 'border: 2px solid var(--g); background: #f0fdf4;' : 'border: 1px solid var(--b); background: #fff;';
 
     return `
-      <div class="home-info-card" style="${cardStyle} border-radius: 14px; padding: 14px; cursor: pointer;" onclick="bukaDetailInformasiByIndex(${index})">
+      <div class="home-info-card" style="${cardStyle} border-radius: 14px; padding: 14px; cursor: pointer; margin-bottom: 10px;" onclick="bukaDetailInformasiByIndex(${index})">
         <div style="display:flex; align-items:center; flex-wrap:wrap; gap:4px; margin-bottom:4px;">
           <span style="font-size:13px; font-weight:800; color:var(--t);">${esc(x.Judul || x.Title || 'Informasi')}</span>
           ${badgeKegiatanHariIni}
         </div>
-        <div style="font-size:11px; color:var(--s); line-height:1.4; margin-bottom:6px;">${esc(x.Informasi || x.Keterangan || x.Isi || '-')}</div>
-        <div style="font-size:9.5px; color:var(--s); font-weight:600;"><i class="fa-regular fa-calendar-days" style="margin-right:4px;"></i>${esc(rawTgl)}</div>
+        <div style="font-size:11px; color:var(--s); line-height:1.4; margin-bottom:8px;">${esc(x.Informasi || x.Keterangan || x.Isi || '-')}</div>
+        <div style="font-size:10px; color:var(--g); font-weight:700; display:flex; align-items:center; gap:5px;">
+          <i class="fa-regular fa-calendar-days"></i> <span>${esc(rawTgl)}</span>
+        </div>
       </div>`;
   };
 
@@ -2778,7 +2781,6 @@ function renderPengaduanPage() {
   }
 }
 
-// FUNGSI MENDAPATKAN HARI SENIN MINGGU INI
 function getMondayThisWeek() {
   let now = new Date();
   let day = now.getDay();
@@ -2788,7 +2790,7 @@ function getMondayThisWeek() {
   return monday;
 }
 
-let pengajuanViewMode = 'aktif'; // 'aktif' (Senin-Jumat pekan ini) atau 'arsip' (semua riwayat)
+let pengajuanViewMode = 'aktif';
 
 function renderPengajuanPage() {
   const allList = [...(DB.pengajuan || [])].sort((a, b) => parseDateVal(b) - parseDateVal(a));
@@ -2797,7 +2799,6 @@ function renderPengajuanPage() {
 
   if (!f) return;
 
-  // Filter otomatis hanya minggu berjalan (Senin s.d. Jumat/Minggu ini) jika mode 'aktif'
   let monday = getMondayThisWeek();
   let scopedList = allList.filter(x => {
     let rawWaktu = extractDisplayDate(x);
@@ -2805,7 +2806,7 @@ function renderPengajuanPage() {
     if (pengajuanViewMode === 'aktif') {
       return itemDate && itemDate >= monday;
     }
-    return true; // Mode 'arsip' menampilkan semua riwayat dari waktu ke waktu
+    return true;
   });
 
   let countMenunggu = 0, countDisetujui = 0, countMendesak = 0;
@@ -2842,7 +2843,6 @@ function renderPengajuanPage() {
     return `background:${defaultBg}; border:1px solid ${defaultBorder}; color:${defaultColor};`;
   };
 
-  // Tombol pilihan tab tampilan (Minggu Ini vs Semua Arsip) - Menyerupai sistem Riwayat Laporan / Arsip
   const tabSwitchHTML = `
     <div style="grid-column: 1 / -1; margin-bottom: 10px; display: flex; background: #e2e8f0; padding: 3px; border-radius: 10px;">
       <button onclick="setPengajuanViewMode('aktif')" style="flex:1; border:0; padding:8px; border-radius:8px; font-size:11px; font-weight:800; cursor:pointer; ${pengajuanViewMode === 'aktif' ? 'background:#fff; color:var(--g); box-shadow:0 2px 5px rgba(0,0,0,0.05);' : 'background:transparent; color:var(--s);'}">
@@ -2875,7 +2875,6 @@ function renderPengajuanPage() {
     </div>
   `;
 
-  // DIKELOMPOKKAN & DIBUAT SERUPA DENGAN TAMPILAN RIWAYAT LAPORAN KERJA
   const grouped = {};
 
   list.forEach(item => {
@@ -3537,7 +3536,7 @@ appContainer.addEventListener('touchend', e => {
       .then(d => {
         if (d) { 
           DB = Object.assign(DB, d); 
-          localStorage.setItem('timSaberCacheData_v45', JSON.stringify(d)); 
+          localStorage.setItem('timSaberCacheData_v46', JSON.stringify(d)); 
           initApp(); 
         }
         setTimeout(() => pullIndicator.style.transform = 'translateY(0)', 400);
@@ -3697,7 +3696,7 @@ function bukaDataSiswa() {
           Swal.close();
           const listSiswa = d.dataSiswa || DB.dataSiswa || [];
           DB.dataSiswa = listSiswa;
-          localStorage.setItem('timSaberCacheData_v45', JSON.stringify(DB));
+          localStorage.setItem('timSaberCacheData_v46', JSON.stringify(DB));
           tampilkanModalDataSiswa(listSiswa);
         })
         .catch(err => {
