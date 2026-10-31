@@ -1346,10 +1346,10 @@ html, body{
 </div>
 
 <script>
-// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 46 - INFORMASI ASCENDING SORT)
-if (localStorage.getItem('timSaberCacheVersion') !== 'v46') {
+// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 47 - REKAP PROFESIONAL PENGAJUAN)
+if (localStorage.getItem('timSaberCacheVersion') !== 'v47') {
   localStorage.clear();
-  localStorage.setItem('timSaberCacheVersion', 'v46');
+  localStorage.setItem('timSaberCacheVersion', 'v47');
 }
 
 // URL WEB APP APPS SCRIPT TERBARU
@@ -1704,7 +1704,7 @@ function pingOnlineStatus() {
 }
 
 function loadData() {
-  const cachedData = localStorage.getItem('timSaberCacheData_v46');
+  const cachedData = localStorage.getItem('timSaberCacheData_v47');
   if (cachedData) {
     try {
       DB = Object.assign(DB, JSON.parse(cachedData));
@@ -1721,7 +1721,7 @@ function loadData() {
       if (d) {
         const newStr = JSON.stringify(d);
         DB = Object.assign(DB, d);
-        localStorage.setItem('timSaberCacheData_v46', newStr);
+        localStorage.setItem('timSaberCacheData_v47', newStr);
         initApp();
       }
     })
@@ -1737,7 +1737,7 @@ function loadDataFallback() {
   window.handleDashboardResponse = function(d) {
     if (d) {
       DB = Object.assign(DB, d);
-      localStorage.setItem('timSaberCacheData_v46', JSON.stringify(d));
+      localStorage.setItem('timSaberCacheData_v47', JSON.stringify(d));
       initApp();
     }
   };
@@ -2399,7 +2399,6 @@ function parseDateVal(x) {
 }
 
 function renderInformasiPage() {
-  // Diubah menjadi (a - b) agar urutan dari tanggal terkecil ke terbesar
   const list = [...getInformasiData()].sort((a, b) => parseDateVal(a) - parseDateVal(b));
   window._currentInfoList = list;
 
@@ -3536,7 +3535,7 @@ appContainer.addEventListener('touchend', e => {
       .then(d => {
         if (d) { 
           DB = Object.assign(DB, d); 
-          localStorage.setItem('timSaberCacheData_v46', JSON.stringify(d)); 
+          localStorage.setItem('timSaberCacheData_v47', JSON.stringify(d)); 
           initApp(); 
         }
         setTimeout(() => pullIndicator.style.transform = 'translateY(0)', 400);
@@ -3599,7 +3598,7 @@ function downloadDataCSV(type) {
         </select>
       `,
       showCancelButton: true,
-      confirmButtonText: 'Download CSV',
+      confirmButtonText: 'Download CSV Profesional',
       cancelButtonText: 'Batal',
       confirmButtonColor: 'var(--blue)',
       preConfirm: () => {
@@ -3635,6 +3634,74 @@ function prosesFilterDanDownload(rawData, type, baseFileName, targetBulan, targe
       alert(`Tidak ada data untuk periode bulan ${['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][bIdx]} ${tVal}.`);
       return;
     }
+  }
+
+  // FORMAT KHUSUS PROFESIONAL UNTUK REKAP PENGAJUAN (PER ANGGOTA & TOTAL BARANG)
+  if (type === 'pengajuan') {
+    let rekapPerAnggota = {};
+
+    filteredData.forEach(item => {
+      let status = String(item.Status || item.status || '').toLowerCase();
+      // Hanya menghitung pengajuan yang disetujui / selesai
+      if (status.includes('disetujui') || status.includes('selesai')) {
+        let nama = (item.Nama || item.nama || 'Tanpa Nama').trim();
+        let area = (item.Area || item.area || '-').trim();
+        let keyAnggota = `${nama} (${area})`;
+
+        if (!rekapPerAnggota[keyAnggota]) {
+          rekapPerAnggota[keyAnggota] = {};
+        }
+
+        for (let i = 1; i <= 6; i++) {
+          let val = item['Kebutuhan' + i] || item['kebutuhan' + i] || '';
+          if (val) {
+            let match = val.toString().match(/(.+?)\s+(\d+)$/);
+            let namaBarang = match ? match[1].trim() : val.trim();
+            let jumlah = match ? parseInt(match[2], 10) : 1;
+
+            rekapPerAnggota[keyAnggota][namaBarang] = (rekapPerAnggota[keyAnggota][namaBarang] || 0) + jumlah;
+          }
+        }
+      }
+    });
+
+    let keysAnggota = Object.keys(rekapPerAnggota);
+    if (keysAnggota.length === 0) {
+      alert("Tidak ada data pengajuan yang disetujui pada periode ini.");
+      return;
+    }
+
+    let csvContent = "\uFEFF";
+    csvContent += "No,Nama Anggota & Area,Nama Barang / Alat yang Diambil,Total Jumlah\r\n";
+
+    let rowNum = 1;
+    keysAnggota.forEach(namaAnggota => {
+      let barangList = rekapPerAnggota[namaAnggota];
+      Object.keys(barangList).forEach(namaBarang => {
+        let totalQty = barangList[namaBarang];
+        let cleanAnggota = namaAnggota.replace(/"/g, '""');
+        let cleanBarang = namaBarang.replace(/"/g, '""');
+        
+        csvContent += `${rowNum},"${cleanAnggota}","${cleanBarang}",${totalQty}\r\n`;
+        rowNum++;
+      });
+    });
+
+    let bulanLabel = targetBulan === 'ALL' ? 'Semua_Bulan' : ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][targetBulan] + '_' + targetTahun;
+    let fileName = `Rekap_Profesional_Pengajuan_${bulanLabel}.csv`;
+
+    let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    let url = URL.createObjectURL(blob);
+    let a = document.createElement('a');
+    a.setAttribute('href', url);
+    a.setAttribute('download', fileName);
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    showToast("BERHASIL MENGUNDUH LAPORAN");
+    return;
   }
 
   let fileName = `${baseFileName}_${targetBulan === 'ALL' ? 'Semua_Bulan' : targetBulan + '_' + targetTahun}.csv`;
@@ -3696,7 +3763,7 @@ function bukaDataSiswa() {
           Swal.close();
           const listSiswa = d.dataSiswa || DB.dataSiswa || [];
           DB.dataSiswa = listSiswa;
-          localStorage.setItem('timSaberCacheData_v46', JSON.stringify(DB));
+          localStorage.setItem('timSaberCacheData_v47', JSON.stringify(DB));
           tampilkanModalDataSiswa(listSiswa);
         })
         .catch(err => {
