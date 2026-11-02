@@ -1217,7 +1217,7 @@ html, body{
 <!-- RIWAYAT LAPORAN -->
 <section id="lapor" class="page">
   <button class="back" onclick="showPage('home')">← Beranda</button>
-  <div class="section">Riwayat Laporan Kerja Pekan Ini (Senin - Jumat)</div>
+  <div class="section">Riwayat Laporan Kerja</div>
   <div id="laporHistoryContainer"></div>
 </section>
 
@@ -1346,10 +1346,10 @@ html, body{
 </div>
 
 <script>
-// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 47 - REKAP PROFESIONAL PENGAJUAN)
-if (localStorage.getItem('timSaberCacheVersion') !== 'v47') {
+// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 48 - REKAP PROFESIONAL LAPORAN)
+if (localStorage.getItem('timSaberCacheVersion') !== 'v48') {
   localStorage.clear();
-  localStorage.setItem('timSaberCacheVersion', 'v47');
+  localStorage.setItem('timSaberCacheVersion', 'v48');
 }
 
 // URL WEB APP APPS SCRIPT TERBARU
@@ -1627,6 +1627,7 @@ let lemburIndex = 0;
 let currentFilterPengaduan = 'ALL';
 let currentFilterPengajuan = 'ALL';
 let currentFilterLaporan = 'ALL';
+let laporanViewMode = 'aktif';
 
 function showToast(text = "BERHASIL DIKIRIM") {
   const t = document.getElementById('toastNotification');
@@ -1704,7 +1705,7 @@ function pingOnlineStatus() {
 }
 
 function loadData() {
-  const cachedData = localStorage.getItem('timSaberCacheData_v47');
+  const cachedData = localStorage.getItem('timSaberCacheData_v48');
   if (cachedData) {
     try {
       DB = Object.assign(DB, JSON.parse(cachedData));
@@ -1721,7 +1722,7 @@ function loadData() {
       if (d) {
         const newStr = JSON.stringify(d);
         DB = Object.assign(DB, d);
-        localStorage.setItem('timSaberCacheData_v47', newStr);
+        localStorage.setItem('timSaberCacheData_v48', newStr);
         initApp();
       }
     })
@@ -1737,7 +1738,7 @@ function loadDataFallback() {
   window.handleDashboardResponse = function(d) {
     if (d) {
       DB = Object.assign(DB, d);
-      localStorage.setItem('timSaberCacheData_v47', JSON.stringify(d));
+      localStorage.setItem('timSaberCacheData_v48', JSON.stringify(d));
       initApp();
     }
   };
@@ -3051,27 +3052,58 @@ function closePhotoModal() {
   });
 })();
 
+function setFilterLaporan(filter) {
+  currentFilterLaporan = currentFilterLaporan === filter ? 'ALL' : filter;
+  renderLaporanPage();
+}
+
+function setLaporanViewMode(mode) {
+  laporanViewMode = mode;
+  renderLaporanPage();
+}
+
 function renderLaporanPage() {
-  const batasHari = 7;
-  const waktuBatas = new Date().getTime() - (batasHari * 24 * 60 * 60 * 1000);
-
-  const list = [...(DB.laporan || [])]
-    .filter(item => {
-      const tglParsed = parseSmartDate(extractDisplayDate(item));
-      if (!tglParsed) return true;
-      return tglParsed.getTime() >= waktuBatas;
-    })
-    .sort((a, b) => parseDateVal(b) - parseDateVal(a));
-
+  const allList = [...(DB.laporan || [])].sort((a, b) => parseDateVal(b) - parseDateVal(a));
   const historyBox = document.getElementById('laporHistoryContainer');
-  const empty = '<div class="card"><p class="muted">Belum ada riwayat laporan kerja pekan ini (Senin - Jumat).</p></div>';
+  const empty = '<div class="card" style="grid-column: 1 / -1;"><p class="muted">Belum ada riwayat laporan kerja untuk periode ini.</p></div>';
 
   if (!historyBox) return;
 
-  if (!list.length) {
-    historyBox.innerHTML = empty;
-    return;
-  }
+  let monday = getMondayThisWeek();
+  let scopedList = allList.filter(x => {
+    let rawWaktu = extractDisplayDate(x);
+    let itemDate = parseSmartDate(rawWaktu);
+    if (laporanViewMode === 'aktif') {
+      return itemDate && itemDate >= monday;
+    }
+    return true;
+  });
+
+  let countSelesai = scopedList.length;
+  let list = scopedList;
+
+  const tabSwitchHTML = `
+    <div style="grid-column: 1 / -1; margin-bottom: 10px; display: flex; background: #e2e8f0; padding: 3px; border-radius: 10px;">
+      <button onclick="setLaporanViewMode('aktif')" style="flex:1; border:0; padding:8px; border-radius:8px; font-size:11px; font-weight:800; cursor:pointer; ${laporanViewMode === 'aktif' ? 'background:#fff; color:var(--g); box-shadow:0 2px 5px rgba(0,0,0,0.05);' : 'background:transparent; color:var(--s);'}">
+        📅 Laporan Minggu Ini (Senin - Jumat)
+      </button>
+      <button onclick="setLaporanViewMode('arsip')" style="flex:1; border:0; padding:8px; border-radius:8px; font-size:11px; font-weight:800; cursor:pointer; ${laporanViewMode === 'arsip' ? 'background:#fff; color:var(--g); box-shadow:0 2px 5px rgba(0,0,0,0.05);' : 'background:transparent; color:var(--s);'}">
+        📂 Semua Riwayat (Arsip)
+      </button>
+    </div>
+  `;
+
+  const rekapHTML = `
+    <div style="grid-column: 1 / -1; margin-bottom: 10px;">
+      ${tabSwitchHTML}
+      <div style="display:grid; grid-template-columns:repeat(1,1fr); gap:8px;">
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:10px; border-radius:10px; text-align:center;">
+          <span style="font-size:10px; font-weight:800; color:#16a34a; display:block;">TOTAL LAPORAN SELESAI</span>
+          <b style="font-size:18px; color:#15803d;">${countSelesai}</b>
+        </div>
+      </div>
+    </div>
+  `;
 
   const grouped = {};
 
@@ -3079,7 +3111,6 @@ function renderLaporanPage() {
     const nama = (item.Nama || item.nama || 'Petugas').trim();
     const area = (item.Area || item.area || '-').trim();
     const tglRaw = extractDisplayDate(item);
-    
     const tglKey = tglRaw.split(' ')[0] || tglRaw;
     const groupKey = `${nama.toLowerCase()}_${area.toLowerCase()}_${tglKey}`;
 
@@ -3112,7 +3143,7 @@ function renderLaporanPage() {
     }
   });
 
-  historyBox.innerHTML = Object.values(grouped).map(g => {
+  const cardsHTML = Object.values(grouped).map(g => {
     const daftarPekerjaanHTML = g.pekerjaanList.map(p => `<li style="margin-bottom:3px;">${esc(p)}</li>`).join('');
     
     const catatanHTML = g.catatanList.length 
@@ -3163,9 +3194,11 @@ function renderLaporanPage() {
       </div>
     `;
   }).join('');
+
+  historyBox.innerHTML = rekapHTML + (cardsHTML ? cardsHTML : empty);
 }
 
-function getWeekOfMonth(date) {
+function getweekOfMonth(date) {
   const dayOfMonth = date.getDate();
   const firstDayOfWeek = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
   const adjustedFirstDay = (firstDayOfWeek === 0) ? 6 : firstDayOfWeek - 1;
@@ -3175,7 +3208,7 @@ function getWeekOfMonth(date) {
 function renderJadwalByDay() {
   const now = new Date();
   const day = now.getDay(); 
-  const currentWeek = getWeekOfMonth(now);
+  const currentWeek = getweekOfMonth(now);
   
   const hariNama = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
   const tanggalStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
@@ -3535,7 +3568,7 @@ appContainer.addEventListener('touchend', e => {
       .then(d => {
         if (d) { 
           DB = Object.assign(DB, d); 
-          localStorage.setItem('timSaberCacheData_v47', JSON.stringify(d)); 
+          localStorage.setItem('timSaberCacheData_v48', JSON.stringify(d)); 
           initApp(); 
         }
         setTimeout(() => pullIndicator.style.transform = 'translateY(0)', 400);
@@ -3642,7 +3675,6 @@ function prosesFilterDanDownload(rawData, type, baseFileName, targetBulan, targe
 
     filteredData.forEach(item => {
       let status = String(item.Status || item.status || '').toLowerCase();
-      // Hanya menghitung pengajuan yang disetujui / selesai
       if (status.includes('disetujui') || status.includes('selesai')) {
         let nama = (item.Nama || item.nama || 'Tanpa Nama').trim();
         let area = (item.Area || item.area || '-').trim();
@@ -3763,7 +3795,7 @@ function bukaDataSiswa() {
           Swal.close();
           const listSiswa = d.dataSiswa || DB.dataSiswa || [];
           DB.dataSiswa = listSiswa;
-          localStorage.setItem('timSaberCacheData_v47', JSON.stringify(DB));
+          localStorage.setItem('timSaberCacheData_v48', JSON.stringify(DB));
           tampilkanModalDataSiswa(listSiswa);
         })
         .catch(err => {
