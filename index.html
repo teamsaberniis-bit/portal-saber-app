@@ -1077,7 +1077,7 @@ html, body{
 
 <!-- IFRAME & FORM TERSEMBUNYI UNTUK PENGIRIMAN TANPA CORS -->
 <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
-<form id="gasSubmitForm" action="https://script.google.com/macros/s/AKfycbxWCJP6Y8I-EJF9s61MjMm7ceDKTlzQRxN__jq9p5LFVKUgMjEbuWTPh_sJW7NLYVOGcg/exec" method="POST" target="hidden_iframe" style="display:none;">
+<form id="gasSubmitForm" action="https://script.google.com/macros/s/AKfycbzh2QzSHDz9KTCXuV78xBIyaYbKeCiqXjsZcbl1rVUGfK4aGi21-7r53RcpV9za6X3D8w/exec" method="POST" target="hidden_iframe" style="display:none;">
   <input type="hidden" name="postData" id="gasPostData">
 </form>
 
@@ -1346,14 +1346,14 @@ html, body{
 </div>
 
 <script>
-// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 48 - REKAP PROFESIONAL LAPORAN)
-if (localStorage.getItem('timSaberCacheVersion') !== 'v48') {
+// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 49)
+if (localStorage.getItem('timSaberCacheVersion') !== 'v49') {
   localStorage.clear();
-  localStorage.setItem('timSaberCacheVersion', 'v48');
+  localStorage.setItem('timSaberCacheVersion', 'v49');
 }
 
-// URL WEB APP APPS SCRIPT TERBARU
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxWCJP6Y8I-EJF9s61MjMm7ceDKTlzQRxN__jq9p5LFVKUgMjEbuWTPh_sJW7NLYVOGcg/exec";
+// URL WEB APP APPS SCRIPT TERBARU (SUDAH DISINKRONKAN)
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzh2QzSHDz9KTCXuV78xBIyaYbKeCiqXjsZcbl1rVUGfK4aGi21-7r53RcpV9za6X3D8w/exec";
 
 // HELPER PARSING GAMBAR GOOGLE DRIVE / LINK LAIN
 function formatImageUrl(rawUrl) {
@@ -1705,7 +1705,7 @@ function pingOnlineStatus() {
 }
 
 function loadData() {
-  const cachedData = localStorage.getItem('timSaberCacheData_v48');
+  const cachedData = localStorage.getItem('timSaberCacheData_v49');
   if (cachedData) {
     try {
       DB = Object.assign(DB, JSON.parse(cachedData));
@@ -1722,7 +1722,7 @@ function loadData() {
       if (d) {
         const newStr = JSON.stringify(d);
         DB = Object.assign(DB, d);
-        localStorage.setItem('timSaberCacheData_v48', newStr);
+        localStorage.setItem('timSaberCacheData_v49', newStr);
         initApp();
       }
     })
@@ -1738,7 +1738,7 @@ function loadDataFallback() {
   window.handleDashboardResponse = function(d) {
     if (d) {
       DB = Object.assign(DB, d);
-      localStorage.setItem('timSaberCacheData_v48', JSON.stringify(d));
+      localStorage.setItem('timSaberCacheData_v49', JSON.stringify(d));
       initApp();
     }
   };
@@ -3568,7 +3568,7 @@ appContainer.addEventListener('touchend', e => {
       .then(d => {
         if (d) { 
           DB = Object.assign(DB, d); 
-          localStorage.setItem('timSaberCacheData_v48', JSON.stringify(d)); 
+          localStorage.setItem('timSaberCacheData_v49', JSON.stringify(d)); 
           initApp(); 
         }
         setTimeout(() => pullIndicator.style.transform = 'translateY(0)', 400);
@@ -3795,7 +3795,7 @@ function bukaDataSiswa() {
           Swal.close();
           const listSiswa = d.dataSiswa || DB.dataSiswa || [];
           DB.dataSiswa = listSiswa;
-          localStorage.setItem('timSaberCacheData_v48', JSON.stringify(DB));
+          localStorage.setItem('timSaberCacheData_v49', JSON.stringify(DB));
           tampilkanModalDataSiswa(listSiswa);
         })
         .catch(err => {
