@@ -18,7 +18,7 @@
 
 <link rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<!-- SweetAlert2 untuk Popup & Dialog Download Periode -->
+<!-- SweetAlert2 untuk Popup & Dialog -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <style>
@@ -89,7 +89,6 @@ html, body{
   padding-top:env(safe-area-inset-top);
 }
 
-/* HEADER LEBIH ELEGAN & BERSIH */
 .header{
   background:rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(10px);
@@ -155,7 +154,6 @@ html, body{
   text-overflow:ellipsis;
 }
 
-/* TOMBOL LONCENG DI HEADER */
 .header-bell-btn {
   position: relative;
   background: var(--gl);
@@ -217,7 +215,6 @@ html, body{
   display: block !important;
 }
 
-/* HERO SECTION DENGAN GRADASI DINAMIS & BAYANGAN HALUS */
 .hero{
   background:linear-gradient(135deg, #16a34a 0%, #15803d 100%);
   color:#fff;
@@ -278,7 +275,6 @@ html, body{
 
 .section-link:hover { text-decoration: underline; }
 
-/* MENU UTAMA GRID DENGAN EFEK HOVER & TRANSISI LEMBUT */
 .menu{
   display:grid;
   grid-template-columns:repeat(4,minmax(0,1fr));
@@ -330,7 +326,6 @@ html, body{
   color: #334155;
 }
 
-/* LEMBUR CONTAINER */
 .lembur-container{
   background:linear-gradient(135deg, #16a34a, #15803d);
   color:#fff;
@@ -466,7 +461,6 @@ html, body{
   font-weight:700;
 }
 
-/* CARD KECIL & DAFTAR LIST */
 .card{
   background:#fff;
   border:1px solid var(--b);
@@ -494,7 +488,6 @@ html, body{
   color:var(--s);
 }
 
-/* BOTTOM NAVIGATION YANG LEBIH MODERN */
 .nav{
   background:rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(12px);
@@ -528,7 +521,6 @@ html, body{
 .nav i{ font-size:18px; line-height:18px; }
 .nav a.active{ color:var(--g); background:var(--gl); box-shadow: 0 2px 8px rgba(22, 163, 74, 0.1); }
 
-/* FORM & INPUT ELEGAN */
 .form-input, .form-textarea, .form-select{
   width:100%;
   border:1.5px solid var(--b);
@@ -542,7 +534,7 @@ html, body{
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.form-input:focus, .form-textarea:focus{
+.form-input:focus, .form-textarea:focus, .form-select:focus{
   border-color:var(--g);
   box-shadow:0 0 0 3px rgba(22,163,74,0.12);
 }
@@ -856,7 +848,6 @@ html, body{
 }
 .home-pengaduan-card{ background:#fffbeb; border-color:#fef3c7; }
 
-/* MODAL PREVIEW FOTO SLIDER / GALERI */
 .image-modal {
   display: none;
   position: fixed;
@@ -927,7 +918,6 @@ html, body{
   border-radius: 14px;
 }
 
-/* MODE PC & TABLET RESPONSIVE (MEDIA QUERY DESKTOP >= 768px) */
 @media (min-width: 768px) {
   body {
     background: #0f172a;
@@ -948,18 +938,9 @@ html, body{
     overflow: hidden;
   }
 
-  .header {
-    padding: 16px 24px;
-  }
-
-  .content {
-    padding: 20px 24px;
-  }
-
-  .menu {
-    grid-template-columns: repeat(8, minmax(0, 1fr));
-    gap: 12px;
-  }
+  .header { padding: 16px 24px; }
+  .content { padding: 20px 24px; }
+  .menu { grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 12px; }
 
   .ico {
     width: 52px;
@@ -979,44 +960,14 @@ html, body{
     gap: 14px;
   }
 
-  .home-info-card, .home-pengaduan-card {
-    margin-bottom: 0;
-  }
+  .home-info-card, .home-pengaduan-card { margin-bottom: 0; }
+  #homeInfoBox, #homePengaduanBox { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .jadwal-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+  #pengajuan .card, #pengaduan .card { max-width: 700px; margin: 0 auto 16px; }
 
-  #homeInfoBox, #homePengaduanBox {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-  }
-
-  .jadwal-cols {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 14px;
-  }
-
-  #pengajuan .card, #pengaduan .card {
-    max-width: 700px;
-    margin: 0 auto 16px;
-  }
-
-  .nav {
-    justify-content: center;
-    gap: 20px;
-    padding: 10px 24px;
-  }
-
-  .nav a {
-    max-width: 140px;
-    font-size: 11px;
-    flex-direction: row;
-    gap: 8px;
-    padding: 8px 12px;
-  }
-
-  .nav i {
-    font-size: 16px;
-  }
+  .nav { justify-content: center; gap: 20px; padding: 10px 24px; }
+  .nav a { max-width: 140px; font-size: 11px; flex-direction: row; gap: 8px; padding: 8px 12px; }
+  .nav i { font-size: 16px; }
 }
 </style>
 </head>
@@ -1075,30 +1026,27 @@ html, body{
   </div>
 </div>
 
-<!-- IFRAME & FORM TERSEMBUNYI UNTUK PENGIRIMAN TANPA CORS -->
+<!-- IFRAME & FORM TERSEMBUNYI -->
 <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
 <form id="gasSubmitForm" action="https://script.google.com/macros/s/AKfycbzh2QzSHDz9KTCXuV78xBIyaYbKeCiqXjsZcbl1rVUGfK4aGi21-7r53RcpV9za6X3D8w/exec" method="POST" target="hidden_iframe" style="display:none;">
   <input type="hidden" name="postData" id="gasPostData">
 </form>
 
-<!-- AUDIO NOTIFIKASI -->
 <audio id="notifSound" preload="auto">
   <source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" type="audio/mpeg">
 </audio>
 
-<!-- TOAST -->
 <div id="toastNotification">
   <i class="fa-solid fa-circle-check"></i>
   <span id="toastText">BERHASIL DIKIRIM</span>
 </div>
 
-<!-- PULL REFRESH -->
 <div class="pull-refresh-indicator" id="pullIndicator">
   <i class="fa-solid fa-rotate fa-spin" style="margin-right:6px;"></i>
   Memperbarui data...
 </div>
 
-<!-- HEADER DENGAN TOMBOL LONCENG NOTIFIKASI -->
+<!-- HEADER -->
 <header class="header">
   <div class="avatar" id="headerAvatar">D</div>
   <div style="flex:1;min-width:0">
@@ -1107,7 +1055,6 @@ html, body{
     <div class="top-area" id="headerArea">• Anggota</div>
   </div>
   
-  <!-- TOMBOL LONCENG -->
   <button type="button" class="header-bell-btn" onclick="bukaModalAbsen()" title="Pemberitahuan Anggota Tidak Masuk">
     <i class="fa-solid fa-bell"></i>
     <span id="bellBadge" class="bell-badge">0</span>
@@ -1125,7 +1072,6 @@ html, body{
     <div style="font-size:10.5px;font-weight:800;margin-top:4px">NURUL IMAM ISLAMIC SCHOOL</div>
   </div>
 
-  <!-- LEMBUR SLIDER BERANDA -->
   <div class="lembur-container" id="lemburMainContainer">
     <div id="lemburSlider">
       <div class="lembur-track" id="lemburTrack">
@@ -1146,8 +1092,8 @@ html, body{
     </div>
   </div>
 
-  <!-- MENU TIM SABER -->
-  <div class="section">Menu Tim SABER</div>
+  <!-- MENU UTAMA -->
+  <div class="section">Menu</div>
   <div class="menu">
     <a class="mi" onclick="showPage('informasi')">
       <div class="ico"><i class="fa-solid fa-bullhorn"></i></div>
@@ -1177,9 +1123,10 @@ html, body{
       <div class="ico o"><i class="fa-solid fa-triangle-exclamation"></i></div>
       <span class="lbl">Pengaduan</span>
     </a>
-    <a class="mi" onclick="bukaDataSiswa()">
-      <div class="ico b"><i class="fa-solid fa-school"></i></div>
-      <span class="lbl">Data Siswa</span>
+    <!-- MENU REKAP -->
+    <a class="mi" onclick="bukaModalRekap()">
+      <div class="ico b"><i class="fa-solid fa-chart-pie"></i></div>
+      <span class="lbl">Rekap</span>
     </a>
   </div>
 
@@ -1243,13 +1190,21 @@ html, body{
       <label><input type="radio" name="prioritas" value="Penting"><span>Penting</span></label>
       <label><input type="radio" name="prioritas" value="Mendesak"><span>Mendesak</span></label>
     </div>
-    <div class="form-label">Kebutuhan Alat / Bahan (6 Kolom)</div>
-    <input class="form-input" id="kebutuhan1" placeholder="1. Kebutuhan pertama">
-    <input class="form-input" id="kebutuhan2" placeholder="2. Kebutuhan kedua" style="margin-top:5px">
-    <input class="form-input" id="kebutuhan3" placeholder="3. Kebutuhan ketiga" style="margin-top:5px">
-    <input class="form-input" id="kebutuhan4" placeholder="4. Kebutuhan keempat" style="margin-top:5px">
-    <input class="form-input" id="kebutuhan5" placeholder="5. Kebutuhan kelima" style="margin-top:5px">
-    <input class="form-input" id="kebutuhan6" placeholder="6. Kebutuhan keenam" style="margin-top:5px">
+    
+    <div class="form-label" style="margin-top:14px; color:var(--g); display:flex; justify-content:space-between; align-items:center;">
+      <span>Daftar Kebutuhan Barang & Jumlah (Maks. 6 Item)</span>
+    </div>
+
+    <!-- KONTAINER DAFTAR ITEM DINAMIS -->
+    <div id="dynamicItemsContainer" style="display:flex; flex-direction:column; gap:8px; margin-top:6px;">
+      <!-- Baris item akan dimasukkan otomatis via JavaScript -->
+    </div>
+
+    <!-- TOMBOL TAMBAH BARANG -->
+    <button type="button" id="btnTambahBarang" onclick="tambahBarisPengajuan()" style="width:100%; margin-top:10px; padding:10px; background:#f0fdf4; border:1.5px dashed var(--g); color:var(--g); font-weight:800; font-size:12px; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
+      <i class="fa-solid fa-plus"></i> Tambah Barang Lain (Maks. 6)
+    </button>
+
     <button class="btn" id="btnPengajuan" onclick="kirimPengajuan()">Kirim Pengajuan</button>
   </div>
   <div class="section" style="margin-top:14px">Riwayat Pengajuan</div>
@@ -1346,16 +1301,136 @@ html, body{
 </div>
 
 <script>
-// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 49)
-if (localStorage.getItem('timSaberCacheVersion') !== 'v49') {
-  localStorage.clear();
-  localStorage.setItem('timSaberCacheVersion', 'v49');
+// DAFTAR KATEGORI BAHAN DAN ALAT (WIPER AIR DIUBAH MENJADI WIPER LANTAI)
+const DAFTAR_BAHAN = [
+  "Sabun Cuci Piring",
+  "Sabun Cuci Tangan",
+  "Sabun Lantai",
+  "Deterjen",
+  "Cling Kaca",
+  "Vixal",
+  "Stella Gantung",
+  "Stella Spray",
+  "Kamper",
+  "Hit Spray",
+  "Plastik Sampah"
+];
+
+const DAFTAR_ALAT = [
+  "Tangkai Lobby Duster / Mop Set",
+  "Kain Lobby Duster",
+  "Kain Mop Set",
+  "Window Squeegee",
+  "Window Washer",
+  "Wiper Lantai",
+  "Sikat Tangkai",
+  "Sikat Closet",
+  "Sapu",
+  "Pengki"
+];
+
+// FUNGSI MENGELOLA BARIS DINAMIS PENGAJUAN BARANG & JUMLAH (MAKSIMAL 6 ITEM)
+let daftarBarisPengajuan = [];
+
+function initPengajuanDinamis() {
+  daftarBarisPengajuan = [{ barang: '', jumlah: 1 }];
+  renderBarisPengajuan();
 }
 
-// URL WEB APP APPS SCRIPT TERBARU (SUDAH DISINKRONKAN)
+function tambahBarisPengajuan() {
+  if (daftarBarisPengajuan.length >= 6) {
+    alert("Batas maksimal pengajuan adalah 6 item.");
+    return;
+  }
+  daftarBarisPengajuan.push({ barang: '', jumlah: 1 });
+  renderBarisPengajuan();
+}
+
+function hapusBarisPengajuan(index) {
+  if (daftarBarisPengajuan.length === 1) {
+    alert("Minimal harus ada 1 barang dalam pengajuan.");
+    return;
+  }
+  daftarBarisPengajuan.splice(index, 1);
+  renderBarisPengajuan();
+}
+
+function updateNilaiBaris(index, field, value) {
+  if (daftarBarisPengajuan[index]) {
+    daftarBarisPengajuan[index][field] = value;
+  }
+}
+
+function ubahJumlahQty(index, delta) {
+  if (daftarBarisPengajuan[index]) {
+    let current = parseInt(daftarBarisPengajuan[index].jumlah, 10) || 1;
+    let nextVal = current + delta;
+    if (nextVal < 1) nextVal = 1;
+    daftarBarisPengajuan[index].jumlah = nextVal;
+    renderBarisPengajuan();
+  }
+}
+
+function renderBarisPengajuan() {
+  const container = document.getElementById('dynamicItemsContainer');
+  const btnTambah = document.getElementById('btnTambahBarang');
+  if (!container) return;
+
+  if (btnTambah) {
+    if (daftarBarisPengajuan.length >= 6) {
+      btnTambah.style.display = 'none';
+    } else {
+      btnTambah.style.display = 'flex';
+    }
+  }
+
+  let optionsHTML = `<option value="">-- Pilih Barang / Alat --</option>`;
+  
+  optionsHTML += `<optgroup label="--- KATEGORI BAHAN ---">`;
+  DAFTAR_BAHAN.forEach(b => {
+    optionsHTML += `<option value="${esc(b)}">${esc(b)}</option>`;
+  });
+  optionsHTML += `</optgroup>`;
+
+  optionsHTML += `<optgroup label="--- KATEGORI ALAT ---">`;
+  DAFTAR_ALAT.forEach(a => {
+    optionsHTML += `<option value="${esc(a)}">${esc(a)}</option>`;
+  });
+  optionsHTML += `</optgroup>`;
+
+  container.innerHTML = daftarBarisPengajuan.map((item, idx) => {
+    return `
+      <div style="background:#f8fafc; border:1px solid var(--b); border-radius:12px; padding:10px; display:flex; flex-direction:column; gap:6px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:10px; font-weight:800; color:var(--s);">Barang #${idx + 1}</span>
+          ${daftarBarisPengajuan.length > 1 ? `<button type="button" onclick="hapusBarisPengajuan(${idx})" style="background:#fee2e2; color:#dc2626; border:0; width:22px; height:22px; border-radius:6px; font-weight:800; cursor:pointer; font-size:10px;">✕</button>` : ''}
+        </div>
+        
+        <!-- LAYOUT SEJAJAR SATU BARIS -->
+        <div style="display:flex; align-items:center; gap:8px;">
+          <select class="form-select" style="flex:1; min-height:42px; font-size:13px;" onchange="updateNilaiBaris(${idx}, 'barang', this.value)">
+            ${optionsHTML.replace(`value="${item.barang}"`, `value="${item.barang}" selected`)}
+          </select>
+          
+          <div style="display:flex; align-items:center; justify-content:space-between; background:#fff; border:1.5px solid var(--b); border-radius:10px; padding:3px 8px; flex:none; height:42px;">
+            <button type="button" onclick="ubahJumlahQty(${idx}, -1)" style="width:30px; height:32px; border-radius:8px; background:#f1f5f9; border:0; font-size:16px; font-weight:800; color:var(--t); cursor:pointer; display:grid; place-items:center;">-</button>
+            <span style="font-size:13.5px; font-weight:800; min-width:24px; text-align:center; color:var(--g); margin:0 4px;">${item.jumlah}</span>
+            <button type="button" onclick="ubahJumlahQty(${idx}, 1)" style="width:30px; height:32px; border-radius:8px; background:var(--gl); border:1px solid #bbf7d0; font-size:16px; font-weight:800; color:var(--g); cursor:pointer; display:grid; place-items:center;">+</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 62)
+if (localStorage.getItem('timSaberCacheVersion') !== 'v62') {
+  localStorage.clear();
+  localStorage.setItem('timSaberCacheVersion', 'v62');
+}
+
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzh2QzSHDz9KTCXuV78xBIyaYbKeCiqXjsZcbl1rVUGfK4aGi21-7r53RcpV9za6X3D8w/exec";
 
-// HELPER PARSING GAMBAR GOOGLE DRIVE / LINK LAIN
 function formatImageUrl(rawUrl) {
   if (!rawUrl) return '';
   let url = String(rawUrl).trim();
@@ -1376,244 +1451,49 @@ function formatImageUrl(rawUrl) {
   return url;
 }
 
-// TEMPLATE DAILY ACTIVITY BERDASARKAN AREA
 const TEMPLATE_DAILY_BY_AREA = {
   "SD": [
-    {
-      jam: "06.00 - 06.55",
-      label: "Persiapan Pagi",
-      tugas: [
-        "Membuka pintu ruangan/kelas & menyalakan AC",
-        "Mengecek serta membersihkan ruangan dan koridor",
-        "Glass cleaning (pembersihan kaca ruangan/kelas)"
-      ]
-    },
+    { jam: "06.00 - 06.55", label: "Persiapan Pagi", tugas: ["Membuka pintu ruangan/kelas & menyalakan AC", "Mengecek serta membersihkan ruangan dan koridor", "Glass cleaning (pembersihan kaca ruangan/kelas)"] },
     { jam: "06.55 - 07.30", spesial: "Tilawah Bersama" },
-    {
-      jam: "07.30 - 10.15",
-      label: "Rutinitas Pagi",
-      tugas: [
-        "Dusting list kaca",
-        "Dusting lemari tempat makan serta mengecek kelengkapannya",
-        "Distribusi snack siswa dan pegawai",
-        "Dusting & sweeping (melap & menyapu) area tangga",
-        "Mengecek ketersediaan air minum & mengisi ulang galon",
-        "Toilet cleaning & pengecekan rutin kebersihan toilet",
-        "Mengerjakan jobdesk harian sesuai jadwal"
-      ]
-    },
-    {
-      jam: "10.15 - 11.55",
-      label: "Layanan Makan Siang",
-      tugas: [
-        "Mendistribusikan makan siang untuk siswa dan pegawai",
-        "Mengumpulkan inner, piring bekas snack, dan membawa ke tempat cucian",
-        "Mengecek, sweeping, & mopping (menyapu & mengepel) koridor",
-        "Mendistribusikan piring snack yang telah selesai dicuci",
-        "Toilet cleaning & pengecekan rutin kebersihan toilet",
-        "Mengerjakan jobdesk harian sesuai jadwal"
-      ]
-    },
+    { jam: "07.30 - 10.15", label: "Rutinitas Pagi", tugas: ["Dusting list kaca", "Dusting lemari tempat makan serta mengecek kelengkapannya", "Distribusi snack siswa dan pegawai", "Dusting & sweeping area tangga", "Mengecek ketersediaan air minum & mengisi ulang galon", "Toilet cleaning & pengecekan rutin kebersihan toilet", "Mengerjakan jobdesk harian sesuai jadwal"] },
+    { jam: "10.15 - 11.55", label: "Layanan Makan Siang", tugas: ["Mendistribusikan makan siang untuk siswa dan pegawai", "Mengumpulkan inner, piring bekas snack, dan membawa ke tempat cucian", "Mengecek, sweeping, & mopping koridor", "Mendistribusikan piring snack yang telah selesai dicuci", "Toilet cleaning & pengecekan rutin kebersihan toilet", "Mengerjakan jobdesk harian sesuai jadwal"] },
     { jam: "11.55 - 13.10", spesial: "ISHOMA (Istirahat, Sholat, Makan)" },
-    {
-      jam: "13.10 - 15.00",
-      label: "Pembersihan Siang",
-      tugas: [
-        "Merapikan perlengkapan makan kotor dan membawa ke tempat cucian",
-        "Sweeping & mopping koridor",
-        "Dusting lemari makan & mengecek ketersediaan air minum galon",
-        "Mendistribusikan perlengkapan makan siswa",
-        "Toilet cleaning & pengecekan rutin kebersihan toilet",
-        "Mengerjakan jobdesk harian sesuai jadwal"
-      ]
-    },
+    { jam: "13.10 - 15.00", label: "Pembersihan Siang", tugas: ["Merapikan perlengkapan makan kotor dan membawa ke tempat cucian", "Sweeping & mopping koridor", "Dusting lemari makan & mengecek ketersediaan air minum galon", "Mendistribusikan perlengkapan makan siswa", "Toilet cleaning & pengecekan rutin kebersihan toilet", "Mengerjakan jobdesk harian sesuai jadwal"] },
     { jam: "15.00 - 15.30", spesial: "Sholat Ashar & Al-Matsurat Bersama" },
-    {
-      jam: "15.30 - 17.00",
-      label: "General Cleaning Sore",
-      orange: true,
-      tugas: [
-        "Dusting meja, kursi, dan barang-barang kelas secara menyeluruh",
-        "Sweeping & mopping kelas serta ruangan area tanggung jawab",
-        "Sweeping & mopping area koridor dan tangga",
-        "Toilet cleaning secara menyeluruh",
-        "Merapikan perlengkapan makan yang belum didistribusikan",
-        "Membersihkan peralatan kebersihan dan menyimpannya kembali ke tempatnya",
-        "Memastikan AC dan lampu dalam keadaan OFF serta pintu ruangan terkunci rapat",
-        "Membuang sampah dan menyimpan inner ke meshal"
-      ]
-    },
+    { jam: "15.30 - 17.00", label: "General Cleaning Sore", orange: true, tugas: ["Dusting meja, kursi, dan barang-barang kelas secara menyeluruh", "Sweeping & mopping kelas serta ruangan area tanggung jawab", "Sweeping & mopping area koridor dan tangga", "Toilet cleaning secara menyeluruh", "Merapikan perlengkapan makan yang belum didistribusikan", "Membersihkan peralatan kebersihan dan menyimpannya kembali ke tempatnya", "Memastikan AC dan lampu dalam keadaan OFF serta pintu ruangan terkunci rapat", "Membuang sampah dan menyimpan inner ke meshal"] },
     { jam: "17.05", spesial: "Persiapan Pulang" }
   ],
   "TK MASJID": [
-    {
-      jam: "06.00 - 06.55",
-      label: "Persiapan Pagi & Masjid",
-      tugas: [
-        "Membuka pintu kelas TK A & menyalakan AC",
-        "Sweeping & Mopping masjid secara menyeluruh",
-        "Toilet Cleaning masjid"
-      ]
-    },
+    { jam: "06.00 - 06.55", label: "Persiapan Pagi & Masjid", tugas: ["Membuka pintu kelas TK A & menyalakan AC", "Sweeping & Mopping masjid secara menyeluruh", "Toilet Cleaning masjid"] },
     { jam: "06.55 - 07.30", spesial: "Tilawah Bersama" },
-    {
-      jam: "07.30 - 10.15",
-      label: "Pelayanan Area TK",
-      tugas: [
-        "Mengecek ketersediaan air minum / mengisi ulang galon",
-        "Mendistribusikan snack siswa dan pegawai",
-        "Toilet Cleaning TK",
-        "Mengumpulkan piring, iner kotor dan membawa ke tempat cucian",
-        "Mengerjakan jobdes sesuai jadwal"
-      ]
-    },
-    {
-      jam: "10.15 - 11.55",
-      label: "Layanan Siang & Masjid",
-      tugas: [
-        "Mendistribusikan makan siang pegawai",
-        "Sweeping & Dusting masjid sebelum waktu sholat dzuhur",
-        "Merapikan peralatan makan/snack anak & membawa ke tempat cucian",
-        "Mendistribusikan piring/perlengkapan makan yang telah dicuci",
-        "Mengerjakan jobdes sesuai jadwal"
-      ]
-    },
+    { jam: "07.30 - 10.15", label: "Pelayanan Area TK", tugas: ["Mengecek ketersediaan air minum / mengisi ulang galon", "Mendistribusikan snack siswa dan pegawai", "Toilet Cleaning TK", "Mengumpulkan piring, iner kotor dan membawa ke tempat cucian", "Mengerjakan jobdes sesuai jadwal"] },
+    { jam: "10.15 - 11.55", label: "Layanan Siang & Masjid", tugas: ["Mendistribusikan makan siang pegawai", "Sweeping & Dusting masjid sebelum waktu sholat dzuhur", "Merapikan peralatan makan/snack anak & membawa ke tempat cucian", "Mendistribusikan piring/perlengkapan makan yang telah dicuci", "Mengerjakan jobdes sesuai jadwal"] },
     { jam: "11.55 - 13.10", spesial: "ISHOMA (Istirahat, Sholat, Makan)" },
-    {
-      jam: "13.10 - 15.00",
-      label: "Pembersihan Siang & Display",
-      tugas: [
-        "Display kembali piring snack & cangkir ke kelas TK",
-        "Mopping lantai kelas TK A & Dusting meja/kursi",
-        "Mengerjakan jobdes sesuai jadwal"
-      ]
-    },
+    { jam: "13.10 - 15.00", label: "Pembersihan Siang & Display", tugas: ["Display kembali piring snack & cangkir ke kelas TK", "Mopping lantai kelas TK A & Dusting meja/kursi", "Mengerjakan jobdes sesuai jadwal"] },
     { jam: "15.00 - 15.30", spesial: "Sholat Ashar & Al-Matsurat Bersama" },
-    {
-      jam: "15.30 - 17.00",
-      label: "General Cleaning Sore (Masjid & TK A)",
-      orange: true,
-      tugas: [
-        "Sweeping, Mopping & Toilet Cleaning masjid secara menyeluruh",
-        "Sweeping & Mopping area kelas TK A secara menyeluruh",
-        "Membuang seluruh sampah & memastikan ruangan terkunci aman"
-      ]
-    },
+    { jam: "15.30 - 17.00", label: "General Cleaning Sore (Masjid & TK A)", orange: true, tugas: ["Sweeping, Mopping & Toilet Cleaning masjid secara menyeluruh", "Sweeping & Mopping area kelas TK A secara menyeluruh", "Membuang seluruh sampah & memastikan ruangan terkunci aman"] },
     { jam: "17.05", spesial: "Persiapan Pulang" }
   ],
   "TK KELAS": [
-    {
-      jam: "06.00 - 06.55",
-      label: "Persiapan Pagi Kelas",
-      tugas: [
-        "Membuka seluruh pintu kelas TK, area bermain, & menyalakan AC",
-        "Dusting & Sweeping ruang kelas & area sekitar",
-        "Memastikan kebersihan karpet/matras bermain anak",
-        "Menyiapkan air galon minum untuk kelas"
-      ]
-    },
+    { jam: "06.00 - 06.55", label: "Persiapan Pagi Kelas", tugas: ["Membuka seluruh pintu kelas TK, area bermain, & menyalakan AC", "Dusting & Sweeping ruang kelas & area sekitar", "Memastikan kebersihan karpet/matras bermain anak", "Menyiapkan air galon minum untuk kelas"] },
     { jam: "06.55 - 07.30", spesial: "Tilawah Bersama" },
-    {
-      jam: "07.30 - 10.15",
-      label: "Pelayanan Kelas Pagi",
-      tugas: [
-        "Mendistribusikan snack siswa dan pegawai",
-        "Standby kebersihan ruang kelas & merapikan tumpahan mainan/makanan",
-        "Mengumpulkan piring, iner kotor dan membawa ke tempat cucian",
-        "Mengerjakan jobdes sesuai jadwal"
-      ]
-    },
-    {
-      jam: "10.15 - 11.55",
-      label: "Layanan Siang & Makan",
-      tugas: [
-        "Mendistribusikan makan siang siswa dan pegawai",
-        "Merapikan peralatan makan/snack anak & membawa ke tempat cucian",
-        "Mendistribusikan piring/perlengkapan makan yang telah dicuci",
-        "Mengerjakan jobdes sesuai jadwal"
-      ]
-    },
+    { jam: "07.30 - 10.15", label: "Pelayanan Kelas Pagi", tugas: ["Mendistribusikan snack siswa dan pegawai", "Standby kebersihan ruang kelas & merapikan tumpahan mainan/makanan", "Mengumpulkan piring, iner kotor dan membawa ke tempat cucian", "Mengerjakan jobdes sesuai jadwal"] },
+    { jam: "10.15 - 11.55", label: "Layanan Siang & Makan", tugas: ["Mendistribusikan makan siang siswa dan pegawai", "Merapikan peralatan makan/snack anak & membawa ke tempat cucian", "Mendistribusikan piring/perlengkapan makan yang telah dicuci", "Mengerjakan jobdes sesuai jadwal"] },
     { jam: "11.55 - 13.10", spesial: "ISHOMA (Istirahat, Sholat, Makan)" },
-    {
-      jam: "13.10 - 15.00",
-      label: "Pembersihan Siang & Display",
-      tugas: [
-        "Display kembali piring snack & cangkir ke kelas",
-        "Mopping seluruh lantai kelas TK & Dusting meja/kursi",
-        "Sterilisasi mainan anak & membersihkan karpet bermain",
-        "Mengerjakan jobdes sesuai jadwal"
-      ]
-    },
+    { jam: "13.10 - 15.00", label: "Pembersihan Siang & Display", tugas: ["Display kembali piring snack & cangkir ke kelas", "Mopping seluruh lantai kelas TK & Dusting meja/kursi", "Sterilisasi mainan anak & membersihkan karpet bermain", "Mengerjakan jobdes sesuai jadwal"] },
     { jam: "15.00 - 15.30", spesial: "Sholat Ashar & Al-Matsurat Bersama" },
-    {
-      jam: "15.30 - 17.00",
-      label: "General Cleaning Sore Kelas",
-      orange: true,
-      tugas: [
-        "Sweeping & Mopping seluruh area kelas TK secara menyeluruh",
-        "Toilet Cleaning anak & guru area TK",
-        "Membuang seluruh sampah kelas ke penampungan",
-        "Memastikan seluruh AC, lampu OFF, jendela & pintu kelas terkunci rapat"
-      ]
-    },
+    { jam: "15.30 - 17.00", label: "General Cleaning Sore Kelas", orange: true, tugas: ["Sweeping & Mopping seluruh area kelas TK secara menyeluruh", "Toilet Cleaning anak & guru area TK", "Membuang seluruh sampah kelas ke penampungan", "Memastikan seluruh AC, lampu OFF, jendela & pintu kelas terkunci rapat"] },
     { jam: "17.05", spesial: "Persiapan Pulang" }
   ],
   "OFFICE": [
-    {
-      jam: "06.00 - 06.55",
-      label: "Persiapan Pagi Office",
-      tugas: [
-        "Membuka pintu kantor & menyalakan AC",
-        "Dusting & Sweeping ruang kantor, koridor, toilet office dll",
-        "Sweeping area tangga"
-      ]
-    },
+    { jam: "06.00 - 06.55", label: "Persiapan Pagi Office", tugas: ["Membuka pintu kantor & menyalakan AC", "Dusting & Sweeping ruang kantor, koridor, toilet office dll", "Sweeping area tangga"] },
     { jam: "06.55 - 07.30", spesial: "Tilawah Bersama" },
-    {
-      jam: "07.30 - 10.15",
-      label: "Rutinitas Pagi Office",
-      tugas: [
-        "Glass cleaning kaca bagian luar dan belakang",
-        "Mendistribusikan snack pegawai",
-        "Mengecek ketersediaan air minum / mengisi ulang galon kantor",
-        "Toilet Cleaning office",
-        "Mengerjakan jobdes sesuai jadwal"
-      ]
-    },
-    {
-      jam: "10.15 - 11.55",
-      label: "Layanan Siang Office",
-      tugas: [
-        "Menyiapkan makan siang pegawai",
-        "Mengecek & Sweeping/Mopping koridor serta Toilet Cleaning office",
-        "Mengerjakan jobdes sesuai jadwal"
-      ]
-    },
+    { jam: "07.30 - 10.15", label: "Rutinitas Pagi Office", tugas: ["Glass cleaning kaca bagian luar dan belakang", "Mendistribusikan snack pegawai", "Mengecek ketersediaan air minum / mengisi ulang galon kantor", "Toilet Cleaning office", "Mengerjakan jobdes sesuai jadwal"] },
+    { jam: "10.15 - 11.55", label: "Layanan Siang Office", tugas: ["Menyiapkan makan siang pegawai", "Mengecek & Sweeping/Mopping koridor serta Toilet Cleaning office", "Mengerjakan jobdes sesuai jadwal"] },
     { jam: "11.55 - 13.10", spesial: "ISHOMA (Istirahat, Sholat, Makan)" },
-    {
-      jam: "13.10 - 15.00",
-      label: "Pembersihan Siang Office",
-      tugas: [
-        "Mopping area kantor dan Toilet Cleaning",
-        "Merapikan perlengkapan makan kotor ke tempat cucian",
-        "Dusting lemari makan & mengecek ketersediaan air minum",
-        "Mengerjakan jobdes sesuai jadwal"
-      ]
-    },
+    { jam: "13.10 - 15.00", label: "Pembersihan Siang Office", tugas: ["Mopping area kantor dan Toilet Cleaning", "Merapikan perlengkapan makan kotor ke tempat cucian", "Dusting lemari makan & mengecek ketersediaan air minum", "Mengerjakan jobdes sesuai jadwal"] },
     { jam: "15.00 - 15.30", spesial: "Sholat Ashar & Al-Matsurat Bersama" },
-    {
-      jam: "15.30 - 17.00",
-      label: "General Cleaning Sore Office",
-      orange: true,
-      tugas: [
-        "Dusting meja, kursi, & barang-barang di area kantor",
-        "Sweeping & Mopping seluruh ruangan kantor secara menyeluruh",
-        "Sweeping & Mopping area tangga kantor",
-        "Toilet Cleaning office secara menyeluruh",
-        "Membuang sampah kantor",
-        "Pastikan kembali AC, lampu dalam keadaan off & pintu kantor terkunci"
-      ]
-    },
+    { jam: "15.30 - 17.00", label: "General Cleaning Sore Office", orange: true, tugas: ["Dusting meja, kursi, & barang-barang di area kantor", "Sweeping & Mopping seluruh ruangan kantor secara menyeluruh", "Sweeping & Mopping area tangga kantor", "Toilet Cleaning office secara menyeluruh", "Membuang sampah kantor", "Pastikan kembali AC, lampu dalam keadaan off & pintu kantor terkunci"] },
     { jam: "17.05", spesial: "Persiapan Pulang" }
   ]
 };
@@ -1705,7 +1585,9 @@ function pingOnlineStatus() {
 }
 
 function loadData() {
-  const cachedData = localStorage.getItem('timSaberCacheData_v49');
+  initPengajuanDinamis();
+
+  const cachedData = localStorage.getItem('timSaberCacheData_v62');
   if (cachedData) {
     try {
       DB = Object.assign(DB, JSON.parse(cachedData));
@@ -1722,7 +1604,7 @@ function loadData() {
       if (d) {
         const newStr = JSON.stringify(d);
         DB = Object.assign(DB, d);
-        localStorage.setItem('timSaberCacheData_v49', newStr);
+        localStorage.setItem('timSaberCacheData_v62', newStr);
         initApp();
       }
     })
@@ -1738,7 +1620,7 @@ function loadDataFallback() {
   window.handleDashboardResponse = function(d) {
     if (d) {
       DB = Object.assign(DB, d);
-      localStorage.setItem('timSaberCacheData_v49', JSON.stringify(d));
+      localStorage.setItem('timSaberCacheData_v62', JSON.stringify(d));
       initApp();
     }
   };
@@ -1955,8 +1837,6 @@ function openAnggotaDetail(i) {
     return namaLap === namaTarget;
   });
 
-  const totalSelesaiAll = laporanAnggota.length;
-
   const sekarang = new Date();
   const bulanIni = sekarang.getMonth();
   const tahunIni = sekarang.getFullYear();
@@ -2004,19 +1884,22 @@ function openAnggotaDetail(i) {
 
   let rekapKeaktifanHTML = '';
   if (!isTargetPJ) {
+    let targetKerjaBulanIni = hitungHariKerjaBulanIni(tahunIni, bulanIni);
+    let persentase = Math.min(100, Math.round((laporanBulanIni.length / targetKerjaBulanIni) * 100));
+
     rekapKeaktifanHTML = `
       <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:10px; margin-bottom:10px;">
         <div style="font-size:11px; font-weight:800; color:var(--g); margin-bottom:6px; display:flex; align-items:center; gap:5px;">
-          <i class="fa-solid fa-chart-line"></i> Rekap Keaktifan Kerja
+          <i class="fa-solid fa-chart-line"></i> Rekap Keaktifan Kerja (Bulan Berjalan)
         </div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:6px;">
           <div style="background:#fff; border:1px solid #bbf7d0; padding:6px 8px; border-radius:8px; text-align:center;">
             <span style="font-size:9.5px; color:var(--s); display:block;">Bulan Ini</span>
-            <b style="font-size:14px; color:var(--g);">${laporanBulanIni.length} Laporan</b>
+            <b style="font-size:14px; color:var(--g);">${laporanBulanIni.length} / ${targetKerjaBulanIni} Hari</b>
           </div>
           <div style="background:#fff; border:1px solid #bbf7d0; padding:6px 8px; border-radius:8px; text-align:center;">
-            <span style="font-size:9.5px; color:var(--s); display:block;">Total Keseluruhan</span>
-            <b style="font-size:14px; color:var(--g);">${totalSelesaiAll} Laporan</b>
+            <span style="font-size:9.5px; color:var(--s); display:block;">Pencapaian</span>
+            <b style="font-size:14px; color:var(--g);">${persentase}%</b>
           </div>
         </div>
         <div style="font-size:10px; color:var(--s); font-weight:600;">
@@ -2290,9 +2173,7 @@ function renderLemburCard() {
     s.innerHTML = data.map(x => {
       const petugas = x.Petugas || x.PIC || x['Petugas/PIC'] || x.Nama || '-';
       const rawTgl = extractDisplayDate(x);
-      
       let tglBersih = rawTgl.split(' pukul ')[0].split(' 00:00:00')[0].trim();
-
       const tglLembur = parseSmartDate(rawTgl);
       const isToday = tglLembur && tglLembur.getTime() === today.getTime();
 
@@ -2731,7 +2612,6 @@ function renderPengaduanPage() {
 
     return `
       <div class="card" style="position:relative; border-radius:14px; padding:12px; margin-bottom:0; background:#fff; border:1px solid var(--b); box-shadow:0 2px 6px rgba(0,0,0,0.02);">
-        
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:6px;">
           <div style="flex:1; min-width:0;">
             <h4 style="font-size:13px; font-weight:800; color:var(--t); text-overflow:ellipsis; overflow:hidden; white-space:nowrap; margin:0;">${esc(namaUser)}</h4>
@@ -2741,34 +2621,28 @@ function renderPengaduanPage() {
             ${esc(statusText)}
           </span>
         </div>
-        
         <div style="font-size:11.5px; color:#c2410c; line-height:1.4; word-break:break-word; margin:6px 0; background:#fff7ed; border:1px solid #fed7aa; padding:8px 10px; border-radius:10px;">
           <b style="display:block; margin-bottom:2px; font-size:10px; color:#ea580c; text-transform:uppercase;"><i class="fa-solid fa-triangle-exclamation" style="margin-right:3px;"></i> Kendala:</b>
           <span style="font-weight:700;">${esc(kendalaTeks)}</span>
         </div>
-
         ${htmlKeterangan}
-
         <div style="margin-top:10px; border-top:1px dashed #e2e8f0; padding-top:8px; display:flex; justify-content:space-between; align-items:center; gap:6px;">
           <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
             <span style="background:#f1f5f9; color:#475569; font-size:9px; font-weight:700; padding:3px 7px; border-radius:6px; display:inline-flex; align-items:center;">
               <i class="fa-regular fa-calendar-plus" style="color:#64748b; margin-right:4px;"></i> Masuk: ${esc(tglLaporanMasuk)}
             </span>
-
             ${tglUpdateStatus && tglUpdateStatus !== '-' ? `
               <span style="background:#dcfce7; color:#15803d; font-size:9px; font-weight:700; padding:3px 7px; border-radius:6px; display:inline-flex; align-items:center;">
                 <i class="fa-solid fa-clock-rotate-left" style="color:#16a34a; margin-right:4px;"></i> Update: ${esc(tglUpdateStatus)}
               </span>
             ` : ''}
           </div>
-
           ${fotoUrl ? `
             <button type="button" onclick="openPhotoModal(['${esc(fotoUrl)}'], 0)" style="font-size:9.5px; color:var(--blue); font-weight:800; display:inline-flex; align-items:center; gap:4px; background:#eff6ff; padding:3px 8px; border-radius:6px; border:1px solid #bfdbfe; cursor:pointer;">
               <i class="fa-solid fa-image"></i> Foto
             </button>
           ` : ''}
         </div>
-
       </div>`;
   };
 
@@ -2895,12 +2769,22 @@ function renderPengajuanPage() {
       };
     }
 
-    for (let i = 1; i <= 6; i++) {
-      let val = item['Kebutuhan' + i] || item['kebutuhan' + i] || '';
-      if (val && !grouped[groupKey].kebutuhanList.includes(val)) {
-        grouped[groupKey].kebutuhanList.push(val);
+    if (item.BarangDanJumlah) {
+      let arr = String(item.BarangDanJumlah).split('||');
+      arr.forEach(bStr => {
+        if (bStr && !grouped[groupKey].kebutuhanList.includes(bStr)) {
+          grouped[groupKey].kebutuhanList.push(bStr);
+        }
+      });
+    } else {
+      for (let i = 1; i <= 6; i++) {
+        let val = item['Kebutuhan' + i] || item['kebutuhan' + i] || '';
+        if (val && !grouped[groupKey].kebutuhanList.includes(val)) {
+          grouped[groupKey].kebutuhanList.push(val);
+        }
       }
     }
+
     if (grouped[groupKey].kebutuhanList.length === 0 && item.Keterangan) {
       grouped[groupKey].kebutuhanList.push(item.Keterangan);
     }
@@ -2939,7 +2823,7 @@ function renderPengajuanPage() {
             <span style="color:var(--s);">Prioritas:</span>
             <b style="color:${prioritasColor};"><i class="fa-solid fa-triangle-exclamation"></i> ${esc(g.prioritas.toUpperCase())}</b>
           </div>
-          <b style="color:var(--g); font-size:10.5px; display:block; margin-top:6px; margin-bottom:4px;">Detail Kebutuhan Alat / Bahan:</b>
+          <b style="color:var(--g); font-size:10.5px; display:block; margin-top:6px; margin-bottom:4px;">Detail Kebutuhan Alat / Bahan & Jumlah:</b>
           <ul style="padding-left:16px; margin:0; color:#334155; font-weight:600;">
             ${daftarKebutuhanHTML}
           </ul>
@@ -3080,7 +2964,6 @@ function renderLaporanPage() {
   });
 
   let countSelesai = scopedList.length;
-  let list = scopedList;
 
   const tabSwitchHTML = `
     <div style="grid-column: 1 / -1; margin-bottom: 10px; display: flex; background: #e2e8f0; padding: 3px; border-radius: 10px;">
@@ -3107,7 +2990,7 @@ function renderLaporanPage() {
 
   const grouped = {};
 
-  list.forEach(item => {
+  scopedList.forEach(item => {
     const nama = (item.Nama || item.nama || 'Petugas').trim();
     const area = (item.Area || item.area || '-').trim();
     const tglRaw = extractDisplayDate(item);
@@ -3199,10 +3082,9 @@ function renderLaporanPage() {
 }
 
 function getweekOfMonth(date) {
-  const dayOfMonth = date.getDate();
-  const firstDayOfWeek = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
-  const adjustedFirstDay = (firstDayOfWeek === 0) ? 6 : firstDayOfWeek - 1;
-  return Math.ceil((dayOfMonth + adjustedFirstDay) / 7);
+  const d = new Date(date.getTime());
+  d.setDate(d.getDate() + (d.getDay() === 0 ? -6 : 1 - d.getDay()));
+  return Math.floor((d.getDate() - 1) / 7) + 1;
 }
 
 function renderJadwalByDay() {
@@ -3258,7 +3140,6 @@ function renderJadwalByDay() {
     { tugas: 'Vaccum karpet', frekuensi: '2x Seminggu', pelaksanaan: 'Selasa & Kamis', days: [2,4], weeks: [1,2,3,4,5], kategori: 'Mingguan' },
     { tugas: 'Cleaning sawang-sawang', frekuensi: '2x Seminggu', pelaksanaan: 'Selasa & Kamis', days: [2,4], weeks: [1,2,3,4,5], kategori: 'Mingguan' },
     { tugas: 'Cleaning dinding kelas', frekuensi: '2x Seminggu', pelaksanaan: 'Senin & Rabu', days: [1,3], weeks: [1,2,3,4,5], kategori: 'Mingguan' },
-    
     { tugas: 'Cleaning balkon dan kaca', frekuensi: '2x Sebulan', pelaksanaan: 'Minggu ke 1 & Minggu ke 3', days: [1,2,3,4,5], weeks: [1, 3], kategori: 'Bulanan' },
     { tugas: 'Cleaning dispenser', frekuensi: '2x Sebulan', pelaksanaan: 'Minggu ke 2 & Minggu ke 4', days: [1,2,3,4,5], weeks: [2, 4], kategori: 'Bulanan' },
     { tugas: 'General cleaning Masjid', frekuensi: '1x Sebulan', pelaksanaan: 'Minggu ke 4', days: [5], weeks: [4], kategori: 'Bulanan' },
@@ -3306,7 +3187,7 @@ function renderJadwalByDay() {
   if (box) {
     box.innerHTML = `
       <div class="jcol">
-        <div class="jhead"><i class="fa-solid fa-sun"></i> 5 Basic & Pekerjaan Harian (Senin - Jumat)</div>
+        <div class="jhead"><i class="fa-solid fa-sun"></i> Pekerjaan Harian</div>
         <div style="padding:10px">${harianList.map(renderItemHTML).join('')}</div>
       </div>
       <div class="jcol">
@@ -3489,25 +3370,33 @@ async function kirimLaporanModal() {
 
 function kirimPengajuan() {
   const btn = document.getElementById('btnPengajuan');
+  const nama = document.getElementById('pengajuanNama').value.trim();
+  const area = document.getElementById('pengajuanArea').value.trim();
+  const prioritas = (document.querySelector('input[name="prioritas"]:checked') || {}).value || 'Normal';
+
+  let validItems = daftarBarisPengajuan.filter(x => x.barang.trim() !== '');
+  if (!nama || !area || validItems.length === 0) {
+    alert('Nama, area, dan minimal pilih satu nama barang pada pengajuan.');
+    return;
+  }
+
   const d = {
     action: 'simpanPengajuan',
     Waktu: new Date().toISOString(),
-    Nama: document.getElementById('pengajuanNama').value.trim(),
-    Area: document.getElementById('pengajuanArea').value.trim(),
-    Prioritas: (document.querySelector('input[name="prioritas"]:checked') || {}).value || 'Normal'
+    Nama: nama,
+    Area: area,
+    Prioritas: prioritas,
+    BarangDanJumlah: validItems.map(x => `${x.barang} (${x.jumlah} pcs)`).join(' || ')
   };
-  
-  for (let i = 1; i <= 6; i++) { 
-    d['Kebutuhan' + i] = document.getElementById('kebutuhan' + i).value.trim(); 
-  }
 
-  const adaIsi = [d.Kebutuhan1, d.Kebutuhan2, d.Kebutuhan3, d.Kebutuhan4, d.Kebutuhan5, d.Kebutuhan6].some(Boolean);
-  if (!d.Nama || !d.Area || !adaIsi) {
-    alert('Nama, area, dan minimal isi satu kebutuhan alat/bahan.'); return;
-  }
+  validItems.forEach((item, idx) => {
+    if (idx < 6) {
+      d['Kebutuhan' + (idx + 1)] = `${item.barang} (${item.jumlah} pcs)`;
+    }
+  });
 
   postViaHiddenForm(d, 'btnPengajuan', 'Kirim Pengajuan', () => {
-    for (let i = 1; i <= 6; i++) { document.getElementById('kebutuhan' + i).value = ''; }
+    initPengajuanDinamis();
     showPage('pengajuan');
   });
 }
@@ -3568,7 +3457,7 @@ appContainer.addEventListener('touchend', e => {
       .then(d => {
         if (d) { 
           DB = Object.assign(DB, d); 
-          localStorage.setItem('timSaberCacheData_v49', JSON.stringify(d)); 
+          localStorage.setItem('timSaberCacheData_v62', JSON.stringify(d)); 
           initApp(); 
         }
         setTimeout(() => pullIndicator.style.transform = 'translateY(0)', 400);
@@ -3669,7 +3558,6 @@ function prosesFilterDanDownload(rawData, type, baseFileName, targetBulan, targe
     }
   }
 
-  // FORMAT KHUSUS PROFESIONAL UNTUK REKAP PENGAJUAN (PER ANGGOTA & TOTAL BARANG)
   if (type === 'pengajuan') {
     let rekapPerAnggota = {};
 
@@ -3684,16 +3572,29 @@ function prosesFilterDanDownload(rawData, type, baseFileName, targetBulan, targe
           rekapPerAnggota[keyAnggota] = {};
         }
 
-        for (let i = 1; i <= 6; i++) {
-          let val = item['Kebutuhan' + i] || item['kebutuhan' + i] || '';
-          if (val) {
-            let match = val.toString().match(/(.+?)\s+(\d+)$/);
-            let namaBarang = match ? match[1].trim() : val.trim();
-            let jumlah = match ? parseInt(match[2], 10) : 1;
-
-            rekapPerAnggota[keyAnggota][namaBarang] = (rekapPerAnggota[keyAnggota][namaBarang] || 0) + jumlah;
+        let itemsToCheck = [];
+        if (item.BarangDanJumlah) {
+          itemsToCheck = String(item.BarangDanJumlah).split('||');
+        } else {
+          for (let i = 1; i <= 6; i++) {
+            let val = item['Kebutuhan' + i] || item['kebutuhan' + i] || '';
+            if (val) itemsToCheck.push(val);
           }
         }
+
+        itemsToCheck.forEach(rawStr => {
+          if (!rawStr) return;
+          let match = rawStr.match(/^(.*?)\s*\((\d+)\s*pcs\)$/i);
+          let namaBarang = rawStr.trim();
+          let qty = 1;
+
+          if (match) {
+            namaBarang = match[1].trim();
+            qty = parseInt(match[2], 10) || 1;
+          }
+
+          rekapPerAnggota[keyAnggota][namaBarang] = (rekapPerAnggota[keyAnggota][namaBarang] || 0) + qty;
+        });
       }
     });
 
@@ -3773,161 +3674,270 @@ function prosesFilterDanDownload(rawData, type, baseFileName, targetBulan, targe
   showToast("BERHASIL MENGUNDUH DATA");
 }
 
-function bukaDataSiswa() {
+let tabRekapAktif = 'kinerja';
+
+function switchTabRekap(tab) {
+  tabRekapAktif = tab;
+  renderIsiModalRekap();
+}
+
+function bukaModalRekap() {
   if (typeof Swal === 'undefined') {
     alert('Library modal sedang dimuat. Silakan coba sebentar lagi.');
     return;
   }
 
-  if (DB.dataSiswa && DB.dataSiswa.length > 0) {
-    tampilkanModalDataSiswa(DB.dataSiswa);
-    return;
-  }
+  const sekarang = new Date();
+  const namaBulanArr = [
+    "Januari", "Februari", "Maret", "April", "Mei", "Juni", 
+    "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+  ];
+  let namaBulanIni = namaBulanArr[sekarang.getMonth()];
+  let tahunIni = sekarang.getFullYear();
 
   Swal.fire({
-    title: 'Memuat Data Siswa...',
-    allowOutsideClick: false,
+    title: 'Rekap Bulanan<br><span style="font-size:11px; color:var(--s); font-weight:600;">(Periode: ' + namaBulanIni + ' ' + tahunIni + ')</span>',
+    html: `<div id="swalRekapContainer"></div>`,
+    width: '520px',
+    showConfirmButton: true,
+    confirmButtonText: 'Tutup',
+    confirmButtonColor: 'var(--g)',
     didOpen: () => {
-      Swal.showLoading();
-      fetch(SCRIPT_URL + "?action=getDashboardData&t=" + new Date().getTime())
-        .then(res => res.json())
-        .then(d => {
-          Swal.close();
-          const listSiswa = d.dataSiswa || DB.dataSiswa || [];
-          DB.dataSiswa = listSiswa;
-          localStorage.setItem('timSaberCacheData_v49', JSON.stringify(DB));
-          tampilkanModalDataSiswa(listSiswa);
-        })
-        .catch(err => {
-          Swal.fire('Error', 'Gagal memuat data siswa.', 'error');
-        });
+      renderIsiModalRekap();
     }
   });
 }
 
-function tampilkanModalDataSiswa(data) {
-  if (!data || data.length === 0) {
-    Swal.fire('Informasi', 'Belum ada data siswa.', 'info');
-    return;
-  }
-
-  const urutanUnit = ['DC', 'TKIT 1', 'TKIT 3', 'SDIT 1', 'SDIT 2', 'SDIT 3', 'SMPIT', 'SMAIT'];
-
-  let grouped = {};
-  data.forEach(row => {
-    let rawLvl = String(row.level || '').trim().toUpperCase();
-    let unitKey = 'Lainnya';
-
-    if (rawLvl.includes('DC') || rawLvl.includes('DAYCARE') || rawLvl.includes('BABY') || rawLvl.includes('TODDLER') || rawLvl.includes('PG')) {
-      unitKey = 'DC';
-    } else if (rawLvl.includes('TKIT 1') || rawLvl.includes('TKIT1')) {
-      unitKey = 'TKIT 1';
-    } else if (rawLvl.includes('TKIT 3') || rawLvl.includes('TKIT3')) {
-      unitKey = 'TKIT 3';
-    } else if (rawLvl.includes('TK') || rawLvl.includes('TKIT')) {
-      unitKey = 'TKIT 1';
-    } else if (rawLvl.includes('SDIT 1') || rawLvl.includes('SDIT1') || rawLvl.includes('SD 1')) {
-      unitKey = 'SDIT 1';
-    } else if (rawLvl.includes('SDIT 2') || rawLvl.includes('SDIT2') || rawLvl.includes('SD 2')) {
-      unitKey = 'SDIT 2';
-    } else if (rawLvl.includes('SDIT 3') || rawLvl.includes('SDIT3') || rawLvl.includes('SD 3')) {
-      unitKey = 'SDIT 3';
-    } else if (rawLvl.includes('SMPIT') || rawLvl.includes('SMP')) {
-      unitKey = 'SMPIT';
-    } else if (rawLvl.includes('SMAIT') || rawLvl.includes('SMA')) {
-      unitKey = 'SMAIT';
-    } else {
-      unitKey = String(row.level || 'Lainnya').trim();
+function hitungHariKerjaBulanIni(tahun, bulan) {
+  let totalHari = new Date(tahun, bulan + 1, 0).getDate();
+  let hariKerja = 0;
+  for (let d = 1; d <= totalHari; d++) {
+    let dayOfWeek = new Date(tahun, bulan, d).getDay();
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Bukan Minggu (0) dan bukan Sabtu (6)
+      hariKerja++;
     }
+  }
+  return hariKerja;
+}
 
-    if (!grouped[unitKey]) grouped[unitKey] = [];
-    grouped[unitKey].push(row);
-  });
+function renderIsiModalRekap() {
+  const container = document.getElementById('swalRekapContainer');
+  if (!container) return;
 
-  let htmlContent = `<div style="max-height: 420px; overflow-y: auto; text-align: left; padding: 2px;">`;
+  const anggotaList = DB.anggota || [];
+  const laporanList = DB.laporan || [];
+  const pengajuanList = DB.pengajuan || [];
 
-  let keysToRender = [...urutanUnit];
-  Object.keys(grouped).forEach(k => {
-    if (!keysToRender.includes(k)) keysToRender.push(k);
-  });
+  const sekarang = new Date();
+  const bulanIni = sekarang.getMonth();
+  const tahunIni = sekarang.getFullYear();
+  const targetKerjaBulanIni = hitungHariKerjaBulanIni(tahunIni, bulanIni);
 
-  let index = 0;
-  keysToRender.forEach(unit => {
-    let kelasList = grouped[unit];
-    if (!kelasList || kelasList.length === 0) return;
+  let tabNavHTML = `
+    <div style="display: flex; background: #e2e8f0; padding: 4px; border-radius: 10px; margin-bottom: 12px;">
+      <button onclick="switchTabRekap('kinerja')" style="flex:1; border:0; padding:8px 4px; border-radius:8px; font-size:11px; font-weight:800; cursor:pointer; transition:all 0.2s; ${tabRekapAktif === 'kinerja' ? 'background:#fff; color:var(--g); box-shadow:0 2px 5px rgba(0,0,0,0.08);' : 'background:transparent; color:var(--s);'}">
+        <i class="fa-solid fa-user-check"></i> Kinerja Anggota
+      </button>
+      <button onclick="switchTabRekap('pengajuan')" style="flex:1; border:0; padding:8px 4px; border-radius:8px; font-size:11px; font-weight:800; cursor:pointer; transition:all 0.2s; ${tabRekapAktif === 'pengajuan' ? 'background:#fff; color:var(--g); box-shadow:0 2px 5px rgba(0,0,0,0.08);' : 'background:transparent; color:var(--s);'}">
+        <i class="fa-solid fa-boxes-packing"></i> Bahan & Alat
+      </button>
+    </div>
+  `;
 
-    let totalUnit = kelasList.reduce((sum, item) => sum + (parseInt(item.totalSiswa || item.total, 10) || 0), 0);
-    let unitId = 'unit_s_' + index;
+  let bodyHTML = '';
 
-    htmlContent += `
-      <div style="border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; margin-bottom: 8px; background: #fff;">
-        <button onclick="toggleUnitDataSiswa('${unitId}')" style="width: 100%; padding: 12px 14px; background: #fff; border: 0; display: flex; align-items: center; justify-content: space-between; cursor: pointer; text-align: left;">
-          <div>
-            <span style="font-weight: 800; font-size: 14px; color: #0f172a; display: block;">${esc(unit)}</span>
-            <span style="font-size: 11px; font-weight: 700; color: var(--g); background: var(--gl); padding: 2px 8px; border-radius: 6px; display: inline-block; margin-top: 3px;">
-              Total Keseluruhan: ${totalUnit} Siswa
+  if (tabRekapAktif === 'kinerja') {
+    bodyHTML += `<div style="max-height: 360px; overflow-y: auto; text-align: left; padding: 2px;">`;
+    bodyHTML += `<div style="font-size: 11px; color: var(--s); margin-bottom: 10px; font-weight: 600;">Persentase keaktifan dihitung berdasarkan hari kerja efektif (Senin s.d. Jumat, total ${targetKerjaBulanIni} hari kerja bulan ini):</div>`;
+
+    let countPrinted = 0;
+    anggotaList.forEach((m) => {
+      let jabatanUpper = String(m.Jabatan || '').toUpperCase();
+      let isPJ = jabatanUpper.includes('PJ') || jabatanUpper.includes('KOORDINATOR') || jabatanUpper.includes('KORDIR');
+      if (isPJ) return; 
+
+      countPrinted++;
+      let namaAnggota = (m.Nama || '').trim();
+      let namaLower = namaAnggota.toLowerCase();
+
+      let laporanAnggotaBulanIni = laporanList.filter(l => {
+        let lapNama = (l.Nama || l.nama || '').trim().toLowerCase();
+        if (lapNama !== namaLower) return false;
+        let d = parseSmartDate(extractDisplayDate(l));
+        return d && d.getMonth() === bulanIni && d.getFullYear() === tahunIni;
+      });
+
+      let totalBulanIni = laporanAnggotaBulanIni.length;
+      let persentase = Math.min(100, Math.round((totalBulanIni / targetKerjaBulanIni) * 100));
+
+      let badgeColor = 'var(--g)';
+      let statusText = 'Sangat Aktif 🟢';
+      if (persentase < 40) {
+        badgeColor = '#dc2626';
+        statusText = 'Perlu Perhatian 🔴';
+      } else if (persentase < 75) {
+        badgeColor = 'var(--o)';
+        statusText = 'Cukup Aktif 🟡';
+      }
+
+      bodyHTML += `
+        <div style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; margin-bottom: 8px; background: #fff;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+            <div>
+              <span style="font-weight: 800; font-size: 13px; color: #0f172a; display: block;">${esc(namaAnggota)}</span>
+              <span style="font-size: 10px; color: var(--s);">Area: <b>${esc(m.Area || 'Umum')}</b></span>
+            </div>
+            <span style="font-size: 10px; font-weight: 800; background: ${badgeColor}; color: #fff; padding: 3px 8px; border-radius: 6px;">
+              ${persentase}% (${statusText})
             </span>
           </div>
-          <i id="icon-${unitId}" class="fa-solid fa-chevron-down" style="color: #94a3b8; transition: transform 0.2s;"></i>
-        </button>
-
-        <div id="${unitId}" style="display: none; background: #f8fafc; padding: 10px; border-top: 1px solid #e2e8f0;">
-    `;
-
-    kelasList.forEach(cls => {
-      let lVal = cls.lakiLaki ?? cls['L'] ?? cls.l ?? 0;
-      let pVal = cls.perempuan ?? cls['P'] ?? cls.p ?? 0;
-      let totVal = cls.totalSiswa ?? cls['Total'] ?? cls.total ?? 0;
-
-      htmlContent += `
-        <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-          <div>
-            <p style="font-weight: 700; font-size: 12.5px; color: #0f172a;">${esc(cls.namaKelas || cls.kelas || '-')}</p>
-            <div style="font-size: 10.5px; color: #64748b; margin-top: 2px;">
-              L: <strong style="color: var(--blue);">${esc(lVal)}</strong> • P: <strong style="color: #db2777;">${esc(pVal)}</strong>
-            </div>
+          <div style="background: #f8fafc; border-radius: 6px; height: 8px; width: 100%; overflow: hidden; margin-top: 6px; border: 1px solid #e2e8f0;">
+            <div style="background: ${badgeColor}; width: ${persentase}%; height: 100%; border-radius: 6px;"></div>
           </div>
-          <div style="text-align: right;">
-            <span style="font-size: 9.5px; color: #94a3b8; display: block;">Total</span>
-            <span style="font-size: 13px; font-weight: 800; color: var(--g);">${esc(totVal)}</span>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 10.5px; color: #64748b;">
+            <span>Laporan Bulan Ini: <b>${totalBulanIni} Tugas</b></span>
+            <span>Target Kerja: ${targetKerjaBulanIni} Hari</span>
           </div>
         </div>
       `;
     });
 
-    htmlContent += `</div></div>`;
-    index++;
-  });
+    if (countPrinted === 0) {
+      bodyHTML += `<div style="text-align:center; padding:20px; color:var(--s); font-size:12px;">Belum ada data kinerja anggota.</div>`;
+    }
+    bodyHTML += `</div>`;
 
-  htmlContent += `</div>`;
-
-  Swal.fire({
-    title: 'Rekapitulasi Data Siswa',
-    html: htmlContent,
-    width: '480px',
-    confirmButtonText: 'Tutup',
-    confirmButtonColor: 'var(--g)'
-  });
-}
-
-function toggleUnitDataSiswa(unitId) {
-  const content = document.getElementById(unitId);
-  const icon = document.getElementById('icon-' + unitId);
-  if (!content) return;
-
-  if (content.style.display === 'none' || !content.style.display) {
-    content.style.display = 'block';
-    if (icon) icon.style.transform = 'rotate(180deg)';
   } else {
-    content.style.display = 'none';
-    if (icon) icon.style.transform = 'rotate(0deg)';
+    let pengajuanBulanIni = pengajuanList.filter(p => {
+      let d = parseSmartDate(extractDisplayDate(p));
+      return d && d.getMonth() === bulanIni && d.getFullYear() === tahunIni;
+    });
+
+    let itemMap = {};
+    let totalQtyAll = 0;
+
+    pengajuanBulanIni.forEach(p => {
+      let itemsToCheck = [];
+      if (p.BarangDanJumlah) {
+        itemsToCheck = String(p.BarangDanJumlah).split('||');
+      } else {
+        for (let i = 1; i <= 6; i++) {
+          let val = p['Kebutuhan' + i] || p['kebutuhan' + i] || '';
+          if (val) itemsToCheck.push(val);
+        }
+      }
+
+      itemsToCheck.forEach(rawStr => {
+        if (!rawStr) return;
+        let match = rawStr.match(/^(.*?)\s*\((\d+)\s*pcs\)$/i);
+        let namaBarang = rawStr.trim();
+        let qty = 1;
+
+        if (match) {
+          namaBarang = match[1].trim();
+          qty = parseInt(match[2], 10) || 1;
+        }
+
+        let cleanNamaBarang = namaBarang.replace(/\s+\d+$/, '').trim();
+        if (!cleanNamaBarang) cleanNamaBarang = namaBarang;
+
+        itemMap[cleanNamaBarang] = (itemMap[cleanNamaBarang] || 0) + qty;
+        totalQtyAll += qty;
+      });
+    });
+
+    let sortedItems = Object.keys(itemMap).sort((a, b) => itemMap[b] - itemMap[a]);
+
+    const colorPalette = ['#16a34a', '#2563eb', '#f97316', '#9333ea', '#0d9488'];
+    
+    let topItemsForPie = sortedItems.slice(0, 5);
+    let otherQty = 0;
+    if (sortedItems.length > 5) {
+      for (let i = 5; i < sortedItems.length; i++) {
+        otherQty += itemMap[sortedItems[i]];
+      }
+      if (otherQty > 0) {
+        topItemsForPie.push('Lainnya');
+        itemMap['Lainnya'] = otherQty;
+      }
+    }
+
+    let currentDeg = 0;
+    let conicStops = [];
+    let legendHTML = '';
+
+    topItemsForPie.forEach((itemNama, idx) => {
+      let qty = itemMap[itemNama];
+      let pct = totalQtyAll > 0 ? (qty / totalQtyAll) * 100 : 0;
+      let degSpan = (pct / 100) * 360;
+      let nextDeg = currentDeg + degSpan;
+      let color = colorPalette[idx % colorPalette.length];
+
+      conicStops.push(`${color} ${currentDeg}deg ${nextDeg}deg`);
+
+      legendHTML += `
+        <div style="display:flex; align-items:center; justify-content:space-between; font-size:11px; margin-bottom:4px; font-weight:600;">
+          <div style="display:flex; align-items:center; gap:6px; min-width:0;">
+            <span style="width:10px; height:10px; background:${color}; border-radius:3px; flex:none;"></span>
+            <span style="text-overflow:ellipsis; overflow:hidden; white-space:nowrap; color:#334155;">${esc(itemNama)}</span>
+          </div>
+          <b style="color:#0f172a; flex:none; margin-left:6px;">${qty} (${Math.round(pct)}%)</b>
+        </div>
+      `;
+
+      currentDeg = nextDeg;
+    });
+
+    let conicGradientCSS = conicStops.length > 0 ? `conic-gradient(${conicStops.join(', ')})` : '#e2e8f0';
+
+    bodyHTML += `<div style="max-height: 360px; overflow-y: auto; text-align: left; padding: 2px;">`;
+    
+    bodyHTML += `
+      <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:14px; margin-bottom:12px;">
+        <b style="font-size:12px; color:#0f172a; display:block; margin-bottom:10px;"><i class="fa-solid fa-chart-pie" style="color:var(--g)"></i> Proporsi Pengajuan Barang & Alat (Bulan Ini)</b>
+        <div style="display:flex; align-items:center; gap:16px;">
+          <div style="width:90px; height:90px; border-radius:50%; background:${conicGradientCSS}; flex:none; box-shadow:0 4px 10px rgba(0,0,0,0.08); position:relative;">
+            <div style="position:absolute; top:18px; left:18px; width:54px; height:54px; background:#fff; border-radius:50%; display:grid; place-items:center; font-size:11px; font-weight:800; color:#0f172a;" title="Total Pcs">
+              ${totalQtyAll}
+            </div>
+          </div>
+          <div style="flex:1; min-width:0; max-height:110px; overflow-y:auto; padding-right:4px;">
+            ${legendHTML || '<span style="font-size:11px; color:var(--s);">Belum ada data barang.</span>'}
+          </div>
+        </div>
+      </div>
+    `;
+
+    bodyHTML += `<div style="font-size: 11px; font-weight: 800; color: var(--t); margin-bottom: 6px;"><i class="fa-solid fa-list-check" style="color:var(--g)"></i> Rincian Jumlah per Item (Tergabung):</div>`;
+
+    if (sortedItems.length > 0) {
+      bodyHTML += `<div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:8px 10px;">`;
+      sortedItems.forEach((itemNama, idx) => {
+        let totalQty = itemMap[itemNama];
+        let color = colorPalette[idx % colorPalette.length];
+        bodyHTML += `
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:${idx === sortedItems.length - 1 ? 'none' : '1px dashed #e2e8f0'}; font-size:11.5px;">
+            <div style="display:flex; align-items:center; gap:6px; min-width:0;">
+              <span style="width:8px; height:8px; background:${color}; border-radius:50%; flex:none;"></span>
+              <span style="font-weight:600; color:#334155;">${idx + 1}. ${esc(itemNama)}</span>
+            </div>
+            <span style="font-weight:800; color:var(--g); background:#f0fdf4; padding:2px 8px; border-radius:6px; border:1px solid #bbf7d0; flex:none;">Total: ${totalQty} Pcs</span>
+          </div>
+        `;
+      });
+      bodyHTML += `</div>`;
+    } else {
+      bodyHTML += `<div style="text-align:center; padding:15px; color:var(--s); font-size:12px; background:#fff; border:1px solid #e2e8f0; border-radius:10px;">Belum ada pengajuan bahan & alat bulan ini.</div>`;
+    }
+
+    bodyHTML += `</div>`;
   }
+
+  container.innerHTML = tabNavHTML + bodyHTML;
 }
 
-// JALANKAN SAAT PERTAMA KALI MEMUAT
 loadData();
 
-// REGISTRASI PERIODIK PING UNTUK ONLINE STATUS (SETIAP 5 MENIT)
 setInterval(pingOnlineStatus, 5 * 60 * 1000);
 
 if ('serviceWorker' in navigator) {
