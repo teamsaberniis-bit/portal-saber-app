@@ -1923,8 +1923,8 @@ function openAnggotaDetail(i) {
           <button type="button" onclick="downloadDataCSV('pengajuan')" class="btn" style="margin:0; font-size:11px; background:var(--blue); min-height:36px;">
             <i class="fa-solid fa-file-arrow-down"></i> Download Rekap Pengajuan (Bulanan)
           </button>
-          <button type="button" onclick="downloadDataCSV('laporan')" class="btn" style="margin:0; font-size:11px; background:var(--blue); min-height:36px;">
-            <i class="fa-solid fa-file-arrow-down"></i> Download Rekap Riwayat Laporan (Bulanan)
+          <button type="button" onclick="downloadDataCSV('rekap_kinerja')" class="btn" style="margin:0; font-size:11px; background:var(--g); min-height:36px;">
+            <i class="fa-solid fa-file-arrow-down"></i> Download Rekap Kinerja Anggota (Bulanan)
           </button>
           <button type="button" onclick="downloadDataCSV('lembur')" class="btn" style="margin:0; font-size:11px; background:var(--o); min-height:36px;">
             <i class="fa-solid fa-file-arrow-down"></i> Download Rekap Lembur (Bulanan)
@@ -3479,15 +3479,15 @@ function downloadDataCSV(type) {
   } else if (type === 'pengajuan') {
     rawData = DB.pengajuan || [];
     baseFileName = "Rekap_Pengajuan_TimSaber";
-  } else if (type === 'laporan') {
+  } else if (type === 'rekap_kinerja') {
     rawData = DB.laporan || [];
-    baseFileName = "Rekap_Riwayat_Laporan_TimSaber";
+    baseFileName = "Rekap_Kinerja_Bulanan_Anggota";
   } else if (type === 'lembur') {
     rawData = DB.lembur || [];
     baseFileName = "Rekap_Lembur_TimSaber";
   }
 
-  if (rawData.length === 0) {
+  if (rawData.length === 0 && type !== 'rekap_kinerja') {
     alert("Tidak ada data untuk diunduh.");
     return;
   }
@@ -3552,10 +3552,70 @@ function prosesFilterDanDownload(rawData, type, baseFileName, targetBulan, targe
       return tglParsed.getMonth() === bIdx && tglParsed.getFullYear() === tVal;
     });
 
-    if (filteredData.length === 0) {
+    if (filteredData.length === 0 && type !== 'rekap_kinerja') {
       alert(`Tidak ada data untuk periode bulan ${['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][bIdx]} ${tVal}.`);
       return;
     }
+  }
+
+  if (type === 'rekap_kinerja') {
+    let bIdx = targetBulan === 'ALL' ? new Date().getMonth() : parseInt(targetBulan, 10);
+    let tVal = parseInt(targetTahun, 10);
+    let targetKerja = hitungHariKerjaBulanIni(tVal, bIdx);
+
+    let csvContent = "\uFEFF";
+    csvContent += "No,Nama Anggota,Area,Total Tugas Bulan Ini,Target Hari Kerja,Persentase Keaktifan,Status Kinerja\r\n";
+
+    let rowNum = 1;
+    (DB.anggota || []).forEach(m => {
+      let jabatanUpper = String(m.Jabatan || '').toUpperCase();
+      let isPJ = jabatanUpper.includes('PJ') || jabatanUpper.includes('KOORDINATOR') || jabatanUpper.includes('KORDIR');
+      if (isPJ) return; 
+
+      let namaAnggota = (m.Nama || '').trim();
+      let namaLower = namaAnggota.toLowerCase();
+      let areaAnggota = (m.Area || '-').trim();
+
+      let laporanAnggotaPeriode = rawData.filter(l => {
+        let lapNama = (l.Nama || l.nama || '').trim().toLowerCase();
+        if (lapNama !== namaLower) return false;
+        let d = parseSmartDate(extractDisplayDate(l));
+        if (!d) return false;
+        if (targetBulan === 'ALL') {
+          return d.getFullYear() === tVal;
+        }
+        return d.getMonth() === bIdx && d.getFullYear() === tVal;
+      });
+
+      let totalTugas = laporanAnggotaPeriode.length;
+      let persentase = Math.min(100, Math.round((totalTugas / targetKerja) * 100));
+      
+      let statusKinerja = "Sangat Aktif";
+      if (persentase < 40) statusKinerja = "Perlu Perhatian";
+      else if (persentase < 75) statusKinerja = "Cukup Aktif";
+
+      let cleanNama = namaAnggota.replace(/"/g, '""');
+      let cleanArea = areaAnggota.replace(/"/g, '""');
+
+      csvContent += `${rowNum},"${cleanNama}","${cleanArea}",${totalTugas},${targetKerja},"${persentase}%","${statusKinerja}"\r\n`;
+      rowNum++;
+    });
+
+    let bulanLabel = targetBulan === 'ALL' ? 'Semua_Bulan' : ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][targetBulan] + '_' + tVal;
+    let fileName = `Rekap_Kinerja_Bulanan_${bulanLabel}.csv`;
+
+    let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    let url = URL.createObjectURL(blob);
+    let a = document.createElement('a');
+    a.setAttribute('href', url);
+    a.setAttribute('download', fileName);
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    showToast("BERHASIL MENGUNDUH REKAP KINERJA");
+    return;
   }
 
   if (type === 'pengajuan') {
