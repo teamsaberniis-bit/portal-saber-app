@@ -1141,7 +1141,6 @@ html, body{
     <h2>Assalamualaikum 👋</h2>
     <p>Selamat Datang di Pusat Informasi TIM SABER</p>
     <div style="font-size:10.5px;font-weight:800;margin-top:4px">NURUL IMAM ISLAMIC SCHOOL</div>
-    <div id="appVersionLabel" style="font-size:9px;font-weight:700;opacity:.82;margin-top:7px;letter-spacing:.2px">Portal Tim SABER • v2.1.0</div>
   </div>
 
   <div class="lembur-container" id="lemburMainContainer">
@@ -4143,19 +4142,10 @@ function renderIsiModalRekap() {
   container.innerHTML = tabNavHTML + bodyHTML;
 }
 
-// Pastikan label versi mengikuti konstanta versi aplikasi.
-(function () {
-  const versionLabel = document.getElementById('appVersionLabel');
-  if (versionLabel) versionLabel.textContent = 'Portal Tim SABER • v' + (window.SABER_APP_VERSION || '2.1.0');
-})();
-
 loadData();
 
 setInterval(pingOnlineStatus, 5 * 60 * 1000);
-
-// Service worker versi lama dibersihkan oleh pengelola versi di bagian <head>
-  // hanya ketika nomor versi aplikasi berubah.
 </script>
 
 </body>
-</html>
+</html>,
