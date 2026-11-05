@@ -1373,7 +1373,7 @@ html, body{
 
 <script data-saber-js-version="2.1.0">
 // SABER JAVASCRIPT VERSION: 2.1.0 | JS inline mengikuti versi dokumen HTML
-// DAFTAR KATEGORI BAHAN DAN ALAT (WIPER AIR DIUBAH MENJADI WIPER LANTAI)
+// DAFTAR KATEGORI BAHAN DAN ALAT
 const DAFTAR_BAHAN = [
   "Sabun Cuci Piring",
   "Sabun Cuci Tangan",
@@ -1401,7 +1401,6 @@ const DAFTAR_ALAT = [
   "Pengki"
 ];
 
-// FUNGSI MENGELOLA BARIS DINAMIS PENGAJUAN BARANG & JUMLAH (MAKSIMAL 6 ITEM)
 let daftarBarisPengajuan = [];
 
 function initPengajuanDinamis() {
@@ -1478,7 +1477,6 @@ function renderBarisPengajuan() {
           ${daftarBarisPengajuan.length > 1 ? `<button type="button" onclick="hapusBarisPengajuan(${idx})" style="background:#fee2e2; color:#dc2626; border:0; width:22px; height:22px; border-radius:6px; font-weight:800; cursor:pointer; font-size:10px;">✕</button>` : ''}
         </div>
         
-        <!-- LAYOUT SEJAJAR SATU BARIS -->
         <div style="display:flex; align-items:center; gap:8px;">
           <select class="form-select" style="flex:1; min-height:42px; font-size:13px;" onchange="updateNilaiBaris(${idx}, 'barang', this.value)">
             ${optionsHTML.replace(`value="${item.barang}"`, `value="${item.barang}" selected`)}
@@ -1495,7 +1493,6 @@ function renderBarisPengajuan() {
   }).join('');
 }
 
-// BERSIHKAN CACHE LAMA OTOMATIS (VERSION 62)
 if (localStorage.getItem('timSaberCacheVersion') !== 'v62') {
   localStorage.clear();
   localStorage.setItem('timSaberCacheVersion', 'v62');
@@ -2124,6 +2121,10 @@ function extractDisplayDate(item) {
 
   let strVal = String(val).trim();
 
+  if (strVal.includes(',') || strVal.includes('s.d') || (strVal.includes('-') && !strVal.match(/^\d{4}-\d{2}-\d{2}/))) {
+    return strVal;
+  }
+
   if (strVal.includes('T') && (strVal.includes('Z') || strVal.includes('+'))) {
     let d = new Date(strVal);
     if (!isNaN(d.getTime())) {
@@ -2162,8 +2163,22 @@ function parseSmartDate(dateStr) {
     return isNaN(dateStr.getTime()) ? null : new Date(dateStr.getTime());
   }
 
-  const raw = String(dateStr).trim();
-  if (!raw || raw === '-') return null;
+  const rawOriginal = String(dateStr).trim();
+  if (!rawOriginal || rawOriginal === '-') return null;
+
+  let raw = rawOriginal;
+
+  if (raw.includes('s.d') || (raw.includes('-') && !raw.match(/^\d{4}-\d{2}-\d{2}/))) {
+    let parts = raw.split(/s\.d\.?|-/i);
+    if (parts.length > 0) {
+      let firstPart = parts[0].trim();
+      let matchTailFull = raw.match(/[\/.-](\d{1,2})[\/.-](\d{2,4})/);
+      if (matchTailFull && !firstPart.includes('/')) {
+        firstPart = `${firstPart}/${matchTailFull[1]}/${matchTailFull[2]}`;
+      }
+      raw = firstPart;
+    }
+  }
 
   const makeLocalDate = (year, month, day, hour = 0, minute = 0, second = 0) => {
     const d = new Date(year, month - 1, day, hour, minute, second, 0);
@@ -2171,7 +2186,6 @@ function parseSmartDate(dateStr) {
     return d;
   };
 
-  // Timestamp ISO dengan zona waktu dikonversi dahulu ke waktu Jakarta.
   if (/^\d{4}-\d{2}-\d{2}T/.test(raw) && /(Z|[+-]\d{2}:?\d{2})$/i.test(raw)) {
     const instant = new Date(raw);
     if (isNaN(instant.getTime())) return null;
@@ -2184,16 +2198,13 @@ function parseSmartDate(dateStr) {
     return makeLocalDate(+parts.year, +parts.month, +parts.day, +parts.hour, +parts.minute, +parts.second);
   }
 
-  // Format ISO lokal: YYYY-MM-DD atau YYYY-MM-DD HH:mm[:ss].
   let m = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
   if (m) {
     return makeLocalDate(+m[1], +m[2], +m[3], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0));
   }
 
-  // Hilangkan nama hari bila tanggal ditulis, misalnya "Senin, 05/11/2026".
   const clean = raw.replace(/^(Senin|Selasa|Rabu|Kamis|Jum['’]?at|Sabtu|Minggu),?\s*/i, '').trim();
 
-  // Format Indonesia numerik selalu dibaca DD/MM/YYYY atau DD-MM-YYYY.
   m = clean.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})(?:\s+(?:pukul\s*)?(\d{1,2})[:.](\d{2})(?:[:.](\d{2}))?)?/i);
   if (m) {
     let year = +m[3];
@@ -2208,13 +2219,11 @@ function parseSmartDate(dateStr) {
     desember:12, des:12, dec:12
   };
 
-  // Format Indonesia: DD NamaBulan YYYY [jam].
   m = clean.match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})(?:\s+(?:pukul\s*)?(\d{1,2})[:.](\d{2})(?:[:.](\d{2}))?)?/i);
   if (m && monthMap[m[2].toLowerCase()]) {
     return makeLocalDate(+m[3], monthMap[m[2].toLowerCase()], +m[1], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0));
   }
 
-  // Format Inggris sebagai fallback, misalnya "Nov 5, 2026".
   const timestamp = Date.parse(clean);
   if (!isNaN(timestamp)) {
     const parsed = new Date(timestamp);
@@ -2223,6 +2232,28 @@ function parseSmartDate(dateStr) {
   }
   return null;
 }
+
+// FUNGSI BARU/PERBAIKAN: Membersihkan format tanggal lembur dan menampilkan Nama Hari secara lengkap
+function formatTanggalLemburBersih(rawTgl) {
+  if (!rawTgl) return "-";
+  
+  // Buang teks jam default/pukul jika ada (misal: "07 November 2026 pukul 00:00:00" atau "00:00:00")
+  let tglBersihStr = String(rawTgl).split(' pukul ')[0].split(' 00:00:00')[0].trim();
+  
+  let tglObj = parseSmartDate(tglBersihStr);
+  if (!tglObj || isNaN(tglObj.getTime())) {
+    return tglBersihStr;
+  }
+  
+  // Format agar menghasilkan: "Jumat, 07 November 2026"
+  return tglObj.toLocaleDateString('id-ID', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
+}
+
 function getFutureLemburData() {
   const rawData = DB.lembur || [];
   const today = new Date();
@@ -2268,7 +2299,7 @@ function renderLemburCard() {
     s.innerHTML = data.map(x => {
       const petugas = x.Petugas || x.PIC || x['Petugas/PIC'] || x.Nama || '-';
       const rawTgl = extractDisplayDate(x);
-      let tglBersih = rawTgl.split(' pukul ')[0].split(' 00:00:00')[0].trim();
+      let tglFinal = formatTanggalLemburBersih(rawTgl);
       const tglLembur = parseSmartDate(rawTgl);
       const isToday = tglLembur && tglLembur.getTime() === today.getTime();
 
@@ -2287,7 +2318,7 @@ function renderLemburCard() {
               <div class="lt"><i class="fa-solid fa-user-clock"></i> Jadwal Lembur</div>
               <span class="badge" style="${badgeStyle}">${esc(badgeText)}</span>
             </div>
-            <div class="ld"><i class="fa-regular fa-calendar"></i> ${esc(tglBersih)}</div>
+            <div class="ld"><i class="fa-regular fa-calendar"></i> ${esc(tglFinal)}</div>
             <div class="grid2">
               <div class="cell"><span>Petugas</span><b>${esc(petugas)}</b></div>
               <div class="cell"><span>Kegiatan</span><b>${esc(x.Kegiatan || '-')}</b></div>
@@ -2302,6 +2333,7 @@ function renderLemburCard() {
   if (p) {
     p.innerHTML = data.map(x => {
       const rawTgl = extractDisplayDate(x);
+      const tglFinal = formatTanggalLemburBersih(rawTgl);
       const tglLembur = parseSmartDate(rawTgl);
       const isToday = tglLembur && tglLembur.getTime() === today.getTime();
       const isTomorrow = tglLembur && tglLembur.getTime() === tomorrow.getTime();
@@ -2326,7 +2358,7 @@ function renderLemburCard() {
             ${badgeTag}
           </div>
           <p><b>Petugas:</b> ${esc(x.Petugas || x.PIC || '-')}</p>
-          <p><b>Hari/Tanggal:</b> ${esc(rawTgl)}</p>
+          <p><b>Hari/Tanggal:</b> ${esc(tglFinal)}</p>
           <p><b>Jam:</b> ${esc(x.In || '-')} - ${esc(x.Out || '-')}</p>
           <p><b>Keterangan:</b> ${esc(x.Keterangan || '-')}</p>
         </div>`;
@@ -3206,15 +3238,12 @@ function saveCompletedTask(key, taskName) {
   }
 }
 
-// Nomor minggu kalender dalam bulan, dengan awal minggu hari Senin.
-// Tanggal 1 yang jatuh pada Minggu tetap masuk minggu kalender pertama.
 function getweekOfMonth(date) {
   const firstDay = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
   const firstMonday = 1 + ((8 - firstDay) % 7);
   return Math.max(1, Math.floor((date.getDate() - firstMonday) / 7) + 1);
 }
 
-// Operasional sekolah: Senin sampai Jumat. Sabtu dan Minggu adalah hari libur.
 function isSchoolWorkingDay(dateOrDay) {
   const day = (dateOrDay instanceof Date) ? dateOrDay.getDay() : Number(dateOrDay);
   return Number.isInteger(day) && day >= 1 && day <= 5;
@@ -3919,7 +3948,7 @@ function hitungHariKerjaBulanIni(tahun, bulan) {
   let hariKerja = 0;
   for (let d = 1; d <= totalHari; d++) {
     let dayOfWeek = new Date(tahun, bulan, d).getDay();
-    if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Bukan Minggu (0) dan bukan Sabtu (6)
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
       hariKerja++;
     }
   }
