@@ -13,15 +13,86 @@
                viewport-fit=cover">
 
 <title>Portal Tim SABER</title>
+<meta name="saber-app-version" content="2.1.0">
+<meta name="saber-css-version" content="2.1.0">
+<meta name="saber-js-version" content="2.1.0">
+
+<!-- Meminta browser memvalidasi HTML terbaru, bukan memakai dokumen lama dari cache -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#ffffff">
 
-<link rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<!-- SweetAlert2 untuk Popup & Dialog -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- Pengelola versi aplikasi dan pembaruan cache -->
+<script>
+(function () {
+  'use strict';
+  var APP_VERSION = '2.1.0';
+  var VERSION_KEY = 'timSaberAppVersion';
 
-<style>
+  try {
+    var previousVersion = localStorage.getItem(VERSION_KEY) || '';
+
+    if (previousVersion && previousVersion !== APP_VERSION) {
+      localStorage.setItem(VERSION_KEY, APP_VERSION);
+
+      // Hapus cache SABER dan lepaskan service worker lama sebelum memuat ulang.
+      var cleanupTasks = [];
+
+      if ('caches' in window) {
+        cleanupTasks.push(
+          caches.keys().then(function (keys) {
+            return Promise.all(keys.filter(function (name) {
+              return /saber/i.test(name);
+            }).map(function (name) {
+              return caches.delete(name);
+            }));
+          }).catch(function () {})
+        );
+      }
+
+      if ('serviceWorker' in navigator) {
+        cleanupTasks.push(
+          navigator.serviceWorker.getRegistration().then(function (registration) {
+            return registration ? registration.unregister() : false;
+          }).catch(function () {})
+        );
+      }
+
+      var url = new URL(window.location.href);
+      if (url.searchParams.get('__saber_v') !== APP_VERSION) {
+        url.searchParams.set('__saber_v', APP_VERSION);
+        url.searchParams.set('__saber_reload', String(Date.now()));
+
+        Promise.all(cleanupTasks).then(function () {
+          window.location.replace(url.toString());
+        });
+        return;
+      }
+
+      Promise.all(cleanupTasks);
+    } else if (!previousVersion) {
+      localStorage.setItem(VERSION_KEY, APP_VERSION);
+    }
+  } catch (error) {
+    // Aplikasi tetap berjalan bila browser membatasi akses penyimpanan.
+  }
+
+  window.SABER_APP_VERSION = APP_VERSION;
+  window.SABER_CSS_VERSION = APP_VERSION;
+  window.SABER_JS_VERSION = APP_VERSION;
+})();
+</script>
+
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css?v=2.1.0">
+<!-- SweetAlert2 untuk Popup & Dialog -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11?v=2.1.0"></script>
+
+<style data-saber-css-version="2.1.0">
+/* SABER CSS VERSION: 2.1.0 | CSS inline mengikuti versi dokumen HTML */
 :root{
   --g:#16a34a;
   --gd:#15803d;
@@ -1070,6 +1141,7 @@ html, body{
     <h2>Assalamualaikum 👋</h2>
     <p>Selamat Datang di Pusat Informasi TIM SABER</p>
     <div style="font-size:10.5px;font-weight:800;margin-top:4px">NURUL IMAM ISLAMIC SCHOOL</div>
+    <div id="appVersionLabel" style="font-size:9px;font-weight:700;opacity:.82;margin-top:7px;letter-spacing:.2px">Portal Tim SABER • v2.1.0</div>
   </div>
 
   <div class="lembur-container" id="lemburMainContainer">
@@ -1300,7 +1372,8 @@ html, body{
   </div>
 </div>
 
-<script>
+<script data-saber-js-version="2.1.0">
+// SABER JAVASCRIPT VERSION: 2.1.0 | JS inline mengikuti versi dokumen HTML
 // DAFTAR KATEGORI BAHAN DAN ALAT (WIPER AIR DIUBAH MENJADI WIPER LANTAI)
 const DAFTAR_BAHAN = [
   "Sabun Cuci Piring",
@@ -4070,15 +4143,18 @@ function renderIsiModalRekap() {
   container.innerHTML = tabNavHTML + bodyHTML;
 }
 
+// Pastikan label versi mengikuti konstanta versi aplikasi.
+(function () {
+  const versionLabel = document.getElementById('appVersionLabel');
+  if (versionLabel) versionLabel.textContent = 'Portal Tim SABER • v' + (window.SABER_APP_VERSION || '2.1.0');
+})();
+
 loadData();
 
 setInterval(pingOnlineStatus, 5 * 60 * 1000);
 
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then(regs => {
-    for (let reg of regs) reg.unregister();
-  });
-}
+// Service worker versi lama dibersihkan oleh pengelola versi di bagian <head>
+  // hanya ketika nomor versi aplikasi berubah.
 </script>
 
 </body>
