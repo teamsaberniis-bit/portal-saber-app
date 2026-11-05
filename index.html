@@ -2086,62 +2086,85 @@ function extractDisplayDate(item) {
 
 function parseSmartDate(dateStr) {
   if (!dateStr) return null;
-  let rawStr = String(dateStr).trim();
-  if (rawStr.includes('T') || rawStr.includes('Z')) {
-    let dIso = new Date(rawStr);
-    if (!isNaN(dIso.getTime())) {
-      return dIso;
-    }
+  if (dateStr instanceof Date) {
+    return isNaN(dateStr.getTime()) ? null : new Date(dateStr.getTime());
   }
 
-  let cleanStr = rawStr.replace(/^(Senin|Selasa|Rabu|Kamis|Jum'at|Jumat|Sabtu|Minggu),?\s*/i, '').trim();
-  const months = {
-    'januari': 'January', 'februari': 'February', 'maret': 'March', 'april': 'April',
-    'mei': 'May', 'juni': 'June', 'juli': 'July', 'agustus': 'August',
-    'september': 'September', 'oktober': 'October', 'november': 'November', 'desember': 'December',
-    'jan': 'Jan', 'feb': 'Feb', 'mar': 'Mar', 'apr': 'Apr', 'mei': 'May', 'jun': 'Jun',
-    'jul': 'Jul', 'agu': 'Aug', 'sep': 'Sep', 'okt': 'Oct', 'nov': 'Nov', 'des': 'Dec'
+  const raw = String(dateStr).trim();
+  if (!raw || raw === '-') return null;
+
+  const makeLocalDate = (year, month, day, hour = 0, minute = 0, second = 0) => {
+    const d = new Date(year, month - 1, day, hour, minute, second, 0);
+    if (d.getFullYear() !== year || d.getMonth() !== month - 1 || d.getDate() !== day) return null;
+    return d;
   };
 
-  for (let idName in months) {
-    cleanStr = cleanStr.replace(new RegExp('\\b' + idName + '\\b', 'gi'), months[idName]);
+  // Timestamp ISO dengan zona waktu dikonversi dahulu ke waktu Jakarta.
+  if (/^\d{4}-\d{2}-\d{2}T/.test(raw) && /(Z|[+-]\d{2}:?\d{2})$/i.test(raw)) {
+    const instant = new Date(raw);
+    if (isNaN(instant.getTime())) return null;
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Jakarta',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+      hourCycle: 'h23'
+    }).formatToParts(instant).reduce((o, p) => (o[p.type] = p.value, o), {});
+    return makeLocalDate(+parts.year, +parts.month, +parts.day, +parts.hour, +parts.minute, +parts.second);
   }
 
-  let timestamp = Date.parse(cleanStr);
-  if (isNaN(timestamp)) {
-    let parts = cleanStr.match(/(\d{1,2})[\/\-\s]+(\d{1,2}|[a-zA-Z]+)[\/\-\s]+(\d{2,4})/);
-    if (parts) {
-      let day = parseInt(parts[1], 10);
-      let month = parts[2];
-      let year = parseInt(parts[3], 10);
-      if (year < 100) year += 2000;
-      
-      if (!isNaN(parseInt(month, 10))) {
-        month = parseInt(month, 10) - 1;
-      } else {
-        month = new Date(Date.parse(month + " 1, 2000")).getMonth();
-      }
-      let d = new Date(year, month, day);
-      return d;
-    }
+  // Format ISO lokal: YYYY-MM-DD atau YYYY-MM-DD HH:mm[:ss].
+  let m = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+  if (m) {
+    return makeLocalDate(+m[1], +m[2], +m[3], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0));
   }
 
+  // Hilangkan nama hari bila tanggal ditulis, misalnya "Senin, 05/11/2026".
+  const clean = raw.replace(/^(Senin|Selasa|Rabu|Kamis|Jum['’]?at|Sabtu|Minggu),?\s*/i, '').trim();
+
+  // Format Indonesia numerik selalu dibaca DD/MM/YYYY atau DD-MM-YYYY.
+  m = clean.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})(?:\s+(?:pukul\s*)?(\d{1,2})[:.](\d{2})(?:[:.](\d{2}))?)?/i);
+  if (m) {
+    let year = +m[3];
+    if (year < 100) year += 2000;
+    return makeLocalDate(year, +m[2], +m[1], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0));
+  }
+
+  const monthMap = {
+    januari:1, jan:1, februari:2, feb:2, maret:3, mar:3, april:4, apr:4,
+    mei:5, may:5, juni:6, jun:6, juli:7, jul:7, agustus:8, agu:8, aug:8,
+    september:9, sep:9, oktober:10, okt:10, oct:10, november:11, nov:11,
+    desember:12, des:12, dec:12
+  };
+
+  // Format Indonesia: DD NamaBulan YYYY [jam].
+  m = clean.match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})(?:\s+(?:pukul\s*)?(\d{1,2})[:.](\d{2})(?:[:.](\d{2}))?)?/i);
+  if (m && monthMap[m[2].toLowerCase()]) {
+    return makeLocalDate(+m[3], monthMap[m[2].toLowerCase()], +m[1], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0));
+  }
+
+  // Format Inggris sebagai fallback, misalnya "Nov 5, 2026".
+  const timestamp = Date.parse(clean);
   if (!isNaN(timestamp)) {
-    let d = new Date(timestamp);
-    return d;
+    const parsed = new Date(timestamp);
+    return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate(),
+      parsed.getHours(), parsed.getMinutes(), parsed.getSeconds());
   }
-
   return null;
 }
-
 function getFutureLemburData() {
   const rawData = DB.lembur || [];
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  return rawData.filter(x => {
-    const parsedDate = parseSmartDate(extractDisplayDate(x));
-    return !parsedDate || parsedDate >= today;
-  });
+  return rawData
+    .map((item, index) => ({ item, index, date: parseSmartDate(extractDisplayDate(item)) }))
+    .filter(x => !x.date || new Date(x.date.getFullYear(), x.date.getMonth(), x.date.getDate()) >= today)
+    .sort((a, b) => {
+      if (!a.date && !b.date) return a.index - b.index;
+      if (!a.date) return 1;
+      if (!b.date) return -1;
+      return a.date.getTime() - b.date.getTime() || a.index - b.index;
+    })
+    .map(x => x.item);
 }
 
 function renderLemburCard() {
@@ -3081,10 +3104,48 @@ function renderLaporanPage() {
   historyBox.innerHTML = rekapHTML + (cardsHTML ? cardsHTML : empty);
 }
 
+function getLocalDateKey(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function getMonthlyCompletionKey(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  return `saber_completed_monthly_${y}-${m}-W${getweekOfMonth(date)}`;
+}
+
+function readCompletedTaskList(key) {
+  try {
+    const value = JSON.parse(localStorage.getItem(key) || '[]');
+    return Array.isArray(value) ? value : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function saveCompletedTask(key, taskName) {
+  const tasks = readCompletedTaskList(key);
+  if (!tasks.includes(taskName)) {
+    tasks.push(taskName);
+    localStorage.setItem(key, JSON.stringify(tasks));
+  }
+}
+
+// Nomor minggu kalender dalam bulan, dengan awal minggu hari Senin.
+// Tanggal 1 yang jatuh pada Minggu tetap masuk minggu kalender pertama.
 function getweekOfMonth(date) {
-  const d = new Date(date.getTime());
-  d.setDate(d.getDate() + (d.getDay() === 0 ? -6 : 1 - d.getDay()));
-  return Math.floor((d.getDate() - 1) / 7) + 1;
+  const firstDay = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+  const firstMonday = 1 + ((8 - firstDay) % 7);
+  return Math.max(1, Math.floor((date.getDate() - firstMonday) / 7) + 1);
+}
+
+// Operasional sekolah: Senin sampai Jumat. Sabtu dan Minggu adalah hari libur.
+function isSchoolWorkingDay(dateOrDay) {
+  const day = (dateOrDay instanceof Date) ? dateOrDay.getDay() : Number(dateOrDay);
+  return Number.isInteger(day) && day >= 1 && day <= 5;
 }
 
 function renderJadwalByDay() {
@@ -3094,10 +3155,11 @@ function renderJadwalByDay() {
   
   const hariNama = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
   const tanggalStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
-  const isWeekend = (day === 0 || day === 6);
+  const isWeekend = !isSchoolWorkingDay(day);
   
-  const todayKey = 'saber_completed_' + now.toISOString().slice(0, 10);
-  const completedTasks = JSON.parse(localStorage.getItem(todayKey) || '[]');
+  const todayKey = 'saber_completed_' + getLocalDateKey(now);
+  const completedTasks = readCompletedTaskList(todayKey);
+  const monthlyCompletedTasks = readCompletedTaskList(getMonthlyCompletionKey(now));
 
   const box = document.getElementById('jadwalCols');
   const hariEl = document.getElementById('jadwalHariIni');
@@ -3114,9 +3176,9 @@ function renderJadwalByDay() {
     if (box) {
       box.innerHTML = `
         <div class="card" style="grid-column: 1 / -1; text-align:center; padding:35px 20px; background:#f8fafc; border:1px dashed var(--b);">
-          <div style="font-size:38px; color:var(--g); margin-bottom:12px;"><i class="fa-solid fa-mug-hot"></i></div>
-          <h3 style="font-size:16px; font-weight:800; color:var(--t); margin-bottom:6px;">Tidak Ada Pekerjaan</h3>
-          <p style="font-size:13px; color:var(--s); font-weight:600;">Selamat berlibur! Nikmati waktu istirahat bersama keluarga. 🌿</p>
+          <div style="font-size:38px; color:var(--g); margin-bottom:12px;"><i class="fa-solid fa-calendar-check"></i></div>
+          <h3 style="font-size:16px; font-weight:800; color:var(--t); margin-bottom:6px;">Hari Libur Sekolah</h3>
+          <p style="font-size:13px; color:var(--s); font-weight:600;">Sekolah beroperasional Senin sampai Jumat. Tidak ada jadwal pekerjaan rutin pada hari Sabtu dan Minggu.</p>
         </div>
       `;
     }
@@ -3145,15 +3207,17 @@ function renderJadwalByDay() {
     { tugas: 'General cleaning Masjid', frekuensi: '1x Sebulan', pelaksanaan: 'Minggu ke 4', days: [5], weeks: [4], kategori: 'Bulanan' },
     { tugas: 'Brusing lantai koridor', frekuensi: '1x Sebulan', pelaksanaan: 'Minggu ke 3', days: [5], weeks: [3], kategori: 'Bulanan' },
     { tugas: 'Penyemprotan disinfektan', frekuensi: '1x Sebulan', pelaksanaan: 'Minggu ke 2', days: [5], weeks: [2], kategori: 'Bulanan' },
-    { tugas: 'Fogging', frekuensi: '1x 3 bulan', pelaksanaan: 'Minggu ke 1', days: [5], weeks: [1], kategori: 'Bulanan' }
+    { tugas: 'Fogging', frekuensi: '1x 3 bulan', pelaksanaan: 'Minggu ke-1 pada Januari, April, Juli & Oktober', days: [5], weeks: [1], months: [0, 3, 6, 9], kategori: 'Bulanan' }
   ];
 
   const renderItemHTML = (x) => {
     const matchDay = x.days.includes(day);
     const matchWeek = x.weeks ? x.weeks.includes(currentWeek) : true;
-    const wajibHariIni = !isWeekend && matchDay && matchWeek;
+    const matchMonth = x.months ? x.months.includes(now.getMonth()) : true;
+    const wajibHariIni = isSchoolWorkingDay(day) && matchDay && matchWeek && matchMonth;
     
-    const isCompleted = completedTasks.includes(x.tugas);
+    const isCompleted = completedTasks.includes(x.tugas) ||
+      (x.kategori === 'Bulanan' && monthlyCompletedTasks.includes(x.tugas));
     
     let statusLabel = '';
     if (isCompleted) {
@@ -3202,6 +3266,10 @@ function renderJadwalByDay() {
 }
 
 function bukaModalLapor(namaTugas) {
+  if (!isSchoolWorkingDay(new Date())) {
+    showToast('Hari libur sekolah. Pelaporan tugas rutin hanya tersedia Senin–Jumat.');
+    return;
+  }
   const modal = document.getElementById('modalLaporTugas');
   const inputPekerjaan = document.getElementById('laporPekerjaanModal');
   const m = DB.anggota[activeMemberIndex] || { Nama: '', Area: '' };
@@ -3348,12 +3416,18 @@ async function kirimLaporanModal() {
     
     postViaHiddenForm(d, 'btnLaporanModal', 'Kirim Laporan (Selesai)', () => {
       const now = new Date();
-      const todayKey = 'saber_completed_' + now.toISOString().slice(0, 10);
-      let completedTasks = JSON.parse(localStorage.getItem(todayKey) || '[]');
-      if (!completedTasks.includes(pekerjaanVal)) {
-        completedTasks.push(pekerjaanVal);
-        localStorage.setItem(todayKey, JSON.stringify(completedTasks));
-      }
+      const tugasBulanan = [
+        'Cleaning balkon dan kaca',
+        'Cleaning dispenser',
+        'General cleaning Masjid',
+        'Brusing lantai koridor',
+        'Penyemprotan disinfektan',
+        'Fogging'
+      ];
+      const completionKey = tugasBulanan.includes(pekerjaanVal)
+        ? getMonthlyCompletionKey(now)
+        : 'saber_completed_' + getLocalDateKey(now);
+      saveCompletedTask(completionKey, pekerjaanVal);
 
       tutupModalLapor();
       document.getElementById('laporCatatanModal').value = '';
