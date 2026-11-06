@@ -3281,12 +3281,15 @@ function renderJadwalByDay() {
   }
 
   const masterTugas = [
-    // --- PEKERJAAN HARIAN (Senin - Jumat) ---
+    // --- PEKERJAAN HARIAN (Senin - Jumat, Toilet Senin - Kamis) ---
     { tugas: '1. Dusting (List kaca, furnitur & perlengkapan pendukung)', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], weeks: [1,2,3,4,5], kategori: 'Harian' },
     { tugas: '2. Glass cleaning (Pembersihan kaca & cermin)', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], weeks: [1,2,3,4,5], kategori: 'Harian' },
     { tugas: '3. Sweeping (Menyapu kelas/ruangan dan koridor)', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], weeks: [1,2,3,4,5], kategori: 'Harian' },
     { tugas: '4. Mopping (Mengepel area kelas/ruangan dan koridor)', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], weeks: [1,2,3,4,5], kategori: 'Harian' },
-    { tugas: '5. Toilet cleaning (Pembersihan & sterilisasi toilet)', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], weeks: [1,2,3,4,5], kategori: 'Harian' },
+    
+    // --- PEMBARUAN TOILET CLEANING MENJADI SENIN - KAMIS ---
+    { tugas: '5. Toilet cleaning (Pembersihan & sterilisasi toilet)', frekuensi: 'Harian', pelaksanaan: 'Senin - Kamis', days: [1,2,3,4], weeks: [1,2,3,4,5], kategori: 'Harian' },
+    
     { tugas: 'Pengosongan & pembuangan sampah ruangan/kelas', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], weeks: [1,2,3,4,5], kategori: 'Harian' },
     { tugas: 'Cleaning area tangga (Sweeping & Mopping)', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], weeks: [1,2,3,4,5], kategori: 'Harian' },
 
@@ -3311,7 +3314,6 @@ function renderJadwalByDay() {
   ];
 
   const renderItemHTML = (x) => {
-    // Penanganan khusus untuk Fogging di hari Sabtu (hari ke-6)
     const isFoggingTask = x.tugas.toLowerCase().includes('fogging');
     const isValidDay = isFoggingTask ? (day === 6) : isSchoolWorkingDay(day);
 
