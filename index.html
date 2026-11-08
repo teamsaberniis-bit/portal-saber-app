@@ -1225,10 +1225,6 @@ html, body{
 <section id="jadwal" class="page">
   <button class="back" onclick="showPage('home')">← Beranda</button>
   <div class="section">Jadwal & Status Pekerjaan</div>
-  <div class="card" style="background:var(--gl);border-color:#bbf7d0;margin-bottom:12px">
-    <b id="jadwalHariIni" style="font-size:12px">Jadwal hari ini</b>
-    <div id="jadwalTanggalHariIni" class="muted" style="margin-top:2px;font-size:10px"></div>
-  </div>
   <div id="jadwalCols" class="jadwal-cols"></div>
 </section>
 
@@ -3257,29 +3253,31 @@ function renderJadwalByDay() {
   const monthlyCompletedTasks = readCompletedTaskList(getMonthlyCompletionKey(now));
 
   const box = document.getElementById('jadwalCols');
-  const hariEl = document.getElementById('jadwalHariIni');
-  const tanggalEl = document.getElementById('jadwalTanggalHariIni');
-
-  if (hariEl) hariEl.textContent = 'Jadwal Kerja Hari Ini: ' + hariNama[day] + ', ' + tanggalStr;
-  if (tanggalEl) {
-    tanggalEl.textContent = isWeekend 
-      ? 'Hari Libur: Tidak ada jadwal pekerjaan rutin pada hari Sabtu & Minggu.' 
-      : `Minggu ke-${currentWeek} bulan berjalan. Ketuk tombol "KERJAKAN HARI INI" pada tugas yang sesuai.`;
-  }
 
   if (isWeekend) {
     if (box) {
       box.innerHTML = `
-        <div class="card" style="grid-column: 1 / -1; text-align:center; padding:35px 20px; background:#f8fafc; border:1px dashed var(--b);">
-          <div style="font-size:38px; color:var(--g); margin-bottom:12px;"><i class="fa-solid fa-calendar-check"></i></div>
-          <h3 style="font-size:16px; font-weight:800; color:var(--t); margin-bottom:6px;">Hari Libur Sekolah</h3>
-          <p style="font-size:13px; color:var(--s); font-weight:600;">Sekolah beroperasional Senin sampai Jumat. Tidak ada jadwal pekerjaan rutin pada hari Sabtu dan Minggu.</p>
+        <div style="grid-column: 1 / -1; display:flex; flex-direction:column; gap:12px;">
+          <!-- Kartu Status Disamakan dengan Tampilan Hari Senin - Jumat -->
+          <div class="jcol">
+            <div class="jhead"><i class="fa-solid fa-calendar-days"></i> Jadwal Kerja Hari Ini: ${esc(hariNama[day])}, ${esc(tanggalStr)}</div>
+            <div style="padding:16px; text-align:center;">
+              <div style="width:44px; height:44px; background:var(--gl); color:var(--g); border-radius:50%; display:grid; place-items:center; font-size:18px; margin:0 auto 10px auto; box-shadow:0 2px 8px rgba(22, 163, 74, 0.15);">
+                <i class="fa-solid fa-mug-hot"></i>
+              </div>
+              <h4 style="font-size:14px; font-weight:800; color:var(--t); margin-bottom:6px;">SELAMAT MENIKMATI HARI LIBUR</h4>
+              <p style="font-size:12px; color:var(--s); line-height:1.5; margin:0 auto; max-width:300px;">
+                Nikmati waktu bersama keluarga dan orang tercinta di hari libur ini agar esok bisa kembali produktif.
+              </p>
+            </div>
+          </div>
         </div>
       `;
     }
     return;
   }
 
+  // Jika hari kerja (Senin - Jumat), tampilkan header jadwal harian seperti biasa
   const masterTugas = [
     // --- PEKERJAAN HARIAN (Senin - Jumat, Toilet Senin - Kamis) ---
     { tugas: '1. Dusting (List kaca, furnitur & perlengkapan pendukung)', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], weeks: [1,2,3,4,5], kategori: 'Harian' },
