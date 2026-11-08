@@ -2398,12 +2398,25 @@ function parseDateVal(x) {
 }
 
 function renderInformasiPage() {
-  const list = [...getInformasiData()].sort((a, b) => parseDateVal(a) - parseDateVal(b));
+  const allList = [...getInformasiData()].sort((a, b) => parseDateVal(a) - parseDateVal(b));
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Filter: Hanya tampilkan informasi yang tanggalnya hari ini atau di masa depan
+  const list = allList.filter(x => {
+    const rawTgl = extractDisplayDate(x);
+    const tglInfo = parseSmartDate(rawTgl);
+    if (!tglInfo) return true;
+    tglInfo.setHours(0, 0, 0, 0);
+    return tglInfo >= today;
+  });
+
   window._currentInfoList = list;
 
   const b = document.getElementById('infoList');
   const h = document.getElementById('homeInfoBox');
-  const emptyAll = '<div class="card"><p class="muted">Belum ada informasi.</p></div>';
+  const emptyAll = '<div class="card"><p class="muted">Tidak ada informasi atau kegiatan aktif.</p></div>';
   const emptyToday = '<div class="card"><p class="muted">Tidak ada kegiatan / informasi untuk hari ini.</p></div>';
 
   if (list.length > 0) {
@@ -2416,9 +2429,6 @@ function renderInformasiPage() {
     }
     localStorage.setItem('lastSeenInfo', infoTerbaru);
   }
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
 
   const infoHariIni = list.filter(x => {
     const rawTgl = extractDisplayDate(x);
