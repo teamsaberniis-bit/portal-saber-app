@@ -3375,24 +3375,23 @@ function renderJadwalByDay() {
 
   // Jika hari kerja (Senin - Jumat), tampilkan header jadwal harian seperti biasa
   const masterTugas = [
-    // --- PEKERJAAN HARIAN (Senin - Jumat, Toilet Senin - Kamis) ---
-    { tugas: '1. Dusting (List kaca, furnitur & perlengkapan pendukung)', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], weeks: [1,2,3,4,5], kategori: 'Harian' },
-    { tugas: '2. Glass cleaning (Pembersihan kaca & cermin)', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], weeks: [1,2,3,4,5], kategori: 'Harian' },
-    { tugas: '3. Sweeping (Menyapu kelas/ruangan dan koridor)', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], weeks: [1,2,3,4,5], kategori: 'Harian' },
-    { tugas: '4. Mopping (Mengepel area kelas/ruangan dan koridor)', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], weeks: [1,2,3,4,5], kategori: 'Harian' },
-    
-    // --- PEMBARUAN TOILET CLEANING MENJADI SENIN - KAMIS ---
-    { tugas: '5. Toilet cleaning (Pembersihan & sterilisasi toilet)', frekuensi: 'Harian', pelaksanaan: 'Senin - Kamis', days: [1,2,3,4], weeks: [1,2,3,4,5], kategori: 'Harian' },
-    
-    { tugas: 'Pengosongan & pembuangan sampah ruangan/kelas', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], weeks: [1,2,3,4,5], kategori: 'Harian' },
+    // --- PEKERJAAN HARIAN (Tanpa Angka, Sampah di Paling Bawah) ---
+    { tugas: 'Dusting (List kaca, furnitur & perlengkapan pendukung)', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], weeks: [1,2,3,4,5], kategori: 'Harian' },
+    { tugas: 'Glass cleaning (Pembersihan kaca & cermin)', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], weeks: [1,2,3,4,5], kategori: 'Harian' },
+    { tugas: 'Sweeping (Menyapu kelas/ruangan dan koridor)', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], weeks: [1,2,3,4,5], kategori: 'Harian' },
+    { tugas: 'Mopping (Mengepel area kelas/ruangan dan koridor)', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], weeks: [1,2,3,4,5], kategori: 'Harian' },
+    { tugas: 'Toilet cleaning (Pembersihan & sterilisasi toilet)', frekuensi: 'Harian', pelaksanaan: 'Senin - Kamis', days: [1,2,3,4], weeks: [1,2,3,4,5], kategori: 'Harian' },
+    { tugas: 'Cleaning Masjid (Sapu, Pel & Rapikan Area Ibadah)', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], weeks: [1,2,3,4,5], kategori: 'Harian' },
     { tugas: 'Cleaning area tangga (Sweeping & Mopping)', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], weeks: [1,2,3,4,5], kategori: 'Harian' },
+    { tugas: 'Pengosongan & pembuangan sampah ruangan/kelas', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], weeks: [1,2,3,4,5], kategori: 'Harian' },
 
     // --- PEKERJAAN MINGGUAN: hari pelaksanaan berlaku setiap minggu sekolah ---
     { tugas: 'General cleaning area tangga (Sikat & Lap Railing)', frekuensi: '1x Seminggu', pelaksanaan: 'Setiap Rabu', scheduleSlots: makeScheduleSlots([3], [1,2,3,4,5]), kategori: 'Mingguan' },
     { tugas: 'Cleaning karpet toilet & keset', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", scheduleSlots: makeScheduleSlots([5], [1,2,3,4,5]), kategori: 'Mingguan' },
     { tugas: 'General cleaning toilet', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", scheduleSlots: makeScheduleSlots([5], [1,2,3,4,5]), kategori: 'Mingguan' },
     { tugas: 'Cleaning tempat sampah', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", scheduleSlots: makeScheduleSlots([5], [1,2,3,4,5]), kategori: 'Mingguan' },
-    { tugas: 'Penggantian sprei', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", scheduleSlots: makeScheduleSlots([5], [1,2,3,4,5]), kategori: 'Mingguan' },
+    { tugas: 'Penggantian kain sprei', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", scheduleSlots: makeScheduleSlots([5], [1,2,3,4,5]), kategori: 'Mingguan' },
+    { tugas: 'Penggantian Perlengkapan Sholat (Mukena, Sarung & Sajadah)', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", scheduleSlots: makeScheduleSlots([5], [1,2,3,4,5]), kategori: 'Mingguan' },
     { tugas: 'Vaccum karpet Masjid', frekuensi: '2x Seminggu', pelaksanaan: "Rabu & Jum'at", scheduleSlots: makeScheduleSlots([3,5], [1,2,3,4,5]), kategori: 'Mingguan' },
     { tugas: 'Vaccum karpet', frekuensi: '2x Seminggu', pelaksanaan: 'Selasa & Kamis', scheduleSlots: makeScheduleSlots([2,4], [1,2,3,4,5]), kategori: 'Mingguan' },
     { tugas: 'Cleaning sawang-sawang', frekuensi: '2x Seminggu', pelaksanaan: 'Selasa & Kamis', scheduleSlots: makeScheduleSlots([2,4], [1,2,3,4,5]), kategori: 'Mingguan' },
