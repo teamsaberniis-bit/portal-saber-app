@@ -13,9 +13,9 @@
                viewport-fit=cover">
 
 <title>Portal Tim SABER</title>
-<meta name="saber-app-version" content="2.1.0">
-<meta name="saber-css-version" content="2.1.0">
-<meta name="saber-js-version" content="2.1.0">
+<meta name="saber-app-version" content="2.1.3">
+<meta name="saber-css-version" content="2.1.3">
+<meta name="saber-js-version" content="2.1.3">
 
 <!-- Meminta browser memvalidasi HTML terbaru, bukan memakai dokumen lama dari cache -->
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -29,7 +29,7 @@
 <script>
 (function () {
   'use strict';
-  var APP_VERSION = '2.1.0';
+  var APP_VERSION = '2.1.3';
   var VERSION_KEY = 'timSaberAppVersion';
 
   try {
@@ -87,12 +87,12 @@
 </script>
 
 <link rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css?v=2.1.0">
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css?v=2.1.3">
 <!-- SweetAlert2 untuk Popup & Dialog -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11?v=2.1.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11?v=2.1.3"></script>
 
-<style data-saber-css-version="2.1.0">
-/* SABER CSS VERSION: 2.1.0 | CSS inline mengikuti versi dokumen HTML */
+<style data-saber-css-version="2.1.3">
+/* SABER CSS VERSION: 2.1.3 | CSS inline mengikuti versi dokumen HTML */
 :root{
   --g:#16a34a;
   --gd:#15803d;
@@ -1367,8 +1367,8 @@ html, body{
   </div>
 </div>
 
-<script data-saber-js-version="2.1.0">
-// SABER JAVASCRIPT VERSION: 2.1.0 | JS inline mengikuti versi dokumen HTML
+<script data-saber-js-version="2.1.3">
+// SABER JAVASCRIPT VERSION: 2.1.3 | JS inline mengikuti versi dokumen HTML
 // DAFTAR KATEGORI BAHAN DAN ALAT
 const DAFTAR_BAHAN = [
   "Sabun Cuci Piring",
@@ -3266,9 +3266,40 @@ function saveCompletedTask(key, taskName) {
 }
 
 function getweekOfMonth(date) {
-  const firstDay = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
-  const firstMonday = 1 + ((8 - firstDay) % 7);
-  return Math.max(1, Math.floor((date.getDate() - firstMonday) / 7) + 1);
+  // Minggu ke-1 = tanggal 1-7, ke-2 = 8-14, ke-3 = 15-21,
+  // ke-4 = 22-28, dan ke-5 = 29-31.
+  // Dengan aturan ini, "minggu ke-2 (Kamis)" selalu berarti Kamis
+  // kedua dalam bulan tersebut, apa pun hari pada tanggal 1.
+  return Math.floor((date.getDate() - 1) / 7) + 1;
+}
+
+// Membuat pasangan minggu-hari agar jadwal berulang tidak salah dicocokkan.
+function makeScheduleSlots(days, weeks) {
+  const slots = [];
+  (weeks || []).forEach(week => {
+    (days || []).forEach(day => slots.push({ week: Number(week), day: Number(day) }));
+  });
+  return slots;
+}
+
+// Penentuan minggu menggunakan kelompok tanggal 1-7, 8-14, 15-21, 22-28, 29-31.
+ // Karena itu minggu ke-n konsisten dengan kemunculan hari ke-n dalam bulan.
+function isTaskScheduledOnDate(task, date) {
+  if (!task || !(date instanceof Date) || Number.isNaN(date.getTime())) return false;
+  const day = date.getDay();
+  const week = getweekOfMonth(date);
+
+  if (Array.isArray(task.months) && !task.months.includes(date.getMonth())) return false;
+
+  if (Array.isArray(task.scheduleSlots)) {
+    return task.scheduleSlots.some(slot =>
+      Number(slot.day) === day && Number(slot.week) === week
+    );
+  }
+
+  const allowedDays = Array.isArray(task.days) ? task.days : [];
+  const allowedWeeks = Array.isArray(task.weeks) ? task.weeks : null;
+  return allowedDays.includes(day) && (!allowedWeeks || allowedWeeks.includes(week));
 }
 
 function isSchoolWorkingDay(dateOrDay) {
@@ -3292,24 +3323,52 @@ function renderJadwalByDay() {
   const box = document.getElementById('jadwalCols');
 
   if (isWeekend) {
+    // Akhir pekan tetap libur, kecuali pekerjaan khusus Fogging yang memang
+    // dijadwalkan pada Sabtu minggu pertama di Jan/Apr/Jul/Okt.
+    const foggingScheduled = isTaskScheduledOnDate({
+      scheduleSlots: [{ week: 1, day: 6 }],
+      months: [0, 3, 6, 9]
+    }, now);
+    const foggingDone = monthlyCompletedTasks.includes('Fogging');
+
     if (box) {
-      box.innerHTML = `
-        <div style="grid-column: 1 / -1; display:flex; flex-direction:column; gap:12px;">
-          <!-- Kartu Status Disamakan dengan Tampilan Hari Senin - Jumat -->
-          <div class="jcol">
-            <div class="jhead"><i class="fa-solid fa-calendar-days"></i> Jadwal Kerja Hari Ini: ${esc(hariNama[day])}, ${esc(tanggalStr)}</div>
-            <div style="padding:16px; text-align:center;">
-              <div style="width:44px; height:44px; background:var(--gl); color:var(--g); border-radius:50%; display:grid; place-items:center; font-size:18px; margin:0 auto 10px auto; box-shadow:0 2px 8px rgba(22, 163, 74, 0.15);">
-                <i class="fa-solid fa-mug-hot"></i>
+      if (foggingScheduled) {
+        const foggingStatus = foggingDone
+          ? '<span class="status" style="background:#15803d;color:#fff;font-weight:800;"><i class="fa-solid fa-check"></i> SELESAI</span>'
+          : `<button type="button" onclick="bukaModalLapor('Fogging')" class="status" style="background:#16a34a;color:#fff;font-weight:800;border:0;padding:6px 10px;border-radius:6px;cursor:pointer;width:100%;text-align:center;"><i class="fa-solid fa-check"></i> KERJAKAN HARI INI</button>`;
+
+        box.innerHTML = `
+          <div style="grid-column:1/-1;">
+            <div class="jcol">
+              <div class="jhead" style="background:var(--o);"><i class="fa-solid fa-calendar-check"></i> Jadwal Khusus Hari Ini: ${esc(hariNama[day])}, ${esc(tanggalStr)}</div>
+              <div style="padding:10px;">
+                <div class="jitem" style="border:2px solid ${foggingDone ? '#bbf7d0' : '#16a34a'};">
+                  <b>Fogging</b>
+                  <small><i class="fa-regular fa-clock"></i> 1x 3 Bulan (Minggu ke-1: Sabtu, Jan/Apr/Jul/Okt)</small>
+                  <div style="margin-top:6px;">${foggingStatus}</div>
+                </div>
               </div>
-              <h4 style="font-size:14px; font-weight:800; color:var(--t); margin-bottom:6px;">SELAMAT MENIKMATI HARI LIBUR</h4>
-              <p style="font-size:12px; color:var(--s); line-height:1.5; margin:0 auto; max-width:300px;">
-                Nikmati waktu bersama keluarga dan orang tercinta di hari libur ini agar esok bisa kembali produktif.
-              </p>
             </div>
           </div>
-        </div>
-      `;
+        `;
+      } else {
+        box.innerHTML = `
+          <div style="grid-column: 1 / -1; display:flex; flex-direction:column; gap:12px;">
+            <div class="jcol">
+              <div class="jhead"><i class="fa-solid fa-calendar-days"></i> Jadwal Kerja Hari Ini: ${esc(hariNama[day])}, ${esc(tanggalStr)}</div>
+              <div style="padding:16px; text-align:center;">
+                <div style="width:44px; height:44px; background:var(--gl); color:var(--g); border-radius:50%; display:grid; place-items:center; font-size:18px; margin:0 auto 10px auto; box-shadow:0 2px 8px rgba(22, 163, 74, 0.15);">
+                  <i class="fa-solid fa-mug-hot"></i>
+                </div>
+                <h4 style="font-size:14px; font-weight:800; color:var(--t); margin-bottom:6px;">SELAMAT MENIKMATI HARI LIBUR</h4>
+                <p style="font-size:12px; color:var(--s); line-height:1.5; margin:0 auto; max-width:300px;">
+                  Nikmati waktu bersama keluarga dan orang tercinta di hari libur ini agar esok bisa kembali produktif.
+                </p>
+              </div>
+            </div>
+          </div>
+        `;
+      }
     }
     return;
   }
@@ -3328,34 +3387,33 @@ function renderJadwalByDay() {
     { tugas: 'Pengosongan & pembuangan sampah ruangan/kelas', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], weeks: [1,2,3,4,5], kategori: 'Harian' },
     { tugas: 'Cleaning area tangga (Sweeping & Mopping)', frekuensi: 'Harian', pelaksanaan: "Senin - Jum'at", days: [1,2,3,4,5], weeks: [1,2,3,4,5], kategori: 'Harian' },
 
-    // --- PEKERJAAN MINGGUAN (Tersortir Seimbang) ---
-    { tugas: 'General cleaning area tangga (Sikat & Lap Railing)', frekuensi: '1x Seminggu', pelaksanaan: 'Setiap Rabu', days: [3], weeks: [1,2,3,4,5], kategori: 'Mingguan' },
-    { tugas: 'Cleaning karpet toilet & keset', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5], weeks: [1,2,3,4,5], kategori: 'Mingguan' },
-    { tugas: 'General cleaning toilet', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5], weeks: [1,2,3,4,5], kategori: 'Mingguan' },
-    { tugas: 'Cleaning tempat sampah', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5], weeks: [1,2,3,4,5], kategori: 'Mingguan' },
-    { tugas: 'Penggantian sprei', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", days: [5], weeks: [1,2,3,4,5], kategori: 'Mingguan' },
-    { tugas: 'Vaccum karpet Masjid', frekuensi: '2x Seminggu', pelaksanaan: "Rabu & Jum'at", days: [3,5], weeks: [1,2,3,4,5], kategori: 'Mingguan' },
-    { tugas: 'Vaccum karpet', frekuensi: '2x Seminggu', pelaksanaan: 'Selasa & Kamis', days: [2,4], weeks: [1,2,3,4,5], kategori: 'Mingguan' },
-    { tugas: 'Cleaning sawang-sawang', frekuensi: '2x Seminggu', pelaksanaan: 'Selasa & Kamis', days: [2,4], weeks: [1,2,3,4,5], kategori: 'Mingguan' },
-    { tugas: 'Cleaning dinding kelas', frekuensi: '2x Seminggu', pelaksanaan: 'Senin & Rabu', days: [1,3], weeks: [1,2,3,4,5], kategori: 'Mingguan' },
+    // --- PEKERJAAN MINGGUAN: hari pelaksanaan berlaku setiap minggu sekolah ---
+    { tugas: 'General cleaning area tangga (Sikat & Lap Railing)', frekuensi: '1x Seminggu', pelaksanaan: 'Setiap Rabu', scheduleSlots: makeScheduleSlots([3], [1,2,3,4,5]), kategori: 'Mingguan' },
+    { tugas: 'Cleaning karpet toilet & keset', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", scheduleSlots: makeScheduleSlots([5], [1,2,3,4,5]), kategori: 'Mingguan' },
+    { tugas: 'General cleaning toilet', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", scheduleSlots: makeScheduleSlots([5], [1,2,3,4,5]), kategori: 'Mingguan' },
+    { tugas: 'Cleaning tempat sampah', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", scheduleSlots: makeScheduleSlots([5], [1,2,3,4,5]), kategori: 'Mingguan' },
+    { tugas: 'Penggantian sprei', frekuensi: '1x Seminggu', pelaksanaan: "Setiap Jum'at", scheduleSlots: makeScheduleSlots([5], [1,2,3,4,5]), kategori: 'Mingguan' },
+    { tugas: 'Vaccum karpet Masjid', frekuensi: '2x Seminggu', pelaksanaan: "Rabu & Jum'at", scheduleSlots: makeScheduleSlots([3,5], [1,2,3,4,5]), kategori: 'Mingguan' },
+    { tugas: 'Vaccum karpet', frekuensi: '2x Seminggu', pelaksanaan: 'Selasa & Kamis', scheduleSlots: makeScheduleSlots([2,4], [1,2,3,4,5]), kategori: 'Mingguan' },
+    { tugas: 'Cleaning sawang-sawang', frekuensi: '2x Seminggu', pelaksanaan: 'Selasa & Kamis', scheduleSlots: makeScheduleSlots([2,4], [1,2,3,4,5]), kategori: 'Mingguan' },
+    { tugas: 'Cleaning dinding kelas', frekuensi: '2x Seminggu', pelaksanaan: 'Senin & Rabu', scheduleSlots: makeScheduleSlots([1,3], [1,2,3,4,5]), kategori: 'Mingguan' },
 
-    // --- PEKERJAAN BULANAN / BERKALA (Tersortir Sesuai Diskusi) ---
-    { tugas: 'Cleaning balkon dan kaca', frekuensi: '2x Sebulan', pelaksanaan: 'Minggu ke-1 (Selasa) & Minggu ke-2 (Rabu)', days: [2, 3], weeks: [1, 2], kategori: 'Bulanan' },
-    { tugas: 'Cleaning dispenser', frekuensi: '2x Sebulan', pelaksanaan: 'Minggu ke-2 (Kamis) & Minggu ke-3 (Senin)', days: [4, 1], weeks: [2, 3], kategori: 'Bulanan' },
-    { tugas: 'General cleaning Masjid', frekuensi: '1x Sebulan', pelaksanaan: 'Minggu ke-4 (Jumat)', days: [5], weeks: [4], kategori: 'Bulanan' },
-    { tugas: 'Brusing lantai koridor', frekuensi: '1x Sebulan', pelaksanaan: 'Minggu ke-3 (Full Senin - Jumat)', days: [1, 2, 3, 4, 5], weeks: [3], kategori: 'Bulanan' },
-    { tugas: 'Penyemprotan disinfektan', frekuensi: '1x Sebulan', pelaksanaan: 'Minggu ke-2 (Jumat)', days: [5], weeks: [2], kategori: 'Bulanan' },
-    { tugas: 'Fogging', frekuensi: '1x 3 Bulan', pelaksanaan: 'Minggu ke-1 (Sabtu: Jan, Apr, Jul, Okt)', days: [6], weeks: [1], months: [0, 3, 6, 9], kategori: 'Bulanan' }
+    // --- PEKERJAAN BULANAN / BERKALA: setiap slot memasangkan minggu + hari ---
+    { tugas: 'Cleaning balkon dan kaca', frekuensi: '2x Sebulan', pelaksanaan: 'Minggu ke-1 (Selasa) & Minggu ke-2 (Rabu)', scheduleSlots: [{ week: 1, day: 2 }, { week: 2, day: 3 }], kategori: 'Bulanan' },
+    { tugas: 'Cleaning dispenser', frekuensi: '2x Sebulan', pelaksanaan: 'Minggu ke-2 (Kamis) & Minggu ke-3 (Senin)', scheduleSlots: [{ week: 2, day: 4 }, { week: 3, day: 1 }], kategori: 'Bulanan' },
+    { tugas: 'General cleaning Masjid', frekuensi: '1x Sebulan', pelaksanaan: 'Minggu ke-4 (Jumat)', scheduleSlots: [{ week: 4, day: 5 }], kategori: 'Bulanan' },
+    { tugas: 'Brusing lantai koridor', frekuensi: '1x Sebulan', pelaksanaan: 'Minggu ke-3 (Full Senin - Jumat)', scheduleSlots: makeScheduleSlots([1,2,3,4,5], [3]), kategori: 'Bulanan' },
+    { tugas: 'Penyemprotan disinfektan', frekuensi: '1x Sebulan', pelaksanaan: 'Minggu ke-2 (Jumat)', scheduleSlots: [{ week: 2, day: 5 }], kategori: 'Bulanan' },
+    { tugas: 'Fogging', frekuensi: '1x 3 Bulan', pelaksanaan: 'Minggu ke-1 (Sabtu: Jan, Apr, Jul, Okt)', scheduleSlots: [{ week: 1, day: 6 }], months: [0, 3, 6, 9], kategori: 'Bulanan' }
   ];
 
   const renderItemHTML = (x) => {
     const isFoggingTask = x.tugas.toLowerCase().includes('fogging');
     const isValidDay = isFoggingTask ? (day === 6) : isSchoolWorkingDay(day);
 
-    const matchDay = x.days.includes(day);
-    const matchWeek = x.weeks ? x.weeks.includes(currentWeek) : true;
-    const matchMonth = x.months ? x.months.includes(now.getMonth()) : true;
-    const wajibHariIni = isValidDay && matchDay && matchWeek && matchMonth;
+    // Jadwal berpasangan: hari dan minggu harus berasal dari slot yang sama.
+    // Ini mencegah Senin minggu ke-2 dianggap cocok dengan jadwal Senin minggu ke-3.
+    const wajibHariIni = isValidDay && isTaskScheduledOnDate(x, now);
     
     const isCompleted = completedTasks.includes(x.tugas) ||
       (x.kategori === 'Bulanan' && monthlyCompletedTasks.includes(x.tugas));
