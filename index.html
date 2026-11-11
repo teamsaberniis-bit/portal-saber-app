@@ -13,9 +13,9 @@
                viewport-fit=cover">
 
 <title>Portal Tim SABER</title>
-<meta name="saber-app-version" content="2.1.3">
-<meta name="saber-css-version" content="2.1.3">
-<meta name="saber-js-version" content="2.1.3">
+<meta name="saber-app-version" content="2.1.4">
+<meta name="saber-css-version" content="2.1.4">
+<meta name="saber-js-version" content="2.1.4">
 
 <!-- Meminta browser memvalidasi HTML terbaru, bukan memakai dokumen lama dari cache -->
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -29,7 +29,7 @@
 <script>
 (function () {
   'use strict';
-  var APP_VERSION = '2.1.3';
+  var APP_VERSION = '2.1.4';
   var VERSION_KEY = 'timSaberAppVersion';
 
   try {
@@ -87,12 +87,12 @@
 </script>
 
 <link rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css?v=2.1.3">
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css?v=2.1.4">
 <!-- SweetAlert2 untuk Popup & Dialog -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11?v=2.1.3"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11?v=2.1.4"></script>
 
-<style data-saber-css-version="2.1.3">
-/* SABER CSS VERSION: 2.1.3 | CSS inline mengikuti versi dokumen HTML */
+<style data-saber-css-version="2.1.4">
+/* SABER CSS VERSION: 2.1.4 | CSS inline mengikuti versi dokumen HTML */
 :root{
   --g:#16a34a;
   --gd:#15803d;
@@ -1367,8 +1367,8 @@ html, body{
   </div>
 </div>
 
-<script data-saber-js-version="2.1.3">
-// SABER JAVASCRIPT VERSION: 2.1.3 | JS inline mengikuti versi dokumen HTML
+<script data-saber-js-version="2.1.4">
+// SABER JAVASCRIPT VERSION: 2.1.4 | JS inline mengikuti versi dokumen HTML
 // DAFTAR KATEGORI BAHAN DAN ALAT
 const DAFTAR_BAHAN = [
   "Sabun Cuci Piring",
@@ -2430,16 +2430,29 @@ function renderInformasiPage() {
     localStorage.setItem('lastSeenInfo', infoTerbaru);
   }
 
+  // Bandingkan tanggal kalender, bukan timestamp lengkap.
+  // Data dari Google Sheets sering menyertakan jam sehingga getTime()
+  // tidak akan sama dengan pukul 00.00 meskipun tanggalnya hari ini.
+  const isSameCalendarDate = (dateA, dateB) => {
+    return dateA instanceof Date &&
+      !isNaN(dateA.getTime()) &&
+      dateB instanceof Date &&
+      !isNaN(dateB.getTime()) &&
+      dateA.getFullYear() === dateB.getFullYear() &&
+      dateA.getMonth() === dateB.getMonth() &&
+      dateA.getDate() === dateB.getDate();
+  };
+
   const infoHariIni = list.filter(x => {
     const rawTgl = extractDisplayDate(x);
     const tglInfo = parseSmartDate(rawTgl);
-    return tglInfo && tglInfo.getTime() === today.getTime();
+    return isSameCalendarDate(tglInfo, today);
   });
 
   const mapper = (x, index) => {
     const rawTgl = extractDisplayDate(x);
     const tglInfo = parseSmartDate(rawTgl);
-    const isToday = tglInfo && tglInfo.getTime() === today.getTime();
+    const isToday = isSameCalendarDate(tglInfo, today);
 
     // Membaca kolom Unit dari data Google Sheets (TK, SD 1, SD 2, SMP, SMA, Umum, dll.)
     const unitText = String(x.Unit || x.unit || x.Kategori || 'Umum').trim().toUpperCase();
