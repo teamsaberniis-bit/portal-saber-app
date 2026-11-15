@@ -3807,9 +3807,9 @@ function downloadDataCSV(type) {
         </select>
       `,
       showCancelButton: true,
-      confirmButtonText: 'Download CSV Profesional',
+      confirmButtonText: 'Download Excel (.xls)',
       cancelButtonText: 'Batal',
-      confirmButtonColor: 'var(--blue)',
+      confirmButtonColor: 'var(--g)',
       preConfirm: () => {
         return {
           bulan: document.getElementById('swalDownloadBulan').value,
@@ -3845,19 +3845,65 @@ function prosesFilterDanDownload(rawData, type, baseFileName, targetBulan, targe
     }
   }
 
+  const namaBulanArr = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  let bulanNama = targetBulan === 'ALL' ? 'Semua Bulan (Keseluruhan)' : namaBulanArr[targetBulan] + ' ' + targetTahun;
+  let bulanLabel = targetBulan === 'ALL' ? 'Semua_Bulan' : namaBulanArr[targetBulan] + '_' + targetTahun;
+
+  // TEMPLATE EXCEL BERWARNA & TERFORMAT (.xls) SERAGAM UNTUK SEMUA REKAP
+  let htmlContent = `
+    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+    <head>
+    <meta charset="UTF-8">
+    <style>
+      body { font-family: 'Segoe UI', Arial, sans-serif; }
+      table { border-collapse: collapse; width: 100%; }
+      .title-banner { background-color: #0f172a; color: #ffffff; font-size: 15px; font-weight: bold; text-align: center; padding: 14px; vertical-align: middle; border: 1px solid #0f172a; }
+      .sub-title { background-color: #f8fafc; color: #334155; font-size: 11px; font-weight: bold; text-align: center; padding: 8px; border: 1px solid #cbd5e1; }
+      th { background-color: #16a34a; color: #ffffff; font-weight: bold; text-align: center; padding: 10px; border: 1px solid #15803d; font-size: 11px; vertical-align: middle; }
+      td { padding: 8px 10px; border: 1px solid #cbd5e1; font-size: 11px; vertical-align: middle; }
+      .zebra { background-color: #f0fdf4; }
+      .total-header { background-color: #f97316; color: #ffffff; font-weight: bold; text-align: center; padding: 10px; border: 1px solid #ea580c; font-size: 11px; vertical-align: middle; }
+      .grand-total-row { background-color: #fef08a; font-weight: bold; color: #713f12; border: 1px solid #ca8a04; }
+      .badge-ok { background-color: #dcfce7; color: #15803d; font-weight: bold; }
+      .badge-warn { background-color: #ffedd5; color: #c2410c; font-weight: bold; }
+      .badge-bad { background-color: #fee2e2; color: #b91c1c; font-weight: bold; }
+    </style>
+    </head>
+    <body>
+  `;
+
+  // 1. REKAP KINERJA ANGGOTA
   if (type === 'rekap_kinerja') {
     let bIdx = targetBulan === 'ALL' ? new Date().getMonth() : parseInt(targetBulan, 10);
     let tVal = parseInt(targetTahun, 10);
     let targetKerja = hitungHariKerjaBulanIni(tVal, bIdx);
 
-    let csvContent = "\uFEFF";
-    csvContent += "No,Nama Anggota,Area,Total Tugas Bulan Ini,Target Hari Kerja,Persentase Keaktifan,Status Kinerja\r\n";
+    htmlContent += `
+      <table>
+        <tr><th colspan="7" class="title-banner">REKAPITULASI KINERJA BULANAN ANGGOTA TIM SABER</th></tr>
+        <tr><td colspan="7" class="sub-title">PERIODE: ${bulanNama.toUpperCase()} | TARGET HARI KERJA: ${targetKerja} HARI</td></tr>
+        <tr>
+          <th style="width:45px;">No</th>
+          <th style="width:220px;">Nama Anggota</th>
+          <th style="width:150px;">Area</th>
+          <th style="width:130px;">Total Tugas Selesai</th>
+          <th style="width:130px;">Target Hari Kerja</th>
+          <th style="width:140px;">Persentase Keaktifan</th>
+          <th style="width:150px;">Status Kinerja</th>
+        </tr>
+    `;
 
     let rowNum = 1;
+    let totalTugasSemua = 0;
+    let totalPersentaseSemua = 0;
+    let countSangatAktif = 0;
+    let countCukupAktif = 0;
+    let countPerluPerhatian = 0;
+
     (DB.anggota || []).forEach(m => {
       let jabatanUpper = String(m.Jabatan || '').toUpperCase();
       let isPJ = jabatanUpper.includes('PJ') || jabatanUpper.includes('KOORDINATOR') || jabatanUpper.includes('KORDIR');
-      if (isPJ) return; 
+      if (isPJ) return;
 
       let namaAnggota = (m.Nama || '').trim();
       let namaLower = namaAnggota.toLowerCase();
@@ -3868,45 +3914,85 @@ function prosesFilterDanDownload(rawData, type, baseFileName, targetBulan, targe
         if (lapNama !== namaLower) return false;
         let d = parseSmartDate(extractDisplayDate(l));
         if (!d) return false;
-        if (targetBulan === 'ALL') {
-          return d.getFullYear() === tVal;
-        }
+        if (targetBulan === 'ALL') return d.getFullYear() === tVal;
         return d.getMonth() === bIdx && d.getFullYear() === tVal;
       });
 
       let totalTugas = laporanAnggotaPeriode.length;
       let persentase = Math.min(100, Math.round((totalTugas / targetKerja) * 100));
-      
       let statusKinerja = "Sangat Aktif";
-      if (persentase < 40) statusKinerja = "Perlu Perhatian";
-      else if (persentase < 75) statusKinerja = "Cukup Aktif";
+      let statusClass = "badge-ok";
 
-      let cleanNama = namaAnggota.replace(/"/g, '""');
-      let cleanArea = areaAnggota.replace(/"/g, '""');
+      if (persentase < 40) {
+        statusKinerja = "Perlu Perhatian";
+        statusClass = "badge-bad";
+        countPerluPerhatian++;
+      } else if (persentase < 75) {
+        statusKinerja = "Cukup Aktif";
+        statusClass = "badge-warn";
+        countCukupAktif++;
+      } else {
+        countSangatAktif++;
+      }
 
-      csvContent += `${rowNum},"${cleanNama}","${cleanArea}",${totalTugas},${targetKerja},"${persentase}%","${statusKinerja}"\r\n`;
+      totalTugasSemua += totalTugas;
+      totalPersentaseSemua += persentase;
+
+      let zebraClass = rowNum % 2 === 0 ? 'class="zebra"' : '';
+
+      htmlContent += `
+        <tr ${zebraClass}>
+          <td align="center">${rowNum}</td>
+          <td><b>${esc(namaAnggota)}</b></td>
+          <td align="center">${esc(areaAnggota)}</td>
+          <td align="center"><b>${totalTugas}</b></td>
+          <td align="center">${targetKerja}</td>
+          <td align="center"><b>${persentase}%</b></td>
+          <td align="center" class="${statusClass}">${statusKinerja}</td>
+        </tr>
+      `;
       rowNum++;
     });
 
-    let bulanLabel = targetBulan === 'ALL' ? 'Semua_Bulan' : ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][targetBulan] + '_' + tVal;
-    let fileName = `Rekap_Kinerja_Bulanan_${bulanLabel}.csv`;
+    let jumlahAnggota = rowNum - 1;
+    let rataRataPersentase = jumlahAnggota > 0 ? Math.round(totalPersentaseSemua / jumlahAnggota) : 0;
 
-    let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    let url = URL.createObjectURL(blob);
-    let a = document.createElement('a');
-    a.setAttribute('href', url);
-    a.setAttribute('download', fileName);
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    
-    showToast("BERHASIL MENGUNDUH REKAP KINERJA");
-    return;
+    htmlContent += `
+      </table>
+      <br><br>
+      <table>
+        <tr><th colspan="2" class="total-header">REKAPITULASI KESELURUHAN KINERJA ANGGOTA (GRAND TOTAL)</th></tr>
+        <tr>
+          <th style="width:280px;">Kategori Ringkasan</th>
+          <th style="width:180px;">Total / Nilai</th>
+        </tr>
+        <tr>
+          <td>Total Anggota Aktif Dinilai</td>
+          <td align="center"><b>${jumlahAnggota} Orang</b></td>
+        </tr>
+        <tr class="zebra">
+          <td>Kategori Sangat Aktif (&ge; 75%)</td>
+          <td align="center" class="badge-ok">${countSangatAktif} Orang</td>
+        </tr>
+        <tr>
+          <td>Kategori Cukup Aktif (40% - 74%)</td>
+          <td align="center" class="badge-warn">${countCukupAktif} Orang</td>
+        </tr>
+        <tr class="zebra">
+          <td>Kategori Perlu Perhatian (&lt; 40%)</td>
+          <td align="center" class="badge-bad">${countPerluPerhatian} Orang</td>
+        </tr>
+        <tr class="grand-total-row">
+          <td align="right"><b>TOTAL TUGAS SELESAI / RATA-RATA KEAKTIFAN :</b></td>
+          <td align="center"><b>${totalTugasSemua} Tugas (${rataRataPersentase}%)</b></td>
+        </tr>
+      </table>
+    `;
   }
-
-  if (type === 'pengajuan') {
+  // 2. REKAP PENGAJUAN BAHAN & ALAT
+  else if (type === 'pengajuan') {
     let rekapPerAnggota = {};
+    let grandTotalBarang = {};
 
     filteredData.forEach(item => {
       let status = String(item.Status || item.status || '').toLowerCase();
@@ -3915,14 +4001,10 @@ function prosesFilterDanDownload(rawData, type, baseFileName, targetBulan, targe
         let area = (item.Area || item.area || '-').trim();
         let keyAnggota = `${nama} (${area})`;
 
-        if (!rekapPerAnggota[keyAnggota]) {
-          rekapPerAnggota[keyAnggota] = {};
-        }
+        if (!rekapPerAnggota[keyAnggota]) rekapPerAnggota[keyAnggota] = {};
 
-        let itemsToCheck = [];
-        if (item.BarangDanJumlah) {
-          itemsToCheck = String(item.BarangDanJumlah).split('||');
-        } else {
+        let itemsToCheck = item.BarangDanJumlah ? String(item.BarangDanJumlah).split('||') : [];
+        if (!item.BarangDanJumlah) {
           for (let i = 1; i <= 6; i++) {
             let val = item['Kebutuhan' + i] || item['kebutuhan' + i] || '';
             if (val) itemsToCheck.push(val);
@@ -3935,7 +4017,6 @@ function prosesFilterDanDownload(rawData, type, baseFileName, targetBulan, targe
           let namaBarang = trimmed;
           let qty = 1;
 
-          // Pisahkan format "Vixal (3 pcs)" atau "Vixal 5"
           let matchParen = trimmed.match(/^(.*?)\s*\((\d+)\s*(?:pcs)?\)$/i);
           let matchSpace = trimmed.match(/^(.*?)\s+(\d+)$/);
 
@@ -3947,10 +4028,10 @@ function prosesFilterDanDownload(rawData, type, baseFileName, targetBulan, targe
             qty = parseInt(matchSpace[2], 10) || 1;
           }
 
-          // Standarisasi kapitalisasi (Title Case) agar item yang sama tergabung rapi
-          namaBarang = namaBarang.toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+          namaBarang = namaBarang.toLowerCase().replace(/\w/g, l => l.toUpperCase());
 
           rekapPerAnggota[keyAnggota][namaBarang] = (rekapPerAnggota[keyAnggota][namaBarang] || 0) + qty;
+          grandTotalBarang[namaBarang] = (grandTotalBarang[namaBarang] || 0) + qty;
         });
       }
     });
@@ -3961,75 +4042,289 @@ function prosesFilterDanDownload(rawData, type, baseFileName, targetBulan, targe
       return;
     }
 
-    let bulanNama = targetBulan === 'ALL' ? 'Semua Bulan' : ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][targetBulan] + ' ' + targetTahun;
-
-    let csvContent = "\uFEFF";
-    csvContent += `"REKAPITULASI PENGAJUAN BAHAN & ALAT TIM SABER - PERIODE ${bulanNama.toUpperCase()}"\r\n\r\n`;
-    csvContent += "No,Nama Anggota & Area,Nama Barang / Alat yang Diambil,Total Jumlah\r\n";
+    htmlContent += `
+      <table>
+        <tr><th colspan="4" class="title-banner">REKAPITULASI PENGAJUAN BAHAN & ALAT TIM SABER</th></tr>
+        <tr><td colspan="4" class="sub-title">PERIODE: ${bulanNama.toUpperCase()}</td></tr>
+        <tr>
+          <th style="width:45px;">No</th>
+          <th style="width:240px;">Nama Anggota & Area</th>
+          <th style="width:260px;">Nama Barang / Alat yang Diambil</th>
+          <th style="width:130px;">Total Jumlah (Pcs)</th>
+        </tr>
+    `;
 
     let noUrut = 1;
     keysAnggota.forEach(namaAnggota => {
       let barangList = rekapPerAnggota[namaAnggota];
-      let cleanAnggota = namaAnggota.replace(/"/g, '""');
       let isFirstRow = true;
+      let zebraClass = noUrut % 2 === 0 ? 'class="zebra"' : '';
 
       Object.keys(barangList).forEach(namaBarang => {
         let totalQty = barangList[namaBarang];
-        let cleanBarang = namaBarang.replace(/"/g, '""');
-
         if (isFirstRow) {
-          csvContent += `${noUrut},"${cleanAnggota}","${cleanBarang}",${totalQty}\r\n`;
+          htmlContent += `
+            <tr ${zebraClass}>
+              <td align="center" valign="top">${noUrut}</td>
+              <td valign="top"><b>${esc(namaAnggota)}</b></td>
+              <td valign="top">${esc(namaBarang)}</td>
+              <td align="center" valign="top"><b>${totalQty}</b></td>
+            </tr>
+          `;
           isFirstRow = false;
         } else {
-          csvContent += `,"","${cleanBarang}",${totalQty}\r\n`;
+          htmlContent += `
+            <tr ${zebraClass}>
+              <td></td>
+              <td></td>
+              <td valign="top">${esc(namaBarang)}</td>
+              <td align="center" valign="top"><b>${totalQty}</b></td>
+            </tr>
+          `;
         }
       });
-
       noUrut++;
     });
 
-    let bulanLabel = targetBulan === 'ALL' ? 'Semua_Bulan' : ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][targetBulan] + '_' + targetTahun;
-    let fileName = `Rekap_Profesional_Pengajuan_${bulanLabel}.csv`;
+    htmlContent += `
+      </table>
+      <br><br>
+      <table>
+        <tr><th colspan="3" class="total-header">REKAPITULASI TOTAL KESELURUHAN SEMUA ANGGOTA (GRAND TOTAL)</th></tr>
+        <tr>
+          <th style="width:45px;">No</th>
+          <th style="width:320px;">Nama Barang / Alat</th>
+          <th style="width:160px;">Total Keseluruhan (Pcs)</th>
+        </tr>
+    `;
 
-    let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    let url = URL.createObjectURL(blob);
-    let a = document.createElement('a');
-    a.setAttribute('href', url);
-    a.setAttribute('download', fileName);
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    
-    showToast("BERHASIL MENGUNDUH LAPORAN");
-    return;
+    let grandTotalSum = 0;
+    let idxBarang = 1;
+    Object.keys(grandTotalBarang).sort().forEach(barang => {
+      let qty = grandTotalBarang[barang];
+      grandTotalSum += qty;
+      let zebraClass = idxBarang % 2 === 0 ? 'class="zebra"' : '';
+      htmlContent += `
+        <tr ${zebraClass}>
+          <td align="center">${idxBarang}</td>
+          <td><b>${esc(barang)}</b></td>
+          <td align="center"><b>${qty} Pcs</b></td>
+        </tr>
+      `;
+      idxBarang++;
+    });
+
+    htmlContent += `
+        <tr class="grand-total-row">
+          <td colspan="2" align="right"><b>GRAND TOTAL SELURUH ITEM (PCS) :</b></td>
+          <td align="center"><b>${grandTotalSum} Pcs</b></td>
+        </tr>
+      </table>
+    `;
+  }
+  // 3. REKAP PENGADUAN KENDALA
+  else if (type === 'pengaduan') {
+    htmlContent += `
+      <table>
+        <tr><th colspan="7" class="title-banner">REKAPITULASI PENGADUAN KENDALA TIM SABER</th></tr>
+        <tr><td colspan="7" class="sub-title">PERIODE: ${bulanNama.toUpperCase()}</td></tr>
+        <tr>
+          <th style="width:45px;">No</th>
+          <th style="width:150px;">Waktu Laporan</th>
+          <th style="width:180px;">Nama Pelapor</th>
+          <th style="width:140px;">Area / Lokasi</th>
+          <th style="width:280px;">Deskripsi Kendala</th>
+          <th style="width:120px;">Status</th>
+          <th style="width:220px;">Keterangan / Penanganan</th>
+        </tr>
+    `;
+
+    let countBaru = 0;
+    let countProses = 0;
+    let countSelesai = 0;
+
+    filteredData.forEach((x, idx) => {
+      const values = Object.values(x).map(v => String(v || '').trim());
+      let tglMasuk = itemDateFormatter(x['Waktu System'] || x.WaktuSystem || x.Tanggal || values[0] || '-');
+      let namaUser = String(x.Nama || x.nama || values[1] || 'Pengguna').trim();
+      let areaUser = String(x.Area || x.area || values[2] || '-').trim();
+      let rawTglUpdate = x['Hari/Tanggal'] || x.HariTanggal || x['Hari/tgl'] || values[6] || '';
+      let keterangan = String(x.Keterangan || x.keterangan || x.TindakLanjut || x.Penanganan || '').trim();
+
+      if (rawTglUpdate.includes('|') && !keterangan) {
+        keterangan = rawTglUpdate.split('|').slice(1).join('|').trim();
+      }
+
+      let statusText = String(x.Status || x.status || '').trim();
+      if (!statusText) {
+        let rawStatus = values.find(v => {
+          let vLow = v.toLowerCase();
+          return (vLow === 'baru' || vLow.includes('progres') || vLow.includes('proses') || vLow.includes('cek') || vLow.includes('selesai')) && !v.startsWith('http');
+        });
+        statusText = rawStatus ? rawStatus : 'BARU';
+      }
+      statusText = statusText.toUpperCase();
+
+      let stLow = statusText.toLowerCase();
+      let statusClass = "badge-bad";
+      if (stLow.includes('selesai')) {
+        statusClass = "badge-ok";
+        countSelesai++;
+      } else if (stLow.includes('progres') || stLow.includes('proses') || stLow.includes('cek')) {
+        statusClass = "badge-warn";
+        countProses++;
+      } else {
+        countBaru++;
+      }
+
+      let rawKendala = String(x.Kendala || x.kendala || x.Deskripsi || x.deskripsi || '').trim();
+      if (!rawKendala) {
+        rawKendala = values.find(v => {
+          if (!v || v === namaUser || v === areaUser || v.startsWith('http')) return false;
+          if (v.includes('T') && v.includes('Z')) return false;
+          if (v.toLowerCase() === statusText.toLowerCase()) return false;
+          if (v.includes('202') && v.length < 25) return false;
+          return v.length > 2;
+        }) || '-';
+      }
+
+      let kendalaTeks = rawKendala;
+      if (rawKendala.includes('|')) {
+        let parts = rawKendala.split('|');
+        kendalaTeks = parts[0].trim();
+        if (!keterangan) keterangan = parts.slice(1).join('|').trim();
+      }
+
+      let zebraClass = (idx + 1) % 2 === 0 ? 'class="zebra"' : '';
+
+      htmlContent += `
+        <tr ${zebraClass}>
+          <td align="center">${idx + 1}</td>
+          <td align="center">${esc(tglMasuk)}</td>
+          <td><b>${esc(namaUser)}</b></td>
+          <td align="center">${esc(areaUser)}</td>
+          <td>${esc(kendalaTeks)}</td>
+          <td align="center" class="${statusClass}">${esc(statusText)}</td>
+          <td>${esc(keterangan || '-')}</td>
+        </tr>
+      `;
+    });
+
+    htmlContent += `
+      </table>
+      <br><br>
+      <table>
+        <tr><th colspan="2" class="total-header">REKAPITULASI TOTAL PENGADUAN (GRAND TOTAL)</th></tr>
+        <tr>
+          <th style="width:260px;">Status Penanganan</th>
+          <th style="width:160px;">Jumlah Laporan</th>
+        </tr>
+        <tr>
+          <td>Laporan Baru</td>
+          <td align="center" class="badge-bad">${countBaru} Laporan</td>
+        </tr>
+        <tr class="zebra">
+          <td>Dalam Proses / Pengecekan</td>
+          <td align="center" class="badge-warn">${countProses} Laporan</td>
+        </tr>
+        <tr>
+          <td>Selesai Ditangani</td>
+          <td align="center" class="badge-ok">${countSelesai} Laporan</td>
+        </tr>
+        <tr class="grand-total-row">
+          <td align="right"><b>GRAND TOTAL SELURUH PENGADUAN :</b></td>
+          <td align="center"><b>${filteredData.length} Laporan</b></td>
+        </tr>
+      </table>
+    `;
+  }
+  // 4. REKAP JADWAL LEMBUR
+  else if (type === 'lembur') {
+    htmlContent += `
+      <table>
+        <tr><th colspan="7" class="title-banner">REKAPITULASI JADWAL LEMBUR TIM SABER</th></tr>
+        <tr><td colspan="7" class="sub-title">PERIODE: ${bulanNama.toUpperCase()}</td></tr>
+        <tr>
+          <th style="width:45px;">No</th>
+          <th style="width:190px;">Hari / Tanggal</th>
+          <th style="width:200px;">Nama Petugas / PIC</th>
+          <th style="width:220px;">Kegiatan</th>
+          <th style="width:90px;">Jam Masuk (In)</th>
+          <th style="width:90px;">Jam Keluar (Out)</th>
+          <th style="width:200px;">Keterangan</th>
+        </tr>
+    `;
+
+    let rekapPerPetugas = {};
+
+    filteredData.forEach((x, idx) => {
+      const rawTgl = extractDisplayDate(x);
+      const tglFinal = formatTanggalLemburBersih(rawTgl);
+      const petugas = String(x.Petugas || x.PIC || x['Petugas/PIC'] || x.Nama || '-').trim();
+      const kegiatan = String(x.Kegiatan || '-').trim();
+      const jamIn = String(x.In || '-').trim();
+      const jamOut = String(x.Out || '-').trim();
+      const keterangan = String(x.Keterangan || '-').trim();
+
+      let petugasKey = petugas.toUpperCase();
+      if (petugasKey && petugasKey !== '-') {
+        rekapPerPetugas[petugasKey] = (rekapPerPetugas[petugasKey] || 0) + 1;
+      }
+
+      let zebraClass = (idx + 1) % 2 === 0 ? 'class="zebra"' : '';
+
+      htmlContent += `
+        <tr ${zebraClass}>
+          <td align="center">${idx + 1}</td>
+          <td>${esc(tglFinal)}</td>
+          <td><b>${esc(petugas)}</b></td>
+          <td>${esc(kegiatan)}</td>
+          <td align="center">${esc(jamIn)}</td>
+          <td align="center">${esc(jamOut)}</td>
+          <td>${esc(keterangan)}</td>
+        </tr>
+      `;
+    });
+
+    htmlContent += `
+      </table>
+      <br><br>
+      <table>
+        <tr><th colspan="3" class="total-header">REKAPITULASI TOTAL LEMBUR PER PETUGAS (GRAND TOTAL)</th></tr>
+        <tr>
+          <th style="width:45px;">No</th>
+          <th style="width:260px;">Nama Petugas</th>
+          <th style="width:160px;">Total Tugas Lembur</th>
+        </tr>
+    `;
+
+    let idxPetugas = 1;
+    Object.keys(rekapPerPetugas).sort().forEach(namaP => {
+      let jml = rekapPerPetugas[namaP];
+      let zebraClass = idxPetugas % 2 === 0 ? 'class="zebra"' : '';
+      htmlContent += `
+        <tr ${zebraClass}>
+          <td align="center">${idxPetugas}</td>
+          <td><b>${esc(namaP)}</b></td>
+          <td align="center"><b>${jml} Kali</b></td>
+        </tr>
+      `;
+      idxPetugas++;
+    });
+
+    htmlContent += `
+        <tr class="grand-total-row">
+          <td colspan="2" align="right"><b>GRAND TOTAL SELURUH JADWAL LEMBUR :</b></td>
+          <td align="center"><b>${filteredData.length} Kegiatan</b></td>
+        </tr>
+      </table>
+    `;
   }
 
-  let fileName = `${baseFileName}_${targetBulan === 'ALL' ? 'Semua_Bulan' : targetBulan + '_' + targetTahun}.csv`;
+  htmlContent += `</body></html>`;
 
-  let keys = [];
-  filteredData.forEach(item => {
-    Object.keys(item).forEach(k => {
-      if (!keys.includes(k)) keys.push(k);
-    });
-  });
-
-  let csvContent = "\uFEFF";
-  csvContent += keys.join(",") + "\r\n";
-
-  filteredData.forEach(item => {
-    let row = keys.map(key => {
-      let val = item[key] !== undefined && item[key] !== null ? String(item[key]) : "";
-      val = val.replace(/"/g, '""');
-      if (val.includes(',') || val.includes('\n') || val.includes('"')) {
-        val = `"${val}"`;
-      }
-      return val;
-    });
-    csvContent += row.join(",") + "\r\n";
-  });
-
-  let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  let fileName = `${baseFileName}_${bulanLabel}.xls`;
+  let blob = new Blob([htmlContent], { type: 'application/vnd.ms-excel;charset=utf-8;' });
   let url = URL.createObjectURL(blob);
   let a = document.createElement('a');
   a.setAttribute('href', url);
@@ -4038,8 +4333,8 @@ function prosesFilterDanDownload(rawData, type, baseFileName, targetBulan, targe
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  
-  showToast("BERHASIL MENGUNDUH DATA");
+
+  showToast("BERHASIL MENGUNDUH FILE EXCEL");
 }
 
 let tabRekapAktif = 'kinerja';
