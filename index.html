@@ -13,9 +13,9 @@
                viewport-fit=cover">
 
 <title>Portal Tim SABER</title>
-<meta name="saber-app-version" content="2.1.5">
-<meta name="saber-css-version" content="2.1.5">
-<meta name="saber-js-version" content="2.1.5">
+<meta name="saber-app-version" content="2.1.6">
+<meta name="saber-css-version" content="2.1.6">
+<meta name="saber-js-version" content="2.1.6">
 
 <!-- Meminta browser memvalidasi HTML terbaru, bukan memakai dokumen lama dari cache -->
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -29,7 +29,7 @@
 <script>
 (function () {
   'use strict';
-  var APP_VERSION = '2.1.5';
+  var APP_VERSION = '2.1.6';
   var VERSION_KEY = 'timSaberAppVersion';
 
   try {
@@ -87,12 +87,12 @@
 </script>
 
 <link rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css?v=2.1.5">
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css?v=2.1.6">
 <!-- SweetAlert2 untuk Popup & Dialog -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11?v=2.1.5"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11?v=2.1.6"></script>
 
-<style data-saber-css-version="2.1.5">
-/* SABER CSS VERSION: 2.1.5 | CSS inline mengikuti versi dokumen HTML */
+<style data-saber-css-version="2.1.6">
+/* SABER CSS VERSION: 2.1.6 | CSS inline mengikuti versi dokumen HTML */
 :root{
   --g:#16a34a;
   --gd:#15803d;
@@ -1363,8 +1363,8 @@ html, body{
   </div>
 </div>
 
-<script data-saber-js-version="2.1.5">
-// SABER JAVASCRIPT VERSION: 2.1.5 | JS inline mengikuti versi dokumen HTML
+<script data-saber-js-version="2.1.6">
+// SABER JAVASCRIPT VERSION: 2.1.6 | JS inline mengikuti versi dokumen HTML
 // DAFTAR KATEGORI BAHAN DAN ALAT
 const DAFTAR_BAHAN = [
   "Sabun Cuci Piring",
@@ -3576,31 +3576,67 @@ async function fileToBase64(inputId) {
 
 function postViaHiddenForm(payload, buttonId, defaultBtnText, successCallback) {
   const btn = document.getElementById(buttonId);
-  if (btn) { btn.disabled = true; btn.innerText = 'Mengirim...'; }
-
-  playNotifSound(); 
-
   const iframe = document.getElementById('hidden_iframe');
-  iframe.onload = function() {
+  const form = document.getElementById('gasSubmitForm');
+  const input = document.getElementById('gasPostData');
+
+  if (!iframe || !form || !input) {
+    const message = 'Komponen pengiriman tidak ditemukan. Muat ulang aplikasi lalu coba kembali.';
+    showToast(message);
+    alert(message);
     if (btn) { btn.disabled = false; btn.innerText = defaultBtnText; }
-    showToast('BERHASIL DIKIRIM');
-    if (successCallback) successCallback();
-    setTimeout(() => { loadData(); }, 800);
-    iframe.onload = null;
-  };
+    return;
+  }
 
-  document.getElementById('gasPostData').value = JSON.stringify(payload);
-  document.getElementById('gasSubmitForm').submit();
+  const requestId = 'saber_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+  payload.requestId = requestId;
+  let settled = false;
+  let timeoutId = null;
 
-  setTimeout(() => {
-    if (btn && btn.disabled) {
+  function finish(success, message) {
+    if (settled) return;
+    settled = true;
+    if (timeoutId) clearTimeout(timeoutId);
+    window.removeEventListener('message', onMessage);
+
+    if (btn) {
       btn.disabled = false;
       btn.innerText = defaultBtnText;
-      showToast('BERHASIL DIKIRIM');
-      if (successCallback) successCallback();
-      setTimeout(() => { loadData(); }, 1000);
     }
-  }, 5000);
+
+    if (success) {
+      playNotifSound();
+      showToast(message || 'Data berhasil disimpan.');
+      if (typeof successCallback === 'function') successCallback();
+      setTimeout(function () { loadData(); }, 800);
+    } else {
+      const errorMessage = message || 'Server belum mengonfirmasi penyimpanan. Periksa koneksi lalu coba kembali.';
+      showToast('Pengiriman belum terkonfirmasi.');
+      alert(errorMessage + '\n\nData pada formulir tidak otomatis dihapus. Silakan periksa data sebelum mengirim ulang agar tidak terjadi duplikasi.');
+    }
+  }
+
+  function onMessage(event) {
+    if (event.source !== iframe.contentWindow) return;
+    const messageData = event.data;
+    if (!messageData || messageData.type !== 'TIM_SABER_RESULT' || !messageData.payload) return;
+    if (messageData.payload.requestId !== requestId) return;
+
+    finish(messageData.payload.success === true, messageData.payload.message);
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = 'Mengirim...';
+  }
+
+  window.addEventListener('message', onMessage);
+  timeoutId = setTimeout(function () {
+    finish(false, 'Server belum memberikan konfirmasi dalam 30 detik. Status penyimpanan belum dapat dipastikan. Jangan langsung mengirim ulang sebelum memeriksa Google Sheets.');
+  }, 30000);
+
+  input.value = JSON.stringify(payload);
+  form.submit();
 }
 
 async function kirimLaporanModal() {
