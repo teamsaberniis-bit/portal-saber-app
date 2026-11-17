@@ -13,9 +13,9 @@
                viewport-fit=cover">
 
 <title>Portal Tim SABER</title>
-<meta name="saber-app-version" content="2.1.6">
-<meta name="saber-css-version" content="2.1.6">
-<meta name="saber-js-version" content="2.1.6">
+<meta name="saber-app-version" content="2.2.0">
+<meta name="saber-css-version" content="2.2.0">
+<meta name="saber-js-version" content="2.2.0">
 
 <!-- Meminta browser memvalidasi HTML terbaru, bukan memakai dokumen lama dari cache -->
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -29,7 +29,7 @@
 <script>
 (function () {
   'use strict';
-  var APP_VERSION = '2.1.6';
+  var APP_VERSION = '2.2.0';
   var VERSION_KEY = 'timSaberAppVersion';
 
   try {
@@ -87,12 +87,12 @@
 </script>
 
 <link rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css?v=2.1.6">
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css?v=2.2.0">
 <!-- SweetAlert2 untuk Popup & Dialog -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11?v=2.1.6"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11?v=2.2.0"></script>
 
-<style data-saber-css-version="2.1.6">
-/* SABER CSS VERSION: 2.1.6 | CSS inline mengikuti versi dokumen HTML */
+<style data-saber-css-version="2.2.0">
+/* SABER CSS VERSION: 2.2.0 | CSS inline mengikuti versi dokumen HTML */
 :root{
   --g:#16a34a;
   --gd:#15803d;
@@ -1363,8 +1363,8 @@ html, body{
   </div>
 </div>
 
-<script data-saber-js-version="2.1.6">
-// SABER JAVASCRIPT VERSION: 2.1.6 | JS inline mengikuti versi dokumen HTML
+<script data-saber-js-version="2.2.0">
+// SABER JAVASCRIPT VERSION: 2.2.0 | JS inline mengikuti versi dokumen HTML
 // DAFTAR KATEGORI BAHAN DAN ALAT
 const DAFTAR_BAHAN = [
   "Sabun Cuci Piring",
@@ -1477,9 +1477,9 @@ function renderBarisPengajuan() {
   }).join('');
 }
 
-if (localStorage.getItem('timSaberCacheVersion') !== 'v63') {
-  localStorage.clear();
-  localStorage.setItem('timSaberCacheVersion', 'v63');
+// Versi cache data dipisahkan tanpa menghapus preferensi/login anggota.
+if (localStorage.getItem('timSaberCacheVersion') !== 'v64') {
+  localStorage.setItem('timSaberCacheVersion', 'v64');
 }
 
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzh2QzSHDz9KTCXuV78xBIyaYbKeCiqXjsZcbl1rVUGfK4aGi21-7r53RcpV9za6X3D8w/exec";
@@ -1640,7 +1640,7 @@ function pingOnlineStatus() {
 function loadData() {
   initPengajuanDinamis();
 
-  const cachedData = localStorage.getItem('timSaberCacheData_v63');
+  const cachedData = localStorage.getItem('timSaberCacheData_v64');
   if (cachedData) {
     try {
       DB = Object.assign(DB, JSON.parse(cachedData));
@@ -1657,7 +1657,7 @@ function loadData() {
       if (d) {
         const newStr = JSON.stringify(d);
         DB = Object.assign(DB, d);
-        localStorage.setItem('timSaberCacheData_v63', newStr);
+        localStorage.setItem('timSaberCacheData_v64', newStr);
         initApp();
       }
     })
@@ -1673,7 +1673,7 @@ function loadDataFallback() {
   window.handleDashboardResponse = function(d) {
     if (d) {
       DB = Object.assign(DB, d);
-      localStorage.setItem('timSaberCacheData_v63', JSON.stringify(d));
+      localStorage.setItem('timSaberCacheData_v64', JSON.stringify(d));
       initApp();
     }
   };
@@ -3536,32 +3536,43 @@ function previewPhoto(input, previewId, textBtnId) {
 }
 
 function resizeAndCompressImage(file) {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
+    if (!file || !file.type || !/^image\/(jpeg|jpg|png|webp)$/i.test(file.type)) {
+      reject(new Error('File harus berupa foto JPG, PNG, atau WEBP.'));
+      return;
+    }
     const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Foto gagal dibaca. Coba pilih atau ambil foto kembali.'));
+    reader.onabort = () => reject(new Error('Pembacaan foto dibatalkan.'));
     reader.onload = function(e) {
       const img = new Image();
+      img.onerror = () => reject(new Error('Foto tidak dapat dibuka atau formatnya rusak.'));
       img.onload = function() {
-        const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
-        
-        const MAX_WIDTH = 800;
-        const MAX_HEIGHT = 800;
-        if (width > height) {
-          if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
-        } else {
-          if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+        try {
+          const canvas = document.createElement('canvas');
+          let width = img.naturalWidth || img.width;
+          let height = img.naturalHeight || img.height;
+          if (!width || !height) throw new Error('Dimensi foto tidak valid.');
+          const maxSide = 900;
+          const scale = Math.min(1, maxSide / Math.max(width, height));
+          width = Math.max(1, Math.round(width * scale));
+          height = Math.max(1, Math.round(height * scale));
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) throw new Error('Perangkat tidak mendukung pemrosesan foto.');
+          ctx.drawImage(img, 0, 0, width, height);
+          const output = canvas.toDataURL('image/jpeg', 0.68);
+          if (!output || output === 'data:,') throw new Error('Foto gagal dikompres.');
+          resolve(output);
+        } catch (err) {
+          reject(err instanceof Error ? err : new Error('Foto gagal diproses.'));
         }
-        
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', 0.7));
       };
       img.src = e.target.result;
     };
-    reader.readAsDataURL(file);
+    try { reader.readAsDataURL(file); }
+    catch (err) { reject(new Error('Tidak dapat membaca foto dari perangkat.')); }
   });
 }
 
@@ -3569,9 +3580,11 @@ async function fileToBase64(inputId) {
   const input = document.getElementById(inputId);
   if (!input || !input.files || !input.files[0]) return null;
   const file = input.files[0];
-  if (file.size > 10 * 1024 * 1024) throw new Error('Ukuran foto maksimal 10 MB.');
+  if (file.size > 10 * 1024 * 1024) throw new Error('Ukuran foto asli maksimal 10 MB.');
   const compressedDataUrl = await resizeAndCompressImage(file);
-  return { base64: compressedDataUrl, name: file.name };
+  const estimatedBytes = Math.ceil((compressedDataUrl.length - compressedDataUrl.indexOf(',') - 1) * 0.75);
+  if (estimatedBytes > 7 * 1024 * 1024) throw new Error('Foto masih terlalu besar setelah dikompres. Silakan ambil foto dengan resolusi lebih rendah.');
+  return { base64: compressedDataUrl, name: file.name.replace(/\.[^.]+$/, '') + '.jpg' };
 }
 
 function postViaHiddenForm(payload, buttonId, defaultBtnText, successCallback) {
@@ -3585,7 +3598,7 @@ function postViaHiddenForm(payload, buttonId, defaultBtnText, successCallback) {
     showToast(message);
     alert(message);
     if (btn) { btn.disabled = false; btn.innerText = defaultBtnText; }
-    return;
+    return false;
   }
 
   const requestId = 'saber_' + Date.now() + '_' + Math.random().toString(36).slice(2);
@@ -3598,21 +3611,19 @@ function postViaHiddenForm(payload, buttonId, defaultBtnText, successCallback) {
     settled = true;
     if (timeoutId) clearTimeout(timeoutId);
     window.removeEventListener('message', onMessage);
-
     if (btn) {
       btn.disabled = false;
       btn.innerText = defaultBtnText;
     }
-
     if (success) {
       playNotifSound();
       showToast(message || 'Data berhasil disimpan.');
       if (typeof successCallback === 'function') successCallback();
       setTimeout(function () { loadData(); }, 800);
     } else {
-      const errorMessage = message || 'Server belum mengonfirmasi penyimpanan. Periksa koneksi lalu coba kembali.';
+      const errorMessage = message || 'Server belum mengonfirmasi penyimpanan. Periksa koneksi.';
       showToast('Pengiriman belum terkonfirmasi.');
-      alert(errorMessage + '\n\nData pada formulir tidak otomatis dihapus. Silakan periksa data sebelum mengirim ulang agar tidak terjadi duplikasi.');
+      alert(errorMessage + '\n\nData formulir tetap disimpan di layar. Periksa Google Sheets sebelum mengirim ulang agar tidak terjadi data ganda.');
     }
   }
 
@@ -3621,22 +3632,23 @@ function postViaHiddenForm(payload, buttonId, defaultBtnText, successCallback) {
     const messageData = event.data;
     if (!messageData || messageData.type !== 'TIM_SABER_RESULT' || !messageData.payload) return;
     if (messageData.payload.requestId !== requestId) return;
-
     finish(messageData.payload.success === true, messageData.payload.message);
   }
 
-  if (btn) {
-    btn.disabled = true;
-    btn.innerText = 'Mengirim...';
-  }
-
+  if (btn) { btn.disabled = true; btn.innerText = 'Mengirim ke server...'; }
   window.addEventListener('message', onMessage);
   timeoutId = setTimeout(function () {
-    finish(false, 'Server belum memberikan konfirmasi dalam 30 detik. Status penyimpanan belum dapat dipastikan. Jangan langsung mengirim ulang sebelum memeriksa Google Sheets.');
-  }, 30000);
+    finish(false, 'Server belum memberikan konfirmasi dalam 45 detik. Status penyimpanan belum dapat dipastikan. Periksa Google Sheets sebelum mencoba lagi.');
+  }, 45000);
 
-  input.value = JSON.stringify(payload);
-  form.submit();
+  try {
+    input.value = JSON.stringify(payload);
+    form.submit();
+    return true;
+  } catch (err) {
+    finish(false, 'Aplikasi gagal memulai pengiriman. Periksa koneksi lalu coba kembali.');
+    return false;
+  }
 }
 
 async function kirimLaporanModal() {
@@ -3651,10 +3663,12 @@ async function kirimLaporanModal() {
   };
   if (!d.Nama || !d.Area || !d.Pekerjaan) { alert('Nama, area, dan pekerjaan wajib diisi.'); return; }
 
-  if (btn) { btn.disabled = true; btn.innerText = 'Memproses Foto...'; }
+  if (btn && btn.disabled) return;
+  if (btn) { btn.disabled = true; btn.innerText = 'Menyiapkan foto...'; }
 
   try {
     const photo = await fileToBase64('laporFotoModal');
+    if (btn) btn.innerText = 'Menyiapkan pengiriman...';
     if (photo) { d.FotoBase64 = photo.base64; d.FotoNama = photo.name; }
     
     postViaHiddenForm(d, 'btnLaporanModal', 'Kirim Laporan (Selesai)', () => {
@@ -3686,6 +3700,8 @@ async function kirimLaporanModal() {
 }
 
 function kirimPengajuan() {
+  const btnPengajuan = document.getElementById('btnPengajuan');
+  if (btnPengajuan && btnPengajuan.disabled) return;
   const nama = document.getElementById('pengajuanNama').value.trim();
   const area = document.getElementById('pengajuanArea').value.trim();
   const prioritas = (document.querySelector('input[name="prioritas"]:checked') || {}).value || 'Normal';
@@ -3730,6 +3746,7 @@ function kirimPengajuan() {
   });
   if (khususItems.length) d.PermintaanKhusus = khususItems.join(' || ');
 
+  if (btnPengajuan) { btnPengajuan.disabled = true; btnPengajuan.innerText = 'Mengirim pengajuan...'; }
   postViaHiddenForm(d, 'btnPengajuan', 'Kirim Pengajuan', () => {
     initPengajuanDinamis();
     showPage('pengajuan');
@@ -3747,10 +3764,12 @@ async function kirimPengaduan() {
   };
   if (!d.Nama || !d.Area || !d.Kendala) { alert('Nama, area, dan pengaduan wajib diisi.'); return; }
 
-  if (btn) { btn.disabled = true; btn.innerText = 'Memproses Foto...'; }
+  if (btn && btn.disabled) return;
+  if (btn) { btn.disabled = true; btn.innerText = 'Menyiapkan foto...'; }
 
   try {
     const photo = await fileToBase64('pengaduanFoto');
+    if (btn) btn.innerText = 'Menyiapkan pengiriman...';
     if (photo) { d.FotoBase64 = photo.base64; d.FotoNama = photo.name; }
     
     postViaHiddenForm(d, 'btnPengaduan', 'Kirim Pengaduan', () => {
@@ -3792,7 +3811,7 @@ appContainer.addEventListener('touchend', e => {
       .then(d => {
         if (d) { 
           DB = Object.assign(DB, d); 
-          localStorage.setItem('timSaberCacheData_v63', JSON.stringify(d)); 
+          localStorage.setItem('timSaberCacheData_v64', JSON.stringify(d)); 
           initApp(); 
         }
         setTimeout(() => pullIndicator.style.transform = 'translateY(0)', 400);
