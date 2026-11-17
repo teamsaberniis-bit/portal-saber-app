@@ -1258,18 +1258,14 @@ html, body{
       <label><input type="radio" name="prioritas" value="Mendesak"><span>Mendesak</span></label>
     </div>
     
-    <div class="form-label" style="margin-top:14px; color:var(--g); display:flex; justify-content:space-between; align-items:center;">
-      <span>Daftar Kebutuhan Barang & Jumlah (Maks. 6 Item)</span>
+    <div class="form-label" style="margin-top:14px; color:var(--g);">Daftar Kebutuhan Alat & Bahan</div>
+
+    <div id="dynamicItemsContainer" style="display:flex; flex-direction:column; gap:10px; margin-top:8px;">
+      <!-- Baris pilihan barang dimasukkan otomatis melalui JavaScript -->
     </div>
 
-    <!-- KONTAINER DAFTAR ITEM DINAMIS -->
-    <div id="dynamicItemsContainer" style="display:flex; flex-direction:column; gap:8px; margin-top:6px;">
-      <!-- Baris item akan dimasukkan otomatis via JavaScript -->
-    </div>
-
-    <!-- TOMBOL TAMBAH BARANG -->
-    <button type="button" id="btnTambahBarang" onclick="tambahBarisPengajuan()" style="width:100%; margin-top:10px; padding:10px; background:#f0fdf4; border:1.5px dashed var(--g); color:var(--g); font-weight:800; font-size:12px; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
-      <i class="fa-solid fa-plus"></i> Tambah Barang Lain (Maks. 6)
+    <button type="button" id="btnTambahBarang" onclick="tambahBarisPengajuan()" style="width:100%; margin-top:10px; padding:11px; background:#f0fdf4; border:1.5px dashed var(--g); color:var(--g); font-weight:800; font-size:12px; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
+      <i class="fa-solid fa-plus"></i> Tambah Barang Lain
     </button>
 
     <button class="btn" id="btnPengajuan" onclick="kirimPengajuan()">Kirim Pengajuan</button>
@@ -1397,45 +1393,40 @@ const DAFTAR_ALAT = [
   "Pengki"
 ];
 
+const OPSI_PERMINTAAN_KHUSUS = '__PERMINTAAN_KHUSUS__';
 let daftarBarisPengajuan = [];
 
 function initPengajuanDinamis() {
-  daftarBarisPengajuan = [{ barang: '', jumlah: 1 }];
+  daftarBarisPengajuan = [{ barang: '', jumlah: 1, namaKhusus: '' }];
   renderBarisPengajuan();
 }
 
 function tambahBarisPengajuan() {
-  if (daftarBarisPengajuan.length >= 6) {
-    alert("Batas maksimal pengajuan adalah 6 item.");
-    return;
-  }
-  daftarBarisPengajuan.push({ barang: '', jumlah: 1 });
+  if (daftarBarisPengajuan.length >= 6) return;
+  daftarBarisPengajuan.push({ barang: '', jumlah: 1, namaKhusus: '' });
   renderBarisPengajuan();
 }
 
 function hapusBarisPengajuan(index) {
   if (daftarBarisPengajuan.length === 1) {
-    alert("Minimal harus ada 1 barang dalam pengajuan.");
-    return;
+    daftarBarisPengajuan[0] = { barang: '', jumlah: 1, namaKhusus: '' };
+  } else {
+    daftarBarisPengajuan.splice(index, 1);
   }
-  daftarBarisPengajuan.splice(index, 1);
   renderBarisPengajuan();
 }
 
 function updateNilaiBaris(index, field, value) {
-  if (daftarBarisPengajuan[index]) {
-    daftarBarisPengajuan[index][field] = value;
-  }
+  if (!daftarBarisPengajuan[index]) return;
+  daftarBarisPengajuan[index][field] = value;
+  if (field === 'barang') renderBarisPengajuan();
 }
 
 function ubahJumlahQty(index, delta) {
-  if (daftarBarisPengajuan[index]) {
-    let current = parseInt(daftarBarisPengajuan[index].jumlah, 10) || 1;
-    let nextVal = current + delta;
-    if (nextVal < 1) nextVal = 1;
-    daftarBarisPengajuan[index].jumlah = nextVal;
-    renderBarisPengajuan();
-  }
+  if (!daftarBarisPengajuan[index]) return;
+  let current = parseInt(daftarBarisPengajuan[index].jumlah, 10) || 1;
+  daftarBarisPengajuan[index].jumlah = Math.max(1, current + delta);
+  renderBarisPengajuan();
 }
 
 function renderBarisPengajuan() {
@@ -1443,49 +1434,46 @@ function renderBarisPengajuan() {
   const btnTambah = document.getElementById('btnTambahBarang');
   if (!container) return;
 
-  if (btnTambah) {
-    if (daftarBarisPengajuan.length >= 6) {
-      btnTambah.style.display = 'none';
-    } else {
-      btnTambah.style.display = 'flex';
-    }
-  }
+  if (btnTambah) btnTambah.style.display = daftarBarisPengajuan.length >= 6 ? 'none' : 'flex';
 
-  let optionsHTML = `<option value="">-- Pilih Barang / Alat --</option>`;
-  
-  optionsHTML += `<optgroup label="--- KATEGORI BAHAN ---">`;
+  let options = '<option value="">-- Pilih Barang / Alat --</option>';
+  options += '<optgroup label="--- KATEGORI BAHAN ---">';
   DAFTAR_BAHAN.forEach(b => {
-    optionsHTML += `<option value="${esc(b)}">${esc(b)}</option>`;
+    options += `<option value="${esc(b)}">${esc(b)}</option>`;
   });
-  optionsHTML += `</optgroup>`;
-
-  optionsHTML += `<optgroup label="--- KATEGORI ALAT ---">`;
+  options += '</optgroup><optgroup label="--- KATEGORI ALAT ---">';
   DAFTAR_ALAT.forEach(a => {
-    optionsHTML += `<option value="${esc(a)}">${esc(a)}</option>`;
+    options += `<option value="${esc(a)}">${esc(a)}</option>`;
   });
-  optionsHTML += `</optgroup>`;
+  options += '</optgroup><option value="' + OPSI_PERMINTAAN_KHUSUS + '">✚ Permintaan Khusus</option>';
 
   container.innerHTML = daftarBarisPengajuan.map((item, idx) => {
+    const selectedOptions = options.replace(
+      `value="${String(item.barang || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;')}"`,
+      `value="${String(item.barang || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;')}" selected`
+    );
+    const khusus = item.barang === OPSI_PERMINTAAN_KHUSUS;
     return `
-      <div style="background:#f8fafc; border:1px solid var(--b); border-radius:12px; padding:10px; display:flex; flex-direction:column; gap:6px;">
+      <div style="background:#f8fafc; border:1.5px solid ${khusus ? '#fbbf24' : 'var(--b)'}; border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:9px;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-          <span style="font-size:10px; font-weight:800; color:var(--s);">Barang #${idx + 1}</span>
-          ${daftarBarisPengajuan.length > 1 ? `<button type="button" onclick="hapusBarisPengajuan(${idx})" style="background:#fee2e2; color:#dc2626; border:0; width:22px; height:22px; border-radius:6px; font-weight:800; cursor:pointer; font-size:10px;">✕</button>` : ''}
+          <span style="font-size:11px; font-weight:800; color:var(--s);">Barang #${idx + 1}</span>
+          ${daftarBarisPengajuan.length > 1 ? `<button type="button" onclick="hapusBarisPengajuan(${idx})" aria-label="Hapus barang" style="background:#fee2e2; color:#dc2626; border:0; width:26px; height:26px; border-radius:7px; font-weight:800; cursor:pointer; font-size:12px;">✕</button>` : ''}
         </div>
-        
-        <div style="display:flex; align-items:center; gap:8px;">
-          <select class="form-select" style="flex:1; min-height:42px; font-size:13px;" onchange="updateNilaiBaris(${idx}, 'barang', this.value)">
-            ${optionsHTML.replace(`value="${item.barang}"`, `value="${item.barang}" selected`)}
-          </select>
-          
-          <div style="display:flex; align-items:center; justify-content:space-between; background:#fff; border:1.5px solid var(--b); border-radius:10px; padding:3px 8px; flex:none; height:42px;">
-            <button type="button" onclick="ubahJumlahQty(${idx}, -1)" style="width:30px; height:32px; border-radius:8px; background:#f1f5f9; border:0; font-size:16px; font-weight:800; color:var(--t); cursor:pointer; display:grid; place-items:center;">-</button>
-            <span style="font-size:13.5px; font-weight:800; min-width:24px; text-align:center; color:var(--g); margin:0 4px;">${item.jumlah}</span>
-            <button type="button" onclick="ubahJumlahQty(${idx}, 1)" style="width:30px; height:32px; border-radius:8px; background:var(--gl); border:1px solid #bbf7d0; font-size:16px; font-weight:800; color:var(--g); cursor:pointer; display:grid; place-items:center;">+</button>
+        <select class="form-select" style="width:100%; min-height:44px; font-size:13px;" onchange="updateNilaiBaris(${idx}, 'barang', this.value)">
+          ${selectedOptions}
+        </select>
+        ${khusus ? `
+          <input type="text" class="form-input" value="${esc(item.namaKhusus || '')}" oninput="updateNilaiBaris(${idx}, 'namaKhusus', this.value)" placeholder="Ketik nama barang yang dibutuhkan..." aria-label="Nama permintaan khusus" style="width:100%; min-height:44px; border-color:#fbbf24;">
+        ` : ''}
+        <div style="display:flex; align-items:center; justify-content:space-between; background:#fff; border:1.5px solid ${khusus ? '#fbbf24' : 'var(--b)'}; border-radius:10px; padding:5px 9px; min-height:44px;">
+          <span style="font-size:12px; font-weight:700; color:${khusus ? '#b45309' : 'var(--s)'};">Jumlah (Pcs)</span>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <button type="button" onclick="ubahJumlahQty(${idx}, -1)" aria-label="Kurangi jumlah" style="width:32px; height:32px; border-radius:8px; background:#f1f5f9; border:0; font-size:17px; font-weight:800; color:var(--t); cursor:pointer;">−</button>
+            <span style="font-size:14px; font-weight:800; min-width:24px; text-align:center; color:${khusus ? '#b45309' : 'var(--g)'};">${item.jumlah || 1}</span>
+            <button type="button" onclick="ubahJumlahQty(${idx}, 1)" aria-label="Tambah jumlah" style="width:32px; height:32px; border-radius:8px; background:var(--gl); border:1px solid #bbf7d0; font-size:17px; font-weight:800; color:var(--g); cursor:pointer;">+</button>
           </div>
         </div>
-      </div>
-    `;
+      </div>`;
   }).join('');
 }
 
@@ -2969,7 +2957,13 @@ function renderPengajuanPage() {
     if (g.prioritas.toLowerCase() === 'penting') prioritasColor = 'var(--o)';
     if (g.prioritas.toLowerCase() === 'mendesak') prioritasColor = '#dc2626';
 
-    const daftarKebutuhanHTML = g.kebutuhanList.map(k => `<li style="margin-bottom:3px;">${esc(k)}</li>`).join('');
+    const daftarKebutuhanHTML = g.kebutuhanList.map(k => {
+      if (String(k).startsWith('[Permintaan Khusus]')) {
+        const sisaTeks = String(k).replace('[Permintaan Khusus]', '').trim();
+        return `<li style="margin-bottom:4px;"><span style="background:#fef3c7; color:#b45309; border:1px solid #fcd34d; font-size:9.5px; font-weight:800; padding:1px 6px; border-radius:4px; margin-right:4px;">Permintaan Khusus</span>${esc(sisaTeks)}</li>`;
+      }
+      return `<li style="margin-bottom:3px;">${esc(k)}</li>`;
+    }).join('');
 
     return `
       <div class="card" style="margin-bottom:0; border:1px solid var(--b); border-radius:12px; padding:12px; background:#fff;">
@@ -3656,16 +3650,35 @@ async function kirimLaporanModal() {
 }
 
 function kirimPengajuan() {
-  const btn = document.getElementById('btnPengajuan');
   const nama = document.getElementById('pengajuanNama').value.trim();
   const area = document.getElementById('pengajuanArea').value.trim();
   const prioritas = (document.querySelector('input[name="prioritas"]:checked') || {}).value || 'Normal';
 
-  let validItems = daftarBarisPengajuan.filter(x => x.barang.trim() !== '');
-  if (!nama || !area || validItems.length === 0) {
-    alert('Nama, area, dan minimal pilih satu nama barang pada pengajuan.');
+  if (!nama || !area) {
+    alert('Nama dan area wajib diisi.');
     return;
   }
+
+  const validItems = daftarBarisPengajuan.filter(item => {
+    if (item.barang === OPSI_PERMINTAAN_KHUSUS) return String(item.namaKhusus || '').trim() !== '';
+    return String(item.barang || '').trim() !== '';
+  });
+
+  if (validItems.length === 0) {
+    alert('Silakan pilih minimal satu barang atau isi nama pada Permintaan Khusus.');
+    return;
+  }
+
+  const formattedItems = validItems.map(item => {
+    if (item.barang === OPSI_PERMINTAAN_KHUSUS) {
+      return `[Permintaan Khusus] ${String(item.namaKhusus).trim()} (${item.jumlah || 1} pcs)`;
+    }
+    return `${item.barang} (${item.jumlah || 1} pcs)`;
+  });
+
+  const khususItems = validItems
+    .filter(item => item.barang === OPSI_PERMINTAAN_KHUSUS)
+    .map(item => `${String(item.namaKhusus).trim()} (${item.jumlah || 1} pcs)`);
 
   const d = {
     action: 'simpanPengajuan',
@@ -3673,14 +3686,13 @@ function kirimPengajuan() {
     Nama: nama,
     Area: area,
     Prioritas: prioritas,
-    BarangDanJumlah: validItems.map(x => `${x.barang} (${x.jumlah} pcs)`).join(' || ')
+    BarangDanJumlah: formattedItems.join(' || ')
   };
 
-  validItems.forEach((item, idx) => {
-    if (idx < 6) {
-      d['Kebutuhan' + (idx + 1)] = `${item.barang} (${item.jumlah} pcs)`;
-    }
+  formattedItems.forEach((itemStr, idx) => {
+    if (idx < 7) d['Kebutuhan' + (idx + 1)] = itemStr;
   });
+  if (khususItems.length) d.PermintaanKhusus = khususItems.join(' || ');
 
   postViaHiddenForm(d, 'btnPengajuan', 'Kirim Pengajuan', () => {
     initPengajuanDinamis();
