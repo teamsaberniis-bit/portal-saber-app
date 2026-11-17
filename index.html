@@ -890,10 +890,10 @@ html, body{
   position:absolute;
   top:calc(14px + env(safe-area-inset-top));
   left:50%;
-  transform:translateX(-50%) translateY(-100px);
+  transform:translateX(-50%) translateY(-120px);
   background:#0f172a;
   color:#fff;
-  padding:10px 18px;
+  padding:11px 18px;
   border-radius:30px;
   font-size:12px;
   font-weight:800;
@@ -902,11 +902,15 @@ html, body{
   align-items:center;
   gap:8px;
   transition:transform .3s cubic-bezier(.175,.885,.32,1.275);
-  z-index:999;
-  white-space:nowrap;
+  z-index:10000;
+  white-space:normal;
+  max-width:calc(100% - 32px);
   pointer-events:none;
 }
 #toastNotification.show{ transform:translateX(-50%) translateY(0); }
+#toastNotification.success{ background:#15803d; }
+#toastNotification.error{ background:#b91c1c; }
+#toastNotification.loading{ background:#1d4ed8; }
 
 .home-info-card, .home-pengaduan-card{
   background:#fff;
@@ -1562,13 +1566,25 @@ let currentFilterPengajuan = 'ALL';
 let currentFilterLaporan = 'ALL';
 let laporanViewMode = 'aktif';
 
-function showToast(text = "BERHASIL DIKIRIM") {
+let saberToastTimer = null;
+function showToast(text = "BERHASIL DIKIRIM", type = 'success') {
   const t = document.getElementById('toastNotification');
   const span = document.getElementById('toastText');
+  const icon = t ? t.querySelector('i') : null;
   if (span) span.textContent = text;
-  if (t) {
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2200);
+  if (!t) return;
+
+  t.classList.remove('success', 'error', 'loading', 'show');
+  t.classList.add(type);
+  if (icon) {
+    icon.className = type === 'loading'
+      ? 'fa-solid fa-spinner fa-spin'
+      : (type === 'error' ? 'fa-solid fa-circle-exclamation' : 'fa-solid fa-circle-check');
+  }
+  if (saberToastTimer) clearTimeout(saberToastTimer);
+  requestAnimationFrame(() => t.classList.add('show'));
+  if (type !== 'loading') {
+    saberToastTimer = setTimeout(() => t.classList.remove('show'), type === 'error' ? 4200 : 3000);
   }
 }
 
@@ -3616,19 +3632,45 @@ function postViaHiddenForm(payload, buttonId, defaultBtnText, successCallback) {
       btn.innerText = defaultBtnText;
     }
     if (success) {
+      const successMessage = message || 'Data berhasil disimpan.';
       playNotifSound();
-      showToast(message || 'Data berhasil disimpan.');
+      showToast(successMessage, 'success');
       if (typeof successCallback === 'function') successCallback();
+      // Popup hanya ditampilkan setelah backend mengembalikan success:true.
+      if (window.Swal && typeof Swal.fire === 'function') {
+        Swal.fire({
+          icon: 'success',
+          title: 'Berhasil terkirim!',
+          text: successMessage,
+          timer: 1900,
+          timerProgressBar: true,
+          showConfirmButton: false,
+          heightAuto: false
+        });
+      }
       setTimeout(function () { loadData(); }, 800);
     } else {
       const errorMessage = message || 'Server belum mengonfirmasi penyimpanan. Periksa koneksi.';
-      showToast('Pengiriman belum terkonfirmasi.');
-      alert(errorMessage + '\n\nData formulir tetap disimpan di layar. Periksa Google Sheets sebelum mengirim ulang agar tidak terjadi data ganda.');
+      const warningMessage = errorMessage + '\n\nData formulir tetap disimpan di layar. Periksa Google Sheets sebelum mengirim ulang agar tidak terjadi data ganda.';
+      showToast('Pengiriman gagal / belum terkonfirmasi.', 'error');
+      if (window.Swal && typeof Swal.fire === 'function') {
+        Swal.fire({
+          icon: 'error',
+          title: 'Belum berhasil terkirim',
+          text: warningMessage,
+          confirmButtonText: 'Mengerti',
+          heightAuto: false
+        });
+      } else {
+        alert(warningMessage);
+      }
     }
   }
 
   function onMessage(event) {
-    if (event.source !== iframe.contentWindow) return;
+    // HtmlService dapat membungkus respons dalam iframe sandbox tambahan.
+    // Karena itu event.source tidak selalu sama dengan iframe target form.
+    // requestId unik menjadi pemeriksaan utama agar respons tidak tertukar.
     const messageData = event.data;
     if (!messageData || messageData.type !== 'TIM_SABER_RESULT' || !messageData.payload) return;
     if (messageData.payload.requestId !== requestId) return;
@@ -3642,6 +3684,7 @@ function postViaHiddenForm(payload, buttonId, defaultBtnText, successCallback) {
   }, 45000);
 
   try {
+    showToast('Sedang mengirim data ke server...', 'loading');
     input.value = JSON.stringify(payload);
     form.submit();
     return true;
